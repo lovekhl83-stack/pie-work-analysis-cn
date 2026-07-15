@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>PIE 다운로드</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{display:flex;flex-direction:column;align-items:center;justify-content:center;
+     min-height:100vh;background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',sans-serif;gap:24px;}
+.logo{display:flex;gap:0;line-height:1;}
+.logo span{font-size:72px;font-weight:900;}
+.logo .p{color:#3b82f6;}.logo .i{color:#f59e0b;}.logo .e{color:#22c55e;}
+.sub{color:#94a3b8;font-size:13px;letter-spacing:.05em;}
+.card{background:#1e293b;border:1px solid #334155;border-radius:16px;
+      padding:36px 48px;text-align:center;max-width:400px;width:90%;}
+h2{font-size:18px;font-weight:700;color:#fff;margin-bottom:8px;}
+.desc{color:#94a3b8;font-size:13px;margin-bottom:28px;line-height:1.6;}
+.btn{display:inline-block;padding:14px 40px;font-size:15px;font-weight:700;
+     border:none;border-radius:10px;background:#2563eb;color:#fff;
+     cursor:pointer;text-decoration:none;transition:background .2s;width:100%;}
+.btn:hover{background:#1d4ed8;}
+.btn:disabled{background:#334155;color:#64748b;cursor:default;}
+#status{margin-top:16px;font-size:13px;min-height:20px;color:#86efac;}
+#status.err{color:#fca5a5;}
+.ver{margin-top:20px;font-size:11px;color:#475569;}
+</style>
+</head>
+<body>
+<div class="logo"><span class="p">P</span><span class="i">I</span><span class="e">E</span></div>
+<div class="sub">Powernet Industrial Engineering</div>
+<div class="card">
+  <h2>최신 버전 다운로드</h2>
+  <p class="desc">아래 버튼을 클릭하면<br>최신 PIE.html 파일을 바로 다운로드합니다.</p>
+  <button class="btn" id="btn" onclick="dl()">⬇ PIE.html 다운로드</button>
+  <div id="status"></div>
+  <div class="ver" id="ver"></div>
+</div>
+<script>
+var RAW='https://raw.githubusercontent.com/lovekhl83-stack/pie-work-analysis/master/PIE.html';
+function dl(){
+  var btn=document.getElementById('btn');
+  var st=document.getElementById('status');
+  st.className='';
+  btn.disabled=true;
+  btn.textContent='다운로드 준비 중…';
+  st.textContent='';
+  fetch(RAW,{cache:'no-store'})
+    .then(function(r){
+      if(!r.ok)throw new Error('서버 오류 ('+r.status+')');
+      return r.blob();
+    })
+    .then(function(blob){
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a');
+      a.href=url; a.download='PIE.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function(){URL.revokeObjectURL(url);},1000);
+      st.textContent='✓ 다운로드 완료!';
+      btn.textContent='⬇ 다시 다운로드';
+      btn.disabled=false;
+    })
+    .catch(function(e){
+      st.className='err';
+      st.textContent='오류: '+e.message;
+      btn.textContent='⬇ 재시도';
+      btn.disabled=false;
+    });
+}
+// 최신 커밋 날짜 표시
+fetch('https://api.github.com/repos/lovekhl83-stack/pie-work-analysis/commits/master')
+  .then(function(r){return r.json();})
+  .then(function(d){
+    var dt=new Date(d.commit.committer.date);
+    document.getElementById('ver').textContent=
+      '최근 업데이트: '+dt.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
+  }).catch(function(){});
+</script>
+</body>
+</html>
