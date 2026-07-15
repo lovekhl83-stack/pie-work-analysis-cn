@@ -2121,7 +2121,30 @@ function WelcomeModal(props){
 }
 
 function StartupModal({onNew,onLoad}){
+  var _lg=useState(function(){return localStorage.getItem('wvas_lang')==='zh'?'zh':'ko';});
+  var lang=_lg[0],setLang=_lg[1];
+  function switchLang(l){setLang(l);localStorage.setItem('wvas_lang',l);}
+  var T = lang==='zh' ? {
+    load:'📂 加载项目', new:'✨ 开始新项目',
+    note:'※ 保存/加载功能仅支持 Chrome · Edge 浏览器'
+  } : {
+    load:'📂 프로젝트 불러오기', new:'✨ 새 프로젝트로 시작하기',
+    note:'※ 저장/불러오기는 Chrome · Edge 브라우저에서 지원됩니다'
+  };
+  function langBtn(code,label){
+    var active=lang===code;
+    return React.createElement('button',{
+      onClick:function(){switchLang(code);},
+      style:{fontSize:11,padding:'4px 10px',borderRadius:6,cursor:'pointer',
+             border:'1px solid '+(active?'#3b82f6':'#334155'),
+             background:active?'#172554':'transparent',
+             color:active?'#93c5fd':'#64748b'}
+    },label);
+  }
   return React.createElement('div',{style:{position:'fixed',inset:0,zIndex:10000,background:'rgba(0,0,0,0.93)',display:'flex',alignItems:'center',justifyContent:'center'}},
+    React.createElement('div',{style:{position:'absolute',top:16,right:16,display:'flex',gap:6}},
+      langBtn('ko','🇰🇷 한국어'),langBtn('zh','🇨🇳 中文')
+    ),
     React.createElement('div',{style:{background:'#1e293b',border:'1px solid #334155',borderRadius:20,padding:'44px 48px',width:440,maxWidth:'94vw',boxShadow:'0 24px 80px rgba(0,0,0,0.8)',textAlign:'center'}},
       React.createElement('div',{style:{marginBottom:6}},
         React.createElement('span',{style:{fontSize:48,fontWeight:900,letterSpacing:3}},
@@ -2132,10 +2155,10 @@ function StartupModal({onNew,onLoad}){
       ),
       React.createElement('div',{style:{color:'#64748b',fontSize:12,marginBottom:40,letterSpacing:1}},'Process Intelligence Engine'),
       React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:14}},
-        React.createElement('button',{onClick:onLoad,style:{width:'100%',padding:'18px 0',background:'rgba(59,130,246,0.12)',border:'2px solid #3b82f6',borderRadius:12,color:'#93c5fd',fontSize:15,fontWeight:700,cursor:'pointer'}},'📂 프로젝트 불러오기'),
-        React.createElement('button',{onClick:onNew,style:{width:'100%',padding:'18px 0',background:'rgba(34,197,94,0.1)',border:'2px solid #16a34a',borderRadius:12,color:'#4ade80',fontSize:15,fontWeight:700,cursor:'pointer'}},'✨ 새 프로젝트로 시작하기')
+        React.createElement('button',{onClick:onLoad,style:{width:'100%',padding:'18px 0',background:'rgba(59,130,246,0.12)',border:'2px solid #3b82f6',borderRadius:12,color:'#93c5fd',fontSize:15,fontWeight:700,cursor:'pointer'}},T.load),
+        React.createElement('button',{onClick:onNew,style:{width:'100%',padding:'18px 0',background:'rgba(34,197,94,0.1)',border:'2px solid #16a34a',borderRadius:12,color:'#4ade80',fontSize:15,fontWeight:700,cursor:'pointer'}},T.new)
       ),
-      React.createElement('div',{style:{color:'#334155',fontSize:10,marginTop:24}},'※ 저장/불러오기는 Chrome · Edge 브라우저에서 지원됩니다')
+      React.createElement('div',{style:{color:'#334155',fontSize:10,marginTop:24}},T.note)
     )
   );
 }
@@ -12033,24 +12056,55 @@ function App() {
 
 function LicenseScreen(props){
   var onActivate=props.onActivate;
+  var _lg=useState(function(){return localStorage.getItem('wvas_lang')==='zh'?'zh':'ko';});
+  var lang=_lg[0],setLang=_lg[1];
+  function switchLang(l){setLang(l);localStorage.setItem('wvas_lang',l);}
+  var T = lang==='zh' ? {
+    subtitle:'工作分析系统', keyLabel:'请输入许可证密钥',
+    placeholder:'PIE-XXXX-XXXX-XXXX (例如: PIE-0143-BD34-D607)',
+    activate:'激活', contact:'许可证咨询: ',
+    errFormat:'格式错误：请按 PIE-XXXX-XXXX-XXXX 格式输入',
+    errInvalid:'许可证密钥无效。',
+    errExpired:function(y,m){return '许可证已过期 ('+y+'.'+m+' 月到期)';}
+  } : {
+    subtitle:'작업 분석 시스템', keyLabel:'라이선스 키를 입력하세요',
+    placeholder:'PIE-XXXX-XXXX-XXXX (예: PIE-0143-BD34-D607)',
+    activate:'활성화', contact:'라이선스 문의: ',
+    errFormat:'형식 오류: PIE-XXXX-XXXX-XXXX 형식으로 입력하세요',
+    errInvalid:'유효하지 않은 라이선스 키입니다.',
+    errExpired:function(y,m){return '만료된 라이선스입니다 ('+y+'.'+m+'월 만료)';}
+  };
   var _i=useState('');var keyInput=_i[0],setKeyInput=_i[1];
   var _e=useState('');var errMsg=_e[0],setErr=_e[1];
   function tryActivate(){
     var k=keyInput.trim().toUpperCase();
     if(k.indexOf('PIE-')===0)k=k.slice(4);
     k=k.replace(/[^0-9A-F]/g,'');
-    if(k.length!==12){setErr('형식 오류: PIE-XXXX-XXXX-XXXX 형식으로 입력하세요');return;}
+    if(k.length!==12){setErr(T.errFormat);return;}
     var result=window._pieLicCheck(k);
-    if(!result){setErr('유효하지 않은 라이선스 키입니다.');return;}
+    if(!result){setErr(T.errInvalid);return;}
     var exp=new Date(result.year,result.month,1);
-    if(new Date()>=exp){setErr('만료된 라이선스입니다 ('+result.year+'.'+('0'+result.month).slice(-2)+'월 만료)');return;}
+    if(new Date()>=exp){setErr(T.errExpired(result.year,('0'+result.month).slice(-2)));return;}
     localStorage.setItem('pie_license_key',k);
     setErr('');onActivate(result);
   }
   var inp={width:'100%',boxSizing:'border-box',background:'#0f172a',border:'1px solid '+(errMsg?'#ef4444':'#334155'),
     borderRadius:8,padding:'10px 14px',fontSize:14,color:'#e2e8f0',textAlign:'center',
     letterSpacing:2,marginBottom:8,outline:'none'};
-  return React.createElement('div',{style:{minHeight:'100vh',background:'#0f172a',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'system-ui,sans-serif'}},
+  function langBtn(code,label){
+    var active=lang===code;
+    return React.createElement('button',{
+      onClick:function(){switchLang(code);},
+      style:{fontSize:11,padding:'4px 10px',borderRadius:6,cursor:'pointer',
+             border:'1px solid '+(active?'#3b82f6':'#334155'),
+             background:active?'#172554':'transparent',
+             color:active?'#93c5fd':'#64748b'}
+    },label);
+  }
+  return React.createElement('div',{style:{position:'relative',minHeight:'100vh',background:'#0f172a',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'system-ui,sans-serif'}},
+    React.createElement('div',{style:{position:'absolute',top:16,right:16,display:'flex',gap:6}},
+      langBtn('ko','🇰🇷 한국어'),langBtn('zh','🇨🇳 中文')
+    ),
     React.createElement('div',{style:{background:'#1e293b',border:'1px solid #334155',borderRadius:16,padding:'40px 48px',maxWidth:420,width:'90%',textAlign:'center',boxShadow:'0 25px 50px rgba(0,0,0,.5)'}},
       React.createElement('div',{style:{display:'flex',justifyContent:'center',gap:0,marginBottom:10}},
         React.createElement('span',{style:{fontSize:56,fontWeight:900,color:'#3b82f6',lineHeight:1}},'P'),
@@ -12062,10 +12116,10 @@ function LicenseScreen(props){
         React.createElement('span',{style:{color:'#f59e0b',fontWeight:700}},'I'),'ndustrial ',
         React.createElement('span',{style:{color:'#22c55e',fontWeight:700}},'E'),'ngineering'
       ),
-      React.createElement('p',{style:{color:'#475569',fontSize:11,marginBottom:32,marginTop:2}},'작업 분석 시스템'),
-      React.createElement('p',{style:{color:'#e2e8f0',fontSize:13,fontWeight:600,marginBottom:10}},'라이선스 키를 입력하세요'),
+      React.createElement('p',{style:{color:'#475569',fontSize:11,marginBottom:32,marginTop:2}},T.subtitle),
+      React.createElement('p',{style:{color:'#e2e8f0',fontSize:13,fontWeight:600,marginBottom:10}},T.keyLabel),
       React.createElement('input',{
-        type:'text',placeholder:'PIE-XXXX-XXXX-XXXX (예: PIE-0143-BD34-D607)',value:keyInput,
+        type:'text',placeholder:T.placeholder,value:keyInput,
         onChange:function(e){setKeyInput(e.target.value);setErr('');},
         onKeyDown:function(e){if(e.key==='Enter')tryActivate();},
         style:inp
@@ -12075,10 +12129,10 @@ function LicenseScreen(props){
         onClick:tryActivate,
         style:{width:'100%',background:'#1d4ed8',color:'#fff',border:'none',borderRadius:8,
           padding:'11px',fontSize:14,fontWeight:700,cursor:'pointer',marginBottom:24,marginTop:6}
-      },'활성화'),
+      },T.activate),
       React.createElement('div',{style:{borderTop:'1px solid #1e293b',paddingTop:16}},
         React.createElement('p',{style:{color:'#475569',fontSize:11,margin:0}},
-          '라이선스 문의: ',
+          T.contact,
           React.createElement('a',{href:'mailto:lovekhl83@gmail.com',style:{color:'#60a5fa'}},'lovekhl83@gmail.com')
         )
       )
