@@ -1377,6 +1377,133 @@ async function fsDeleteFile(dh,name){
   catch(e){alert('삭제 실패: '+e.message);return false;}
 }
 
+// ─────────────────────────────────────────
+//  ST 누적 저장소 (로컬 폴더 / 로컬 서버) — 부품 ST를 여러 PC에서 공유 누적
+// ─────────────────────────────────────────
+const ST_BACKEND_MODE_KEY='pie_st_backend_mode'; // 'none' | 'folder' | 'server'
+const ST_BACKEND_URL_KEY='pie_st_backend_url';
+const ST_BACKEND_FOLDER_NAME_KEY='pie_st_backend_folder_name';
+const ST_BACKEND_FILE='PIE_ST_누적.json';
+
+function stBackendMode(){return localStorage.getItem(ST_BACKEND_MODE_KEY)||'none';}
+function stBackendSetMode(m){localStorage.setItem(ST_BACKEND_MODE_KEY,m);}
+function stBackendUrl(){return localStorage.getItem(ST_BACKEND_URL_KEY)||'';}
+function stBackendSetUrl(u){localStorage.setItem(ST_BACKEND_URL_KEY,(u||'').trim());}
+function stBackendFolderName(){return localStorage.getItem(ST_BACKEND_FOLDER_NAME_KEY)||'';}
+
+async function stFolderPick(){
+  try{
+    var h=await showDirectoryPicker({mode:'readwrite',startIn:'desktop'});
+    await idbPut('stDirHandle',h);
+    localStorage.setItem(ST_BACKEND_FOLDER_NAME_KEY,h.name);
+    return h;
+  }catch(e){if(e.name!=='AbortError')alert('폴더 선택 실패: '+e.message);return null;}
+}
+async function stFolderRestore(){
+  try{
+    var h=await idbGet('stDirHandle');
+    if(!h)return null;
+    var perm=await h.queryPermission({mode:'readwrite'});
+    if(perm==='granted')return h;
+    var req2=await h.requestPermission({mode:'readwrite'});
+    return req2==='granted'?h:null;
+  }catch(e){return null;}
+}
+
+// 두 항목 중 더 신뢰할 수 있는 쪽 채택 (표본수 우선, 동일하면 최신순) — 반복 동기화해도 값이 부풀지 않도록 합산 대신 선택 방식 사용
+function _stPickBetter(a,b){
+  if(!a) return b; if(!b) return a;
+  var an=a.n||0, bn=b.n||0;
+  if(an!==bn) return an>bn?a:b;
+  return (new Date(a.updatedAt||0) >= new Date(b.updatedAt||0)) ? a : b;
+}
+function mergePartStPayload(base,incoming){
+  var baseParts=(base&&base.parts)||[];
+  var incParts=(incoming&&incoming.parts)||[];
+  var mergedParts=baseParts.slice();
+  var nameToId={};
+  mergedParts.forEach(function(p){nameToId[(p.name||'').toLowerCase()]=p.id;});
+  var incIdToMergedId={};
+  incParts.forEach(function(p){
+    var key=(p.name||'').toLowerCase();
+    if(!nameToId[key]){mergedParts.push(p);nameToId[key]=p.id;}
+    incIdToMergedId[p.id]=nameToId[key];
+  });
+  var basePartSt=(base&&base.partSt)||{};
+  var incPartSt=(incoming&&incoming.partSt)||{};
+  var merged=JSON.parse(JSON.stringify(basePartSt));
+  Object.keys(incPartSt).forEach(function(incPid){
+    var mergedPid=incIdToMergedId[incPid]||incPid;
+    var incTasks=incPartSt[incPid]||{};
+    if(!merged[mergedPid]) merged[mergedPid]={};
+    Object.keys(incTasks).forEach(function(taskName){
+      merged[mergedPid][taskName]=_stPickBetter(merged[mergedPid][taskName],incTasks[taskName]);
+    });
+  });
+  return {parts:mergedParts, partSt:merged};
+}
+
+async function stBackendRead(){
+  var mode=stBackendMode();
+  if(mode==='folder'){
+    var h=await stFolderRestore();
+    if(!h) return null;
+    try{
+      var fh=await h.getFileHandle(ST_BACKEND_FILE,{create:false});
+      var file=await fh.getFile();
+      return JSON.parse(await file.text());
+    }catch(e){return null;} // 최초 동기화 시 파일이 아직 없을 수 있음
+  }
+  if(mode==='server'){
+    var url=stBackendUrl();
+    if(!url) return null;
+    try{
+      var res=await fetch(url.replace(/\/$/,'')+'/api/st',{method:'GET',signal:AbortSignal.timeout(5000)});
+      if(!res.ok) return null;
+      return await res.json();
+    }catch(e){return null;}
+  }
+  return null;
+}
+async function stBackendWrite(payload){
+  var mode=stBackendMode();
+  if(mode==='folder'){
+    var h=await stFolderRestore();
+    if(!h) return {ok:false,reason:'폴더 접근 권한이 없습니다. 설정에서 폴더를 다시 선택하세요.'};
+    try{
+      var fh=await h.getFileHandle(ST_BACKEND_FILE,{create:true});
+      var w=await fh.createWritable();
+      await w.write(JSON.stringify(payload,null,2));
+      await w.close();
+      return {ok:true};
+    }catch(e){return {ok:false,reason:e.message};}
+  }
+  if(mode==='server'){
+    var url=stBackendUrl();
+    if(!url) return {ok:false,reason:'서버 주소가 설정되지 않았습니다.'};
+    try{
+      var res=await fetch(url.replace(/\/$/,'')+'/api/st',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload),signal:AbortSignal.timeout(8000)
+      });
+      if(!res.ok) return {ok:false,reason:'HTTP '+res.status};
+      return {ok:true};
+    }catch(e){return {ok:false,reason:e.message};}
+  }
+  return {ok:false,reason:'저장소가 등록되지 않았습니다.'};
+}
+async function stBackendSync(silent){
+  var mode=stBackendMode();
+  if(mode==='none') return {ok:false,reason:'등록된 저장소가 없습니다.'};
+  var remote=await stBackendRead();
+  var localPayload={parts:partsList(),partSt:partStLoad()};
+  var merged = remote ? mergePartStPayload(localPayload,remote) : localPayload;
+  partsSave(merged.parts);
+  partStSave(merged.partSt);
+  var res=await stBackendWrite(merged);
+  if(!silent && !res.ok) console.warn('[PIE ST-Backend] 동기화 실패:',res.reason);
+  return Object.assign({},res,{merged:merged});
+}
 
 /* ── comp-video.js ── */
 
@@ -1762,19 +1889,40 @@ function GanttByName({ tasks, totalDuration, currentTime, onSeek, onLoopTask, ac
 function SettingsModal({lang,setLang,onClose}){
   var [draft,setDraft]=useState(lang);
   var s=STRINGS[lang]||STRINGS.ko;
+  var [stMode,setStMode]=useState(stBackendMode);
+  var [stUrl,setStUrl]=useState(stBackendUrl);
+  var [stFolderName,setStFolderName]=useState(stBackendFolderName);
+  var [stSyncMsg,setStSyncMsg]=useState('');
+  var [stSyncing,setStSyncing]=useState(false);
   function apply(){
     setLang(draft);
     localStorage.setItem('wvas_lang',draft);
+    stBackendSetMode(stMode);
+    stBackendSetUrl(stUrl);
     onClose();
   }
+  async function pickStFolder(){
+    if(!window.showDirectoryPicker){alert('Chrome/Edge 브라우저에서만 지원됩니다.');return;}
+    var h=await stFolderPick();
+    if(h) setStFolderName(h.name);
+  }
+  async function testAndSync(){
+    stBackendSetMode(stMode);
+    stBackendSetUrl(stUrl);
+    setStSyncing(true);setStSyncMsg('동기화 중...');
+    var res=await stBackendSync(false);
+    setStSyncing(false);
+    setStSyncMsg(res.ok?'✅ 동기화 성공':'❌ 실패: '+(res.reason||'알 수 없는 오류'));
+  }
   var LANGS=[['ko','🇰🇷 한국어'],['zh','🇨🇳 中文'],['vi','🇻🇳 Tiếng Việt']];
+  var STMODES=[['none','사용 안 함'],['folder','📁 폴더'],['server','🌐 서버']];
   return React.createElement('div',{
     style:{position:'fixed',inset:0,background:'rgba(0,0,0,.7)',zIndex:9000,
            display:'flex',alignItems:'center',justifyContent:'center'},
     onClick:function(e){if(e.target===e.currentTarget)onClose();}
   },
     React.createElement('div',{style:{background:'#1e293b',border:'1px solid #334155',borderRadius:14,
-      padding:28,width:340,boxShadow:'0 8px 40px rgba(0,0,0,.5)'}},
+      padding:28,width:380,maxHeight:'85vh',overflowY:'auto',boxShadow:'0 8px 40px rgba(0,0,0,.5)'}},
       React.createElement('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}},
         React.createElement('span',{style:{fontWeight:700,fontSize:16,color:'#f1f5f9'}},s.settings_title),
         React.createElement('button',{onClick:onClose,
@@ -1806,6 +1954,55 @@ function SettingsModal({lang,setLang,onClose}){
             );
           })
         )
+      ),
+      React.createElement('div',{style:{marginBottom:20,paddingTop:16,borderTop:'1px solid #334155'}},
+        React.createElement('div',{style:{fontSize:12,fontWeight:700,color:'#94a3b8',marginBottom:6}},'📊 부품 ST 누적 저장소 (선택)'),
+        React.createElement('div',{style:{fontSize:11,color:'#475569',marginBottom:10,lineHeight:1.6}},
+          '폴더 또는 로컬 서버를 등록하면, 이 프로그램에서 분석한 부품별 표준시간(ST)이 자동으로 그곳에 누적 저장/동기화됩니다. 여러 PC가 같은 폴더(네트워크 공유 폴더 포함) 또는 서버를 등록하면 서로 누적된 데이터를 공유할 수 있습니다.'),
+        React.createElement('div',{style:{display:'flex',gap:6,marginBottom:10}},
+          STMODES.map(function(item){
+            var code=item[0],label=item[1];
+            var active=stMode===code;
+            return React.createElement('button',{
+              key:code,
+              onClick:function(){setStMode(code);setStSyncMsg('');},
+              style:{flex:1,fontSize:11,padding:'7px 4px',borderRadius:6,cursor:'pointer',
+                     border:'1px solid '+(active?'#3b82f6':'#334155'),
+                     background:active?'#172554':'transparent',
+                     color:active?'#93c5fd':'#64748b'}
+            },label);
+          })
+        ),
+        stMode==='folder'&&React.createElement('div',{style:{marginBottom:6}},
+          React.createElement('button',{
+            onClick:pickStFolder,
+            style:{width:'100%',fontSize:11,padding:'8px 10px',borderRadius:6,
+                   background:'#0f172a',border:'1px solid #334155',color:'#e2e8f0',cursor:'pointer',marginBottom:6}
+          },stFolderName?('📁 '+stFolderName+' (변경하려면 클릭)'):'📁 폴더 선택'),
+          React.createElement('div',{style:{fontSize:10,color:'#334155'}},
+            '팁: 네트워크 공유 폴더(예: \\\\서버\\공유폴더)를 드라이브로 연결한 뒤 선택하면 여러 PC가 공유 가능합니다.')
+        ),
+        stMode==='server'&&React.createElement('div',{style:{marginBottom:6}},
+          React.createElement('input',{
+            type:'text',
+            placeholder:'http://192.168.0.10:8791',
+            value:stUrl,
+            onChange:function(e){setStUrl(e.target.value);setStSyncMsg('');},
+            style:{width:'100%',boxSizing:'border-box',fontSize:11,padding:'6px 10px',borderRadius:6,
+                   background:'#0f172a',border:'1px solid #334155',color:'#e2e8f0',
+                   outline:'none',marginBottom:6}
+          }),
+          React.createElement('div',{style:{fontSize:10,color:'#334155'}},
+            '팁: PIE_ST_server.ps1을 실행 중인 PC의 LAN 주소를 입력하세요.')
+        ),
+        stMode!=='none'&&React.createElement('button',{
+          onClick:testAndSync,
+          disabled:stSyncing,
+          style:{width:'100%',fontSize:11,padding:'7px 0',borderRadius:6,border:'1px solid #334155',
+                 background:stSyncing?'#1e3a5f':'#14532d',color:stSyncing?'#93c5fd':'#86efac',
+                 cursor:stSyncing?'default':'pointer',marginTop:4}
+        },stSyncing?'⏳ 동기화 중...':'🔄 지금 동기화'),
+        stSyncMsg&&React.createElement('div',{style:{fontSize:10,color:'#94a3b8',marginTop:6}},stSyncMsg)
       ),
       React.createElement('div',{style:{display:'flex',gap:10,justifyContent:'flex-end'}},
         React.createElement('button',{onClick:onClose,
@@ -5023,6 +5220,20 @@ function PartsManager({parts,onPartsChange}){
   var _ps=useState(partStLoad); var partSt=_ps[0],setPartSt=_ps[1];
   var _pr=useState(partResetLoad);
   var partReset=_pr[0],setPartReset=_pr[1];
+  var _bsy=useState(false); var stSyncing=_bsy[0],setStSyncing=_bsy[1];
+  async function doStBackendSync(){
+    if(stBackendMode()==='none'){alert('설정에서 ST 누적 저장소(폴더/서버)를 먼저 등록하세요.');return;}
+    setStSyncing(true);
+    var res=await stBackendSync(false);
+    setStSyncing(false);
+    if(res.ok){
+      onPartsChange(partsList());
+      setPartSt(partStLoad());
+      alert('동기화 완료!');
+    } else {
+      alert('동기화 실패: '+(res.reason||'알 수 없는 오류'));
+    }
+  }
 
   var _as=useState(function(){return lsList().map(function(m){return lsGet(m.id);}).filter(Boolean);});
   var allSessions=_as[0]; var setAllSessions=_as[1];
@@ -5090,6 +5301,7 @@ function PartsManager({parts,onPartsChange}){
       next[selId][name]={st:avg,n:durs.length,updatedAt:new Date().toISOString()};
     });
     partStSave(next);setPartSt(next);
+    if(stBackendMode()!=='none') stBackendSync(true).then(function(r){if(r.ok)setPartSt(partStLoad());}).catch(function(){});
     alert('표준시간이 저장되었습니다.');
   }
   function exportStCsv(){
@@ -5183,6 +5395,11 @@ function PartsManager({parts,onPartsChange}){
   onClick:exportPartsDb,
   title:'현재 부품·표준시간 데이터를 파일(.pie)로 내보냅니다 (다른 PC와 공유 시 사용)'},
   '⬆ 파일로 내보내기'),
+        stBackendMode()!=='none'&&React.createElement('button',{className:'btn btn-slate',style:{fontSize:11,
+    background:stSyncing?'#1e3a5f':undefined,color:stSyncing?'#93c5fd':undefined},
+  onClick:doStBackendSync,disabled:stSyncing,
+  title:'설정에서 등록한 ST 누적 저장소(폴더/서버)와 동기화합니다'},
+  stSyncing?'⏳ 동기화 중...':'🔄 지금 동기화'),
 React.createElement('button',{className:'btn btn-green',style:{fontSize:12},
           onClick:function(){partsSave(parts);onPartsChange(parts);alert('부품 목록 저장 완료 ('+parts.length+'개)');},
           title:'현재 부품 목록을 저장합니다'},'💾 저장'),
@@ -10482,6 +10699,7 @@ function App() {
     if(!savedCount){alert('저장할 데이터가 없습니다.\n부품을 선택하고 작업 요소를 측정해주세요.');return;}
     partStSave(db);
     localStorage.setItem('pie_last_upload_sig',sig);
+    if(stBackendMode()!=='none') stBackendSync(true).catch(function(){});
     alert('저장 완료!\n부품 '+savedCount+'개 저장됨 (부품관리 DB, 로컬)');
   }
 
@@ -11624,6 +11842,7 @@ function App() {
                     });
                   });
                   partStSave(db);
+                  if(stBackendMode()!=='none') stBackendSync(true).catch(function(){});
 
                   alert('저장 완료 ('+pids.length+'개 부품)');
                 },
