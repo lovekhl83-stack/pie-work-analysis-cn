@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>PIE 다운로드</title>
+<title>PIE(중국) 다운로드</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -13,64 +13,39 @@ body{display:flex;flex-direction:column;align-items:center;justify-content:cente
 .logo .p{color:#3b82f6;}.logo .i{color:#f59e0b;}.logo .e{color:#22c55e;}
 .sub{color:#94a3b8;font-size:13px;letter-spacing:.05em;}
 .card{background:#1e293b;border:1px solid #334155;border-radius:16px;
-      padding:36px 48px;text-align:center;max-width:400px;width:90%;}
+      padding:36px 48px;text-align:center;max-width:440px;width:90%;}
 h2{font-size:18px;font-weight:700;color:#fff;margin-bottom:8px;}
 .desc{color:#94a3b8;font-size:13px;margin-bottom:28px;line-height:1.6;}
 .btn{display:inline-block;padding:14px 40px;font-size:15px;font-weight:700;
      border:none;border-radius:10px;background:#2563eb;color:#fff;
      cursor:pointer;text-decoration:none;transition:background .2s;width:100%;}
 .btn:hover{background:#1d4ed8;}
-.btn:disabled{background:#334155;color:#64748b;cursor:default;}
-#status{margin-top:16px;font-size:13px;min-height:20px;color:#86efac;}
-#status.err{color:#fca5a5;}
+.steps{text-align:left;background:#0f172a;border:1px solid #334155;border-radius:10px;
+       padding:14px 18px;margin-top:20px;font-size:12px;color:#94a3b8;line-height:1.9;}
+.steps b{color:#e2e8f0;}
 .ver{margin-top:20px;font-size:11px;color:#475569;}
+.badge{display:inline-block;font-size:11px;padding:3px 10px;border-radius:20px;
+       background:rgba(34,197,94,.12);border:1px solid rgba(74,222,128,.4);color:#4ade80;margin-bottom:8px;}
 </style>
 </head>
 <body>
 <div class="logo"><span class="p">P</span><span class="i">I</span><span class="e">E</span></div>
 <div class="sub">Powernet Industrial Engineering</div>
 <div class="card">
-  <h2>최신 버전 다운로드</h2>
-  <p class="desc">아래 버튼을 클릭하면<br>최신 PIE.html 파일을 바로 다운로드합니다.</p>
-  <button class="btn" id="btn" onclick="dl()">⬇ PIE.html 다운로드</button>
-  <div id="status"></div>
+  <div class="badge">📴 오프라인 · 중국용 · 구글 연동 없음</div>
+  <h2>PIE(중국) 다운로드</h2>
+  <p class="desc">아래 버튼을 클릭하면 프로그램 전체(zip)를 다운로드합니다.<br>인터넷 없이 실행되는 오프라인 버전입니다.</p>
+  <a class="btn" href="https://github.com/lovekhl83-stack/pie-work-analysis-cn/archive/refs/heads/main.zip">⬇ 전체 프로그램 다운로드 (.zip)</a>
+  <div class="steps">
+    <b>설치 방법</b><br>
+    1. 다운로드한 zip 파일 압축 풀기<br>
+    2. 압축 푼 폴더 안의 <b>PIE(중국).bat</b> 더블클릭<br>
+    3. 브라우저가 자동으로 열리며 프로그램 실행 (인터넷 불필요)
+  </div>
   <div class="ver" id="ver"></div>
 </div>
 <script>
-var RAW='https://raw.githubusercontent.com/lovekhl83-stack/pie-work-analysis/master/PIE.html';
-function dl(){
-  var btn=document.getElementById('btn');
-  var st=document.getElementById('status');
-  st.className='';
-  btn.disabled=true;
-  btn.textContent='다운로드 준비 중…';
-  st.textContent='';
-  fetch(RAW,{cache:'no-store'})
-    .then(function(r){
-      if(!r.ok)throw new Error('서버 오류 ('+r.status+')');
-      return r.blob();
-    })
-    .then(function(blob){
-      var url=URL.createObjectURL(blob);
-      var a=document.createElement('a');
-      a.href=url; a.download='PIE.html';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(function(){URL.revokeObjectURL(url);},1000);
-      st.textContent='✓ 다운로드 완료!';
-      btn.textContent='⬇ 다시 다운로드';
-      btn.disabled=false;
-    })
-    .catch(function(e){
-      st.className='err';
-      st.textContent='오류: '+e.message;
-      btn.textContent='⬇ 재시도';
-      btn.disabled=false;
-    });
-}
-// 최신 커밋 날짜 표시
-fetch('https://api.github.com/repos/lovekhl83-stack/pie-work-analysis/commits/master')
+fetch('https://api.github.com/repos/lovekhl83-stack/pie-work-analysis-cn/commits/main')
   .then(function(r){return r.json();})
   .then(function(d){
     var dt=new Date(d.commit.committer.date);
