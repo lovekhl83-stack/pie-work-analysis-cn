@@ -1,0 +1,18 @@
+{
+  "fileCheckpointingEnabled": true,
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && [ -n \"$(git status --porcelain)\" ] && git add -A && git commit -q -m \"auto: 작업 스냅샷 (나루 자동커밋)\" >/dev/null 2>&1; true",
+            "timeout": 30,
+            "statusMessage": "자동 커밋 중..."
+          }
+        ]
+      }
+    ]
+  }
+}
