@@ -38,9 +38,9 @@
 ├─ PIE_ST_server.ps1        # ST 공유 서버 (+:8792, GET/POST /api/st, st_store.json 병합 저장)
 ├─ mediapipe\pose\           # Pose 모델 자산 8파일 (tflite/wasm/binarypb/data/loader js)
 ├─ setup.bat / install.vbs  # 구형 간이 설치: PIE.html만 바탕화면 복사 (⚠ mediapipe 미복사)
-├─ PIE_설치.bat → PIE_설치.ps1   # GUI 설치기(한국어): %LOCALAPPDATA%\PIE_WorkAnalysis에 PIE.html만 복사 + 제거 레지스트리(HKCU) 등록
-├─ PIE_setup.ps1            # GUI 설치기(한/영/베 3언어, 중국·베트남 Windows 폰트 폴백) — 역시 PIE.html만 복사
-├─ PIE_제거.bat → PIE_제거.ps1   # 설치 폴더+레지스트리 제거
+├─ PIE_설치.bat → PIE_setup.ps1  # GUI 설치기(한/영/중/베 병기, 중국 Windows 폰트 폴백): %LOCALAPPDATA%\PIE_WorkAnalysis에 PIE.html+PIE_제거.bat만 복사, 바탕화면·시작메뉴 바로가기(⚠ 타겟=PIE.html 직접=file://), HKCU 언인스톨 등록
+├─ PIE_설치.ps1             # ⚠ 고아 파일 — 어떤 진입점도 실행하지 않음 (PIE_setup.ps1의 한국어 전용 구버전, 로직 동일)
+├─ PIE_제거.bat → PIE_제거.ps1   # 설치 폴더+레지스트리 제거 (⚠ bat 3행 파일명이 CP949 바이트로 저장돼 chcp 65001에서 깨짐 → 제거 전면 불능, 백로그 P0)
 ├─ PIE_가이드.html           # 설치·사용 가이드 (ko/zh/vi 3언어 섹션)
 ├─ download.html            # GitHub Pages 랜딩: main.zip 다운로드 버튼 + 최근 커밋일 표시
 ├─ README.md                # 실행/설치/주의사항
@@ -174,6 +174,15 @@
 - **AI 동작분석(YOLO, AiAnalysisModal 5953)**: `localhost:8000` 별도 서버 — `GET /health`(3s) → `POST /analyze/stream`(multipart: file·sample_fps 5·idle_threshold 1.5·min_segment 1.0·use_yolo) → SSE 스트림(progress/status/result, `[DONE]`) → 결과 tasks로 **현재 분석 전체 교체**(applyAiTasks 11170, beforeSnap 백업). ⚠ 백엔드 코드는 저장소 미동봉(백로그)
 - **영상비교(VideoCompareModal 6907)**: 2영상 나란히 수동 재생 비교(Pose 미사용)
 
+### 내보내기 산출물 (⑤ 정리)
+| 기능 | 위치 | 형식 | CJK |
+|---|---|---|---|
+| SOP `exportSOP` | 10738 | 베스트 사이클 → 작업별 480×270 JPEG 캡처 → PDF+Excel 동시 생성 | PDF는 helvetica로 작업명 출력 → **한글·한자 깨짐**(백로그) |
+| SOP Excel | 10932 | HTML table → .xls(BOM) + data URI 이미지 | 안전(헤더는 한국어 고정) |
+| 산출보고서 ReportModal | 7304 | **화면 표시 전용**(다운로드 없음): 요약·파이·CoV 안정도·스크린샷 그리드 | — |
+| 전체 PDF `exportPDF` | 11132 | html2canvas 래스터 → jsPDF | 안전 |
+| CSV | 10633 | BOM+CRLF+이스케이프 | 안전(헤더 한국어 고정) |
+
 ---
 
 ## 6. 부가 서버 2종 (순수 PowerShell, 설치 불필요)
@@ -193,7 +202,10 @@
 - **ST 공유 서버 PC**: `PIE_ST_server_시작.bat` 실행, 각 클라이언트는 설정>ST 누적 저장소>서버에 `http://<서버IP>:8792` 등록
 - **설치 스크립트들(⚠ 전부 PIE.html 단일 복사 — 중국판에는 부적합)**:
   - setup.bat/install.vbs: 바탕화면에 복사 (구형, 원본 온라인판 잔재)
-  - PIE_설치.ps1(한국어 GUI)/PIE_setup.ps1(한·영·베 GUI, 중국 Windows 폰트 폴백): `%LOCALAPPDATA%\PIE_WorkAnalysis` 설치 + HKCU 언인스톨 레지스트리 + PIE_제거.bat 복사
+  - PIE_설치.bat → **PIE_setup.ps1**(한/영/중/베 병기 GUI): `%LOCALAPPDATA%\PIE_WorkAnalysis`에 PIE.html+PIE_제거.bat 복사, 바탕화면 `PIE 작업분석.lnk`·시작메뉴(타겟이 PIE.html 직접이라 **file:// 실행 유도**), HKCU 언인스톨 등록. PIE_설치.ps1은 진입점 없는 고아 구버전
+  - PIE_제거.bat은 인코딩 파손으로 동작 불가(백로그 P0) — 레지스트리 UninstallString·시작메뉴 제거 항목 전부 이 bat 경유
+- **오프라인 무결성(⑤ 실측)**: PIE.html 런타임 외부 네트워크 호출 **0건** (WebSocket/sendBeacon/외부 src 전무). 유일한 외부 통로는 사용자가 ST 서버·YOLO 서버 주소란에 외부 URL을 직접 입력하는 경우뿐. download.html의 api.github.com 호출은 다운로드 페이지 전용(앱 무관)
+- **Pages 배포 범위 주의**: pages.yml이 저장소 전체를 업로드 — CLAUDE.md·PROJECT_OVERVIEW.md·WORKLOG.md·.claude/settings.json 같은 내부 문서도 공개 배포에 포함됨(백로그)
 - **웹 배포**: push → GitHub Actions(pages.yml)가 **폴더 전체**를 Pages로 배포 → download.html에서 main.zip 다운로드. 레거시 Jekyll 빌드가 대용량 바이너리에서 실패해 Actions 방식으로 전환(커밋 d82d663). download.html의 최근 업데이트 표시는 api.github.com 호출(오프라인 현장이 아닌 다운로드 시점용)
 - **원본 대비 차이**: GAS(구글시트) 연동 제거, MediaPipe 로컬화, ST 누적 백엔드 신설, 라이선스/시작 화면 ko/zh 토글
 
@@ -205,7 +217,8 @@
 
 ## 9. 다국어
 
-- STRINGS(1042): ko 53키 / zh 52키(`tab_lineanalysis` 누락) / vi 53키. 언어 선택: 시작·라이선스 화면은 ko/zh 토글이지만 **SettingsModal 라디오는 ko/zh/vi 3개**(1917) — vi도 노출됨(원본 잔재)
+- STRINGS(1042): ko 52키 / zh 51키 / vi 51키(⑤ 실측; zh·vi 모두 `tab_lineanalysis` 누락). zh 값 6곳에 한글 혼입 "分석"(1088·1091·1093·1108·1109·1116). 언어 선택: 시작·라이선스 화면은 ko/zh 토글이지만 **SettingsModal 라디오는 ko/zh/vi 3개**(1917) — vi도 노출됨(원본 잔재)
+- **STRINGS를 참조하는 컴포넌트는 6곳뿐**(HomeDashboard·Settings·LoadProject·ProjectMenu·LeftSidebar·SegmentCompare) — 본문 화면은 사실상 한국어 전용. alert/confirm 68곳 중 67곳 미번역, 한국어 렌더 리터럴 약 1,600건(⑤ 실측)
 - 라이선스·시작 화면은 STRINGS와 별도의 내장 T 객체로 ko/zh 처리 (12281, 2324)
 - **한국어 하드코딩 잔존 구역**: StepGuide 4단계 안내(2367~2373), 각종 alert/confirm(11043, 8656 등), 간트 안내문(12255), **AI 모달 4종 전체**(AiAnalysis/VisionAi/SegmentCompare/VideoCompare — STRINGS 미사용), 통계 인사이트·용어집 — zh 전수 커버리지 미달 (백로그 C)
 - PIE_가이드.html은 ko/zh/vi 3언어 섹션 구조(단, 언어별 섹션 구성 일치 여부 미검증)
