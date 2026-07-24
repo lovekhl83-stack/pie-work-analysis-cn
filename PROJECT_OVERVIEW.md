@@ -89,7 +89,8 @@
 | `wvas_sessions_<id>` | 세션 데이터 본문 (작업요소 배열 등. ⚠ 30개 캡에서 잘린 세션의 본문은 미삭제 → 고아 누적, 백로그) |
 | `wvas_models` | 모델-공정 트리 (공정에 tasks/fps/rating/takt 스냅숏 저장, `loadFromProcess`로 복원) |
 | `wvas_parts` | 부품 마스터 (기본 11종 PCB 부품: id/name/insertType(Radial·Axial)/leadCount) |
-| `wvas_part_st` | **부품 표준시간 DB** (모델 무관): `{partId: {taskName: {st, n(표본수), updatedAt, ...}}}` |
+| `wvas_part_st` | **부품 표준시간 DB** (모델 무관): `{partId: {taskName: {st:초, n:표본수, updatedAt:ISO}}}` — 필드는 이 3개뿐. 특수 키: 작업명 `'전체작업'`(일괄 저장), partId `'__none__'`(부품 미지정, UI 미표시) |
+| `pie_last_upload_sig` | "분석 내용 저장" 중복 방지 서명 (1단계) |
 | `wvas_part_taskdb_reset` | 부품 ST 초기화 이력 |
 | `wvas_rating` | 레이팅·여유율 (기본 `{r:100, a:15}`) |
 | `wvas_workers` | 작업자 마스터 (기본 작업자1~3) |
@@ -99,7 +100,7 @@
 | `pie_line_workers` / `pie_line_tasks` / `pie_line_model` | 라인분석 탭 전용 (작업자/작업/모델명) |
 | `pie_st_backend_mode` / `_url` / `_folder_name` | ST 누적 저장소 모드('none'\|'folder'\|'server')/서버 주소/폴더 표시명 |
 | `pie_license_key` | 활성화된 라이선스 키 |
-| IndexedDB `wvas_fs` | 디렉터리 핸들 2개: `dirHandle`(E드라이브 저장), `stDirHandle`(ST 공유 폴더) |
+| IndexedDB `wvas_fs` | 디렉터리 핸들 2개(`dirHandle`, `stDirHandle`) + 영상 원본 `vid_<id>`(addVideos 10499가 기록하나 읽기·삭제 코드 없음 — 백로그) |
 
 ### .wvas 프로젝트 파일 (내보내기/E드라이브 저장 공통, version 2)
 ```jsonc
@@ -108,8 +109,19 @@
   "videos":[{id,name,tasks,fps,completed}], // 다중 영상. src는 저장 안 함(null)
   "activeVideoId":"", "partId":"" }
 ```
-- **영상 원본은 어디에도 저장하지 않는다** — 불러오면 `src:null`로 복원되어 영상 파일을 다시 끌어와야 함 (의도된 설계: 용량)
-- 같은 로드 로직이 loadFromStorage/importFromFile/applyFileData 3곳에 중복 (11041~11116, 리팩터 후보)
+- 세션(localStorage)/.wvas/E드라이브 경로는 **영상 원본을 저장하지 않는다** — 불러오면 `src:null`, 영상 재선택 필요. 단 **메뉴의 통합 프로젝트 저장(version:4, saveUnifiedProject 11194)은 예외**: 사용자 지정 폴더에 `project.json`+영상 바이너리(분석 영상 `analysis_N_이름`, 라인분석 작업자 영상 `line_wid_이름`)를 저장하고 loadUnifiedProject(11242)가 복원
+- 같은 로드 로직이 loadFromStorage/importFromFile/applyFileData 3곳 중복(11041~11116). LoadProjectModal(2021)+loadProjectData(11289)는 호출 경로 없는 4번째 사본(죽은 코드)
+
+### 부품 ST DB 쓰기 3경로 — 의미가 서로 다름 (백로그 결정 D)
+| 경로 | 저장 값 | n 의미 | 중복가드 |
+|---|---|---|---|
+| PartsManager 확정저장 (5292) | 이력 평균 **raw**(레이팅 미적용) **덮어쓰기** | 이력 표본수 | — |
+| analysis "분석 내용 저장" (10650) | `'전체작업'` 키에 **raw** 가중평균 누적 | +=사이클수 | `pie_last_upload_sig` |
+| 테이블 툴바 "부품 ST 저장" (11809) | **레이팅·여유율 적용값** 가중평균 누적 | +=표본수 | 없음(재클릭 시 n 부풀림) |
+
+### ST 누적 동기화 트리거 (시작·주기 자동 동기화 없음 — 전부 사용자 액션 후)
+- 수동: SettingsModal·PartsManager "지금 동기화" 버튼 (1913, 5227)
+- 자동(silent): 위 3개 저장 직후 (5304, 10702, 11845)
 
 ### ST 누적 저장소 (이 빌드의 핵심 대체 기능 — 구글시트 GAS 대신)
 | 모드 | 동작 |
@@ -142,9 +154,25 @@
 5. 라인분석에서 작업자별 영상 분석 → 야마즈미 배분(제약·대기시간 반영) → 시뮬 → SOP/보고서/PDF/CSV 출력
 - 키보드: Space 재생/정지, ←→ 1프레임(Shift=5초), I/O 마킹, Esc 루프 해제. 마우스 휠 스텝 30/50/67/100ms
 
+### 작업요소(task) 레코드 (finishMark 10552 생성)
+`{id(uid 7자), name, type(value-added|auxiliary|waste), color, cycle(1~10), hand(LH|RH), startTime, endTime, duration, note, worker, partId, wasteType*, therbligs*, ecrs*}` (*: waste/고급열 전용). video 레코드 `{id,name,src(objectURL),file,tasks,completed,fps}`(10488)
+- 마킹 상태기계: 클릭/I → `pending=현재시각`+자동 재생 → 클릭/O → 역방향이면 alert 유지, 정상이면 pause+task 생성. I는 pending 중 확정 겸용(토글)
+- **ST 수식**: `ST = 관측시간 × (레이팅/100) × (1 + 여유율/100)` — 동일식이 16곳 산재(공용 함수 없음: 10600·2989·3535·4074·11833 등)
+- CSV(10633): `영상,#,작업명,사이클,분류,시작,종료,소요(s),소요(hms),비고` — ST·부품·작업자·손·서블릭·ECRS 열 미포함. BOM+CRLF
+- 통계(CycleStats 2967): 사이클별 관측·ST·유형합·CV, 이상치(n>3 && |x−μ|>2σ), 대표 ST=이상치 제외 평균×보정, 필요관측수 `ceil((40σ/μ)²)`, 필요인원 `ceil(베스트사이클 ST/택트)`
+
+### 라인 계열 데이터 흐름·알고리즘
+- 라인분석(9830) 작업자별 마킹 → 작업자×부품 평균 `yamaTasks`(type 고정 value-added, cycle 고정 1) → App.lineYamaData(10418) → 야마즈미(드래그 재배분은 `yamaAssignments` 오버레이, 원본 불변 12119) → 시뮬(이 빌드에선 항상 읽기 전용 뷰)
+- 별갈래: 분석 탭 → 모델관리 "공정으로 저장"(5696, stdTimeTotal 스냅숏) → `wvas_models` → 작업편성·병목차트
+- 배분 휴리스틱: 야마즈미 AI 재배치 = First-Fit Decreasing(용량 takt×1.05, 최소 인원 탐색, 3530) / 라인예측 편성 = LPT 탐욕(4981)
+- **택트 3원화**: App.taktTime(야마즈미·시뮬 10436) vs model.taktTime(작업편성 4395) vs LinePredict 자체 tt(4942) — 상호 동기화 없음
+- ST분석·라인예측은 공유 ST DB가 아니라 **세션 30개의 원시 duration** 재계산(4851, 4946) — 타 PC 동기화 데이터 미반영
+- 제약 `wvas_constraints`(before/wait)·대기 `wvas_waittimes`(작업명→초)는 작업 "이름" 기준 전역 키(프로젝트 무관)
+
 ### AI 기능 (모두 로컬)
-- **Pose 영상비교**: MediaPipe Pose(경량 모델 complexity 0) 2영상 병렬 추론→손목 속도·DTW로 구간 비교. 자산은 `mediapipe/pose/` 로컬 서빙 — **8791 서버 실행이 전제**
-- **AI 동작분석/비전 분석(YOLO)**: `localhost:8000`에 별도 설치된 로컬 서버 필요. 미설치 시 안내만
+- **AI 비전 분석(Pose, VisionAiModal 7882)**: 영상 1~2개 × 작업자 1~2명(좌우 반분할 crop)을 1x 실시간 재생하며 MediaPipe Pose(complexity 0, initPose 8643) 추론 → 손목 랜드마크→칼만→EMA 속도 → 마스터 구간(캔버스 2클릭, 2패스) 대비 **DTW**(25샘플, 위치1.0+방향0.5+몸중심0.3+비대칭0.2 가중, 7836) 판정: 정미/대기·낭비/이동 → 0.4s 미만 세그먼트 버림 → 사이클 일관성 점수·Westinghouse 자동 레이팅(8768)·병목 CV 분석(8779)·궤적 히트맵. 자산은 `mediapipe/pose/` 로컬 서빙(**8791 서버 전제**). 결과는 React state(10449)에만 보관(휘발 — 백로그)
+- **AI 동작분석(YOLO, AiAnalysisModal 5953)**: `localhost:8000` 별도 서버 — `GET /health`(3s) → `POST /analyze/stream`(multipart: file·sample_fps 5·idle_threshold 1.5·min_segment 1.0·use_yolo) → SSE 스트림(progress/status/result, `[DONE]`) → 결과 tasks로 **현재 분석 전체 교체**(applyAiTasks 11170, beforeSnap 백업). ⚠ 백엔드 코드는 저장소 미동봉(백로그)
+- **영상비교(VideoCompareModal 6907)**: 2영상 나란히 수동 재생 비교(Pose 미사용)
 
 ---
 
@@ -177,9 +205,9 @@
 
 ## 9. 다국어
 
-- STRINGS(1042): ko 53키 / zh 52키(`tab_lineanalysis` 누락) / vi 53키(UI 노출 없음, 원본 잔재)
+- STRINGS(1042): ko 53키 / zh 52키(`tab_lineanalysis` 누락) / vi 53키. 언어 선택: 시작·라이선스 화면은 ko/zh 토글이지만 **SettingsModal 라디오는 ko/zh/vi 3개**(1917) — vi도 노출됨(원본 잔재)
 - 라이선스·시작 화면은 STRINGS와 별도의 내장 T 객체로 ko/zh 처리 (12281, 2324)
-- **한국어 하드코딩 잔존 구역**: StepGuide 4단계 안내(2367~2373, '눠러' 오타 포함), 각종 alert/confirm(불러오기 실패 11043, MediaPipe 로딩 중 8656 등), 간트 안내문(12255) — zh 전수 커버리지는 미달 (백로그 C)
+- **한국어 하드코딩 잔존 구역**: StepGuide 4단계 안내(2367~2373), 각종 alert/confirm(11043, 8656 등), 간트 안내문(12255), **AI 모달 4종 전체**(AiAnalysis/VisionAi/SegmentCompare/VideoCompare — STRINGS 미사용), 통계 인사이트·용어집 — zh 전수 커버리지 미달 (백로그 C)
 - PIE_가이드.html은 ko/zh/vi 3언어 섹션 구조(단, 언어별 섹션 구성 일치 여부 미검증)
 
 ## 10. 알아둘 설계 결정·이음새(seam)
@@ -192,3 +220,7 @@
 6. **원본(온라인판) 잔재**: vi 사전, setup.bat/install.vbs, 'WVAS-report' PDF 파일명(11153), wvas_ 키 프리픽스(구명 Work Video Analysis System 추정), 가이드의 "온라인/오프라인 기능" 섹션
 7. **file:// 실행 감지 없음**: file://로 직접 열어도 경고 없이 실행되다가 Pose에서만 실패 — README로만 안내
 8. **브라우저 요구**: File System Access API(저장/불러오기·ST folder 모드)와 `AbortSignal.timeout`(1461) 때문에 Chrome/Edge 최신판 필요. StartupModal에 명시
+9. **stdTime 수식 16곳 산재**: 공용 함수 없이 같은 식 반복 — 수식 수정 시 전수 교체 필요
+10. **죽은 코드 군**: LoadProjectModal+loadProjectData(2021·11289 도달 불가), 야마즈미 멀티영상 분기 약 200줄(allVideos:[] 고정 12130)·사이클 필터(3385), VideoCompare 작업 비교 패널(7118), VisionResultPanel applyAll(7705), CycleStats pct()(3040) 등
+11. **세션 기반 재계산 탭**: ST분석·라인예측은 wvas_part_st를 읽지 않음(세션 30개 원시값) — 공유 DB·화면 간 값 불일치 가능
+12. **비전 분석 결과 휘발**: visionResults는 저장 경로 없음 — 새로고침 시 소실
