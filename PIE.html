@@ -2444,12 +2444,14 @@ function CycleComparison({ tasks, onSeek }) {
   tasks.forEach(t=>{ const n=t.name,c=t.cycle||1; if(matrix[n]&&matrix[n][c]!==undefined) matrix[n][c].push(t); });
 
   function cellDur(n,c){ return matrix[n][c].reduce((s,t)=>s+t.duration,0); }
-  function cellAvg(n){ return cycles.reduce((s,c)=>s+cellDur(n,c),0)/cycles.length; }
-  function cellMin(n){ return Math.min(...cycles.map(c=>cellDur(n,c))); }
-  function cellMax(n){ return Math.max(...cycles.map(c=>cellDur(n,c))); }
+  function cellVals(n){ return cycles.map(c=>cellDur(n,c)).filter(v=>v>0); } // 작업이 없는(결측) 사이클은 통계에서 제외
+  function cellAvg(n){ const v=cellVals(n); return v.length?v.reduce((s,x)=>s+x,0)/v.length:0; }
+  function cellMin(n){ const v=cellVals(n); return v.length?Math.min(...v):0; }
+  function cellMax(n){ const v=cellVals(n); return v.length?Math.max(...v):0; }
   function cov(n){
-    const avg=cellAvg(n); if(!avg) return 0;
-    const std=Math.sqrt(cycles.reduce((s,c)=>s+Math.pow(cellDur(n,c)-avg,2),0)/cycles.length);
+    const v=cellVals(n); if(v.length<2) return 0;
+    const avg=v.reduce((s,x)=>s+x,0)/v.length; if(!avg) return 0;
+    const std=Math.sqrt(v.reduce((s,x)=>s+Math.pow(x-avg,2),0)/v.length);
     return (std/avg)*100;
   }
   function cycleTotalDur(c){ return names.reduce((s,n)=>s+cellDur(n,c),0); }
@@ -2673,6 +2675,7 @@ function CycleComparison({ tasks, onSeek }) {
 
   function exportCycleExcel(){
     var date=new Date().toISOString().slice(0,10);
+    var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
     // Build HTML table for Excel
     var th=function(s,bg,color){return '<th style="background:'+bg+';color:'+(color||'#fff')+';padding:6px 10px;border:1px solid #ccc;font-weight:bold;white-space:nowrap">'+s+'</th>';};
     var td=function(s,bg,color,align){return '<td style="background:'+(bg||'#fff')+';color:'+(color||'#222')+';padding:5px 8px;border:1px solid #ccc;text-align:'+(align||'center')+'">'+s+'</td>';};
@@ -2683,7 +2686,7 @@ function CycleComparison({ tasks, onSeek }) {
     cycles.forEach(function(c){html+=th('사이클 '+c,CYCLE_COLORS[c-1]);});
     html+=th('평균','#1e40af')+th('최소','#166534')+th('최대','#991b1b')+th('CoV%','#92400e')+'</tr>';
     names.forEach(function(n){
-      html+='<tr>'+td(n,'#f8fafc','#1e293b','left');
+      html+='<tr>'+td(esc(n),'#f8fafc','#1e293b','left');
       cycles.forEach(function(c){
         var d=cellDur(n,c);
         var avg=cellAvg(n); var mn=cellMin(n); var mx=cellMax(n);
@@ -2702,7 +2705,7 @@ function CycleComparison({ tasks, onSeek }) {
     if(notedTasks.length){
       html+='<br/><table><tr>'+th('사이클','#374151')+th('작업명','#374151')+th('소요시간(초)','#374151')+th('메모','#374151')+'</tr>';
       notedTasks.forEach(function(t){
-        html+='<tr>'+td('사이클 '+(t.cycle||1),'#f9fafb','#1e293b','left')+td(t.name,'#f9fafb','#1e293b','left')+td(t.duration.toFixed(3),'#fff')+td(t.note||'','#fffbeb','#1e293b','left')+'</tr>';
+        html+='<tr>'+td('사이클 '+(t.cycle||1),'#f9fafb','#1e293b','left')+td(esc(t.name),'#f9fafb','#1e293b','left')+td(t.duration.toFixed(3),'#fff')+td(esc(t.note||''),'#fffbeb','#1e293b','left')+'</tr>';
       });
       html+='</table>';
     }
@@ -3289,15 +3292,16 @@ function CycleStats(props){
     // ── 부품별 표준공수 ──
     (function(){
       if(!parts.length) return null;
-      var cycleNums=[...new Set(tasks.map(function(t){return t.cycle||1;}))].length||1;
       var byPart={};
       tasks.forEach(function(t){
-        if(!t.partId) return;
-        if(!byPart[t.partId]) byPart[t.partId]={total:0};
+        if(!t.partId||t.type==='waste') return; // 부품 ST DB 저장 로직과 동일 기준: 낭비 제외
+        if(!byPart[t.partId]) byPart[t.partId]={total:0,cyc:{}};
         byPart[t.partId].total+=t.duration;
+        byPart[t.partId].cyc[t.cycle||1]=1;
       });
       var pdata=parts.filter(function(p){return byPart[p.id];}).map(function(p){
-        var avgObs=byPart[p.id].total/cycleNums;
+        var nCyc=Object.keys(byPart[p.id].cyc).length||1;
+        var avgObs=byPart[p.id].total/nCyc; // 부품이 등장한 사이클 수로 나눔 (DB 저장값과 일치)
         var std=avgObs*(ratingFactor/100)*(1+allowanceRate/100);
         return {part:p,avgObs:avgObs,std:std};
       }).sort(function(a,b){return b.std-a.std;});
@@ -3380,7 +3384,7 @@ function Yamazumi(props){
   var _am=useState(480); var availMins=_am[0],setAvailMins=_am[1];
   useEffect(function(){
     if(!dailyTarget||dailyTarget<=0||!availMins||availMins<=0) return;
-    setTaktTime(Math.round(availMins*60/dailyTarget));
+    setTaktTime(Math.max(1,Math.round(availMins*60/dailyTarget)));
   },[dailyTarget,availMins]);
 
   // ── Drag state ──
@@ -3599,7 +3603,7 @@ function Yamazumi(props){
     var newEff=taktTime>0?Math.round(curTotal/(minW*taktTime)*100):0;
     var moves=[];
     bestPlan.forEach(function(bin,bi){
-      var wLabel=workers[bi]?workers[bi].label:'작업자'+(bi+1);
+      var wLabel=workers[bi]?(workers[bi].label||workers[bi].name||workers[bi].id):'작업자'+(bi+1);
       bin.items.forEach(function(t){
         var origW=workers.find(function(w){return w.id===t.origWorker;});
         var origLabel=origW?origW.label:t.origWorker;
@@ -3777,8 +3781,8 @@ function Yamazumi(props){
   var svgW=padL+16+workers.length*(barW+gap)+8;
   var scale=chartH/maxTotal;
 
-  var fromName=dragging?workers.find(function(w){return w.id===dragging.worker;})?workers.find(function(w){return w.id===dragging.worker;}).label:'?':'';
-  var toName=dragOver?workers.find(function(w){return w.id===dragOver;})?workers.find(function(w){return w.id===dragOver;}).label:'?':'';
+  var fromName=dragging?(function(){var w=workers.find(function(x){return x.id===dragging.worker;});return w?(w.label||w.name||w.id):'?';})():'';
+  var toName=dragOver?(function(){var w=workers.find(function(x){return x.id===dragOver;});return w?(w.label||w.name||w.id):'?';})():'';
 
   // ── Render ──
   return React.createElement('div',{style:{display:'flex',flexDirection:'column',height:'100%',overflow:'hidden'}},
@@ -3847,7 +3851,7 @@ function Yamazumi(props){
             :React.createElement('label',{style:{fontSize:12,display:'flex',alignItems:'center',gap:5,color:'#94a3b8'}},
               '택트타임:',
               React.createElement('input',{type:'number',value:taktTime,min:1,
-                onChange:function(e){setTaktTime(Number(e.target.value));},
+                onChange:function(e){var v=Number(e.target.value);if(!isFinite(v))return;setTaktTime(v<1?1:v);},
                 style:{width:64,background:'#1e293b',border:'1px solid #334155',borderRadius:4,padding:'2px 6px',fontSize:12,color:'#e2e8f0'}}),
               '초'),
           React.createElement('button',{
@@ -3996,7 +4000,7 @@ function Yamazumi(props){
             {label:'편성효율',val:(prevEff!==null?prevEff:origEff)+'%',color:'#60a5fa'},
             {label:'최대공수',val:maxT+'s',color:'#94a3b8'},
             {label:'택트타임',val:taktTime+'s',color:'#94a3b8'},
-            {label:'필요인원',val:(function(){var tot=displayData.reduce(function(s,d){return s+d.total;},0)*(yamaView==='part'?1:((ratingFactor/100)*(1+allowanceRate/100)));return Math.ceil(tot/taktTime)+'명';}()),color:'#a78bfa'},
+            {label:'필요인원',val:(function(){var tot=displayData.reduce(function(s,d){return s+d.total;},0)*(yamaView==='part'?1:((ratingFactor/100)*(1+allowanceRate/100)));return taktTime>0?Math.ceil(tot/taktTime)+'명':'-';}()),color:'#a78bfa'},
           ].map(function(s){return React.createElement('div',{key:s.label,style:{background:'#1e293b',border:'1px solid #334155',borderRadius:6,padding:'6px 12px',fontSize:12,color:'#94a3b8'}},
             s.label+': ',React.createElement('strong',{style:{color:s.color}},s.val));})
         ),
@@ -4720,10 +4724,10 @@ function RebalanceWorkspace(props){
   var PROC_COLORS=['#3b82f6','#a855f7','#ec4899','#f97316','#22c55e','#06b6d4','#f43f5e','#eab308'];
   var allEntries=[];
   procs.forEach(function(src,si){
-    (src.tasks||[]).forEach(function(t){
+    (src.tasks||[]).forEach(function(t,ti){
       var rf=(src.ratingFactor||100)/100;
       var ar=1+(src.allowanceRate||15)/100;
-      var eid=src.id+'__'+encodeURIComponent(t.name||'task')+'__'+si;
+      var eid=src.id+'__'+encodeURIComponent(t.name||'task')+'__'+si+'_'+ti; // ti: 동명 작업도 개별 칩으로 구분
       var curProcId=rebalMoves[eid]||src.id;
       allEntries.push({
         id:eid,name:t.name||(t.type==='waste'?'대기':'작업'),
@@ -6004,8 +6008,9 @@ function AiAnalysisModal(props){
   function checkHealth(url){
     return fetch(url+'/health',{signal:AbortSignal.timeout(3000)})
       .then(function(r){return r.json();})
-      .catch(function(){return null;});
+      .catch(function(){return false;}); // false=연결 실패 (null=확인 중과 구분)
   }
+  useEffect(function(){return function(){if(abortRef.current)abortRef.current.abort();};},[]); // 모달 닫힘 시 진행 중 분석 중단
 
   function startAnalysis(){
     var videoFile=props.videoFiles&&props.videoFiles.get(props.activeVideoId);
@@ -6036,9 +6041,14 @@ function AiAnalysisModal(props){
         if(!res.ok) return res.json().then(function(e){throw new Error(e.error||'HTTP '+res.status);});
         setProgress(10); setStatus('AI 분석 시작...');
         var reader=res.body.getReader(); var dec=new TextDecoder(); var buf='';
+        var gotResult=false;
         function pump(){
           return reader.read().then(function(d){
-            if(d.done) return;
+            if(d.done){
+              if(!gotResult){setErrMsg('❌ 서버 응답이 결과 없이 끊어졌습니다. 서버 창의 오류를 확인하세요.');setStatus('중단됨');}
+              setBusy(false);
+              return;
+            }
             buf+=dec.decode(d.value,{stream:true});
             var lines=buf.split('\n'); buf=lines.pop();
             lines.forEach(function(line){
@@ -6050,6 +6060,7 @@ function AiAnalysisModal(props){
                 if(obj.progress!=null) setProgress(obj.progress);
                 if(obj.status)   setStatus(obj.status);
                 if(obj.result){
+                  gotResult=true;
                   if(obj.result.error){ setErrMsg('❌ '+obj.result.error); setBusy(false); }
                   else { setResult(obj.result); setBusy(false); setProgress(100); setStatus('분석 완료!'); }
                 }
@@ -6111,11 +6122,16 @@ function AiAnalysisModal(props){
           })
         ),
         health===null
-          ?React.createElement('span',{style:{fontSize:11,color:'#64748b'}},'연결 중...')
+          ?React.createElement('span',{style:{fontSize:11,color:'#64748b'}},'연결 확인 중...')
           :serverOk
             ?React.createElement('span',{style:{fontSize:11,color:'#4ade80',fontWeight:600}},
                 '✅ 연결됨 | OpenCV:'+( hasCv?'✅':'❌')+' | YOLO:'+(hasYolo?'✅':'✘'))
-            :React.createElement('span',{style:{fontSize:11,color:'#f87171'}},'❌ 서버 연결 안됨 (start.bat 실행 필요)')
+            :React.createElement('span',{style:{fontSize:11,color:'#f87171',display:'flex',alignItems:'center',gap:6}},
+                '❌ 서버 연결 안됨',
+                React.createElement('button',{
+                  onClick:function(){setHealth(null);checkHealth(serverUrl).then(function(h){setHealth(h);});},
+                  style:{fontSize:10,padding:'2px 8px',borderRadius:4,cursor:'pointer',background:'#1e293b',color:'#93c5fd',border:'1px solid #334155'}
+                },'🔄 재확인'))
       ),
 
       // ── Video file status ──
@@ -7720,14 +7736,16 @@ function VisionResultPanel(props){
              display:'flex',flexDirection:'column',alignItems:'center',gap:12}},
       React.createElement('div',{style:{fontSize:48}},'🤖'),
       React.createElement('div',{style:{fontSize:14,color:C.text,fontWeight:600}},'분석 결과 없음'),
-      React.createElement('div',{style:{fontSize:12}},'왼쪽 메뉴 「AI 비전 분석 (Beta)」를 실행하면 여기에 결과가 저장됩니다.')
+      React.createElement('div',{style:{fontSize:12}},'왼쪽 메뉴 「AI 비전 분석 (Beta)」를 실행하면 여기에 결과가 표시됩니다.'),
+      React.createElement('div',{style:{fontSize:11,color:'#475569'}},'※ 결과는 저장되지 않으며 새로고침·세션 전환 시 사라집니다')
     );
   }
 
   var segs=results.segs;
   var wSec=segs.filter(function(s){return s.state==='정미작업';}).reduce(function(a,s){return a+s.dur;},0);
   var dSec=segs.filter(function(s){return s.state==='대기/낭비';}).reduce(function(a,s){return a+s.dur;},0);
-  var tot=wSec+dSec;
+  var mSec=segs.filter(function(s){return s.state==='이동';}).reduce(function(a,s){return a+s.dur;},0);
+  var tot=wSec+dSec+mSec;
   var maxT=segs.reduce(function(a,s){return Math.max(a,s.end);},0)||1;
   var workerSet=[];
   segs.forEach(function(s){if(workerSet.indexOf(s.worker)<0)workerSet.push(s.worker);});
@@ -7777,6 +7795,14 @@ function VisionResultPanel(props){
         React.createElement('div',{style:{fontSize:10,color:C.sub}},tot>0?(dSec/tot*100).toFixed(0)+'%':''),
         filter==='대기/낭비'&&React.createElement('div',{style:{fontSize:9,color:C.red,marginTop:3}},'✓ 필터 중')
       ),
+      mSec>0&&React.createElement('div',{style:cardSt('이동'),
+        onClick:function(){setFilter(filter==='이동'?'all':'이동');}},
+        React.createElement('div',{style:{fontSize:10,color:filter==='이동'?C.blue:C.sub,
+          marginBottom:2,fontWeight:filter==='이동'?700:400}},'◆ 이동'),
+        React.createElement('div',{style:{fontSize:20,fontWeight:700,color:C.blue}},mSec.toFixed(1)+'s'),
+        React.createElement('div',{style:{fontSize:10,color:C.sub}},tot>0?(mSec/tot*100).toFixed(0)+'%':''),
+        filter==='이동'&&React.createElement('div',{style:{fontSize:9,color:C.blue,marginTop:3}},'✓ 필터 중')
+      ),
       React.createElement('div',{style:cardSt('all'),onClick:function(){setFilter('all');}},
         React.createElement('div',{style:{fontSize:10,color:filter==='all'?C.blue:C.sub,
           marginBottom:2,fontWeight:filter==='all'?700:400}},'■ 전체'),
@@ -7800,7 +7826,7 @@ function VisionResultPanel(props){
               return React.createElement('div',{key:i,style:{position:'absolute',top:0,height:'100%',
                 left:(s.start/maxT*100)+'%',
                 width:Math.max(0.3,(s.end-s.start)/maxT*100)+'%',
-                background:s.state==='정미작업'?C.green:C.red,
+                background:s.state==='정미작업'?C.green:s.state==='이동'?C.blue:C.red,
                 opacity:active?0.9:0.12}});
             })
           ),
@@ -8689,6 +8715,8 @@ function VisionAiModal(props){
     if(!mpReady){alert('MediaPipe 아직 로딩 중입니다.');return;}
     var units=buildUnits();
     if(!units.length){alert('영상을 먼저 업로드해주세요.');return;}
+    var _mr=masterRangeRef.current||{};
+    if(!(_mr.start>=0&&_mr.end>_mr.start)&&!confirm('마스터(기준) 구간이 지정되지 않았습니다.\n지정 없이 분석하면 대부분 "대기/낭비"로 판정되어 의미 있는 결과가 나오기 어렵습니다.\n\n계속할까요? (취소 후 영상 위를 2번 클릭하면 기준 구간을 지정할 수 있습니다)')) return;
     unitsRef.current=units;
     setStatus('loading');
     logRef.current=[];setLogItems([]);setResultSegs([]);
@@ -8988,7 +9016,8 @@ function VisionAiModal(props){
 
   var wSec=resultSegs.filter(function(s){return s.state==='정미작업';}).reduce(function(a,s){return a+s.dur;},0);
   var dSec=resultSegs.filter(function(s){return s.state==='대기/낭비';}).reduce(function(a,s){return a+s.dur;},0);
-  var tot=wSec+dSec;
+  var mSec=resultSegs.filter(function(s){return s.state==='이동';}).reduce(function(a,s){return a+s.dur;},0);
+  var tot=wSec+dSec+mSec;
   var C={bg:'#090f1a',panel:'#1e293b',bd:'#334155',text:'#e2e8f0',sub:'#64748b',
          blue:'#3b82f6',green:'#22c55e',red:'#ef4444',amber:'#f59e0b',purple:'#a855f7'};
   var mr=masterRangeRef.current;
@@ -9694,7 +9723,7 @@ function VisionAiModal(props){
             onClick:function(){setShowTraj(function(v){return !v;})}
           },showTraj?'🗺 궤적 ON':'🗺 궤적'),
           status==='done'&&tot>0&&React.createElement('span',{style:{fontSize:11,color:C.sub}},
-            '정미: '+wSec.toFixed(1)+'s ('+((wSec/tot*100)|0)+'%)  |  대기: '+dSec.toFixed(1)+'s  |  '+resultSegs.length+'구간')
+            '정미: '+wSec.toFixed(1)+'s ('+((wSec/tot*100)|0)+'%)  |  대기: '+dSec.toFixed(1)+'s'+(mSec>0?'  |  이동: '+mSec.toFixed(1)+'s':'')+'  |  '+resultSegs.length+'구간')
         )
       ),
       // 우: 마스터 설정 + 허용률 + 로그
