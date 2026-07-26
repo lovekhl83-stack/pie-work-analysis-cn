@@ -11,9 +11,34 @@ $Port = 8792
 $StoreFile = Join-Path $RootDir 'st_store.json'
 
 function Write-EmptyStore {
-  '{"parts":[],"partSt":{}}' | Out-File -FilePath $StoreFile -Encoding utf8 -NoNewline
+  '{"parts":[],"partSt":{},"tomb":{},"partTomb":{}}' | Out-File -FilePath $StoreFile -Encoding utf8 -NoNewline
 }
 if (-not (Test-Path $StoreFile)) { Write-EmptyStore }
+
+# PSCustomObject/hashtable 어느 쪽이든 (키,값) 목록으로 변환
+function Get-MapEntries($m) {
+  $out = @()
+  if ($null -eq $m) { return ,$out }
+  if ($m -is [hashtable]) { foreach ($k in @($m.Keys)) { $out += ,@($k, $m[$k]) } }
+  else { foreach ($p in $m.PSObject.Properties) { $out += ,@($p.Name, $p.Value) } }
+  return ,$out  # 단일 원소여도 배열 형태 유지 (PowerShell 자동 풀림 방지)
+}
+# {키:시각ISO} 맵을 최신 시각 우선으로 병합 (클라이언트 _stampMerge와 동일 규칙)
+function Merge-StampMap($a, $b) {
+  $out = @{}
+  foreach ($e in (Get-MapEntries $a)) { $out[$e[0]] = $e[1] }
+  foreach ($e in (Get-MapEntries $b)) {
+    $k = $e[0]; $v = $e[1]
+    if (-not $out.ContainsKey($k)) { $out[$k] = $v }
+    else {
+      $ta = [datetime]::MinValue; $tb = [datetime]::MinValue
+      try { $ta = [datetime]$out[$k] } catch {}
+      try { $tb = [datetime]$v } catch {}
+      if ($tb -gt $ta) { $out[$k] = $v }
+    }
+  }
+  return $out
+}
 
 function Select-BetterEntry($a, $b) {
   if ($null -eq $a) { return $b }
@@ -70,7 +95,40 @@ function Merge-PartStPayload($base, $incoming) {
     }
   }
 
-  return [PSCustomObject]@{ parts = $mergedParts; partSt = $merged }
+  # 삭제 표식(tombstone) 병합·적용 (결정 E, 2026-07-26) — 클라이언트 mergePartStPayload와 동일 규칙:
+  # 표식 시각이 항목의 updatedAt 이상이면 삭제된 것으로 간주해 제거. 재생성 항목은 updatedAt이 더 최신이라 살아남는다.
+  $tomb = @{}
+  foreach ($e in (Get-MapEntries $(if ($base) { $base.tomb } else { $null }))) { $tomb[$e[0]] = Merge-StampMap $null $e[1] }
+  foreach ($e in (Get-MapEntries $(if ($incoming) { $incoming.tomb } else { $null }))) {
+    $tPid = if ($incIdToMergedId.ContainsKey($e[0])) { $incIdToMergedId[$e[0]] } else { $e[0] }
+    $tomb[$tPid] = Merge-StampMap $tomb[$tPid] $e[1]
+  }
+  $partTomb = Merge-StampMap $(if ($base) { $base.partTomb } else { $null }) $(if ($incoming) { $incoming.partTomb } else { $null })
+  foreach ($mPid in @($merged.Keys)) {
+    if ($null -eq $merged[$mPid]) { $merged.Remove($mPid); continue }
+    foreach ($task in @($merged[$mPid].Keys)) {
+      $entry = $merged[$mPid][$task]
+      $eT = [datetime]::MinValue
+      try { $eT = [datetime]$entry.updatedAt } catch {}
+      $tT = $null
+      if ($tomb.ContainsKey($mPid) -and $tomb[$mPid].ContainsKey($task)) { try { $tT = [datetime]$tomb[$mPid][$task] } catch {} }
+      if ($null -ne $tT -and $tT -ge $eT) { $merged[$mPid].Remove($task) }
+    }
+    if ($merged[$mPid].Count -eq 0) { $merged.Remove($mPid) }
+  }
+  $keptParts = New-Object System.Collections.ArrayList
+  foreach ($p in $mergedParts) {
+    $keyL = $p.name.ToString().ToLowerInvariant()
+    $drop = $false
+    if ($partTomb.ContainsKey($keyL)) {
+      $tT2 = [datetime]::MinValue; $cT = [datetime]::MinValue
+      try { $tT2 = [datetime]$partTomb[$keyL] } catch {}
+      try { $cT = [datetime]$p.createdAt } catch {}
+      if ($tT2 -ge $cT) { $drop = $true }
+    }
+    if (-not $drop) { [void]$keptParts.Add($p) }
+  }
+  return [PSCustomObject]@{ parts = $keptParts; partSt = $merged; tomb = $tomb; partTomb = $partTomb }
 }
 
 function Get-LanAddresses {

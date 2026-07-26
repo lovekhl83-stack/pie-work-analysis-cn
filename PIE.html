@@ -1305,6 +1305,13 @@ function partStSave(db){localStorage.setItem(PART_ST_KEY,JSON.stringify(db));}
 const PART_RESET_KEY='wvas_part_taskdb_reset';
 function partResetLoad(){try{return JSON.parse(localStorage.getItem(PART_RESET_KEY)||'{}');}catch{return{};}}
 function partResetSave(db){localStorage.setItem(PART_RESET_KEY,JSON.stringify(db));}
+// 삭제 표식(tombstone) — 삭제·리셋이 ST 누적 동기화로 되살아나지 않도록 삭제 사실을 전파 (결정 E, 2026-07-26)
+const PART_TOMB_KEY='wvas_part_st_tomb';   // {partId:{작업명:삭제시각ISO}}
+function partTombLoad(){try{return JSON.parse(localStorage.getItem(PART_TOMB_KEY)||'{}');}catch{return{};}}
+function partTombSave(db){localStorage.setItem(PART_TOMB_KEY,JSON.stringify(db));}
+const PARTS_TOMB_KEY='wvas_parts_tomb';    // {부품명소문자:삭제시각ISO}
+function partsTombLoad(){try{return JSON.parse(localStorage.getItem(PARTS_TOMB_KEY)||'{}');}catch{return{};}}
+function partsTombSave(db){localStorage.setItem(PARTS_TOMB_KEY,JSON.stringify(db));}
 
 // ─────────────────────────────────────────
 //  Workers master storage
@@ -1441,6 +1448,13 @@ function _stPickBetter(a,b){
   if(an!==bn) return an>bn?a:b;
   return (new Date(a.updatedAt||0) >= new Date(b.updatedAt||0)) ? a : b;
 }
+function _stampMerge(a,b){ // {키:시각ISO} 맵을 최신 시각 우선으로 병합
+  var out=Object.assign({},a||{});
+  Object.keys(b||{}).forEach(function(k){
+    if(!out[k]||new Date(b[k])>new Date(out[k])) out[k]=b[k];
+  });
+  return out;
+}
 function mergePartStPayload(base,incoming){
   var baseParts=(base&&base.parts)||[];
   var incParts=(incoming&&incoming.parts)||[];
@@ -1453,6 +1467,7 @@ function mergePartStPayload(base,incoming){
     if(!nameToId[key]){mergedParts.push(p);nameToId[key]=p.id;}
     incIdToMergedId[p.id]=nameToId[key];
   });
+  function remapPids(m){var out={};Object.keys(m||{}).forEach(function(pid){out[incIdToMergedId[pid]||pid]=m[pid];});return out;}
   var basePartSt=(base&&base.partSt)||{};
   var incPartSt=(incoming&&incoming.partSt)||{};
   var merged=JSON.parse(JSON.stringify(basePartSt));
@@ -1464,7 +1479,27 @@ function mergePartStPayload(base,incoming){
       merged[mergedPid][taskName]=_stPickBetter(merged[mergedPid][taskName],incTasks[taskName]);
     });
   });
-  return {parts:mergedParts, partSt:merged};
+  // 삭제 표식 병합·적용 (결정 E): 표식 시각이 항목의 updatedAt 이상이면 항목 제거 — 삭제가 전 PC로 전파된다.
+  // 삭제된 부품·작업을 다시 만들면 updatedAt이 표식보다 최신이 되므로 정상 부활한다.
+  var tomb={};
+  var baseTomb=(base&&base.tomb)||{};
+  Object.keys(baseTomb).forEach(function(pid){tomb[pid]=Object.assign({},baseTomb[pid]);});
+  var incTomb=remapPids((incoming&&incoming.tomb)||{});
+  Object.keys(incTomb).forEach(function(pid){tomb[pid]=_stampMerge(tomb[pid],incTomb[pid]);});
+  var partTomb=_stampMerge((base&&base.partTomb)||{},(incoming&&incoming.partTomb)||{});
+  Object.keys(merged).forEach(function(pid){
+    Object.keys(merged[pid]).forEach(function(task){
+      var eT=new Date((merged[pid][task]&&merged[pid][task].updatedAt)||0);
+      var tT=tomb[pid]&&tomb[pid][task]?new Date(tomb[pid][task]):null;
+      if(tT&&tT>=eT) delete merged[pid][task];
+    });
+    if(!Object.keys(merged[pid]).length) delete merged[pid];
+  });
+  mergedParts=mergedParts.filter(function(p){
+    var t=partTomb[(p.name||'').toLowerCase()];
+    return !(t&&new Date(t)>=new Date(p.createdAt||0));
+  });
+  return {parts:mergedParts, partSt:merged, tomb:tomb, partTomb:partTomb};
 }
 
 async function stBackendRead(){
@@ -1520,10 +1555,12 @@ async function stBackendSync(silent){
   var mode=stBackendMode();
   if(mode==='none') return {ok:false,reason:'등록된 저장소가 없습니다.'};
   var remote=await stBackendRead();
-  var localPayload={parts:partsList(),partSt:partStLoad()};
-  var merged = remote ? mergePartStPayload(localPayload,remote) : localPayload;
+  var localPayload={parts:partsList(),partSt:partStLoad(),tomb:partTombLoad(),partTomb:partsTombLoad()};
+  var merged = mergePartStPayload(localPayload, remote||{});
   partsSave(merged.parts);
   partStSave(merged.partSt);
+  partTombSave(merged.tomb);
+  partsTombSave(merged.partTomb);
   var res=await stBackendWrite(merged);
   if(!silent && !res.ok) console.warn('[PIE ST-Backend] 동기화 실패:',res.reason);
   return Object.assign({},res,{merged:merged});
@@ -2292,13 +2329,22 @@ function Tip(props){
 
 
 function WelcomeModal(props){
-  var steps=[
+  var zh=localStorage.getItem('wvas_lang')==='zh';
+  var steps=zh?[
+    {icon:'🎬',title:'加载视频',desc:'将作业视频文件拖放到画面左侧区域。支持 MP4、MOV 等大多数格式。'},
+    {icon:'▶️',title:'播放视频',desc:'按空格键或播放按钮播放视频。'},
+    {icon:'🖱️',title:'记录作业',desc:'作业开始时点击视频(或按空格) → 结束时再点击一次。就这么简单!'},
+    {icon:'📊',title:'查看结果',desc:'点击上方标签查看图表·作业分配·分析结果等。'},
+    {icon:'📄',title:'导出报告',desc:'点击上方 SOP 按钮,可将作业标准书保存为 PDF/Excel。'},
+  ]:[
     {icon:'🎬',title:'영상 불러오기',desc:'화면 왼쪽 영역에 작업 영상 파일을 끌어다 놓으세요. MP4, MOV 등 대부분 형식이 됩니다.'},
     {icon:'▶️',title:'영상 재생하기',desc:'스페이스바 또는 재생 버튼으로 영상을 재생합니다.'},
     {icon:'🖱️',title:'작업 기록하기',desc:'작업이 시작될 때 영상 클릭(또는 스페이스바) → 끝날 때 다시 클릭. 이것만 하면 됩니다!'},
-    {icon:'📊',title:'결과 확인하기',desc:'상단 탭에서 차트·작업배분·분석결과 등을 놀러 분석 결과를 확인하세요.'},
+    {icon:'📊',title:'결과 확인하기',desc:'상단 탭에서 차트·작업배분·분석결과 등을 눌러 분석 결과를 확인하세요.'},
     {icon:'📄',title:'보고서 내보내기',desc:'상단 SOP 버튼으로 작업표준서를 PDF/Excel로 저장할 수 있습니다.'},
   ];
+  var W=zh?{hello:'欢迎使用!',sub:'只需跟着 5 个步骤,马上就能上手',dont:'不再显示',start:'开始使用 →'}
+        :{hello:'처음 오셨군요! 환영합니다',sub:'5단계만 따라하면 바로 사용할 수 있어요',dont:'다시 보지 않기',start:'시작하기 →'};
   var [dontShow,setDontShow]=React.useState(false);
   function handleClose(){
     if(dontShow) localStorage.setItem('wvas_welcomed','1');
@@ -2315,8 +2361,8 @@ function WelcomeModal(props){
       React.createElement('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:20}},
         React.createElement('span',{style:{fontSize:28}},'👋'),
         React.createElement('div',null,
-          React.createElement('div',{style:{fontSize:16,fontWeight:700,color:'#f1f5f9'}},'첫으로 오셨군요! 환영합니다'),
-          React.createElement('div',{style:{fontSize:12,color:'#64748b'}},'5단계만 따라하면 바로 사용할 수 있어요')
+          React.createElement('div',{style:{fontSize:16,fontWeight:700,color:'#f1f5f9'}},W.hello),
+          React.createElement('div',{style:{fontSize:12,color:'#64748b'}},W.sub)
         )
       ),
       steps.map(function(s,i){
@@ -2334,12 +2380,12 @@ function WelcomeModal(props){
       React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:20,paddingTop:16,borderTop:'1px solid #334155'}},
         React.createElement('label',{style:{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'#64748b',cursor:'pointer'}},
           React.createElement('input',{type:'checkbox',checked:dontShow,onChange:function(e){setDontShow(e.target.checked);}}),
-          '다시 보지 않기'
+          W.dont
         ),
         React.createElement('button',{
           style:{background:'#3b82f6',color:'#fff',border:'none',borderRadius:8,padding:'8px 22px',fontSize:13,fontWeight:700,cursor:'pointer'},
           onClick:handleClose,
-        },'시작하기 →')
+        },W.start)
       )
     )
   );
@@ -5317,9 +5363,21 @@ function PartsManager({parts,onPartsChange}){
     partsSave(next);onPartsChange(next);setShowForm(false);
   }
   function del(id){
-    if(!confirm('이 부품을 삭제하시겠습니까?')) return;
+    if(!confirm('이 부품을 삭제하시겠습니까?\n(ST 누적 저장소 사용 시 다른 PC에서도 삭제됩니다)')) return;
+    var gone=parts.find(function(p){return p.id===id;});
     var next=parts.filter(function(p){return p.id!==id;});
     partsSave(next);onPartsChange(next);
+    // 삭제 표식: 부품 자체 + 해당 부품의 ST 항목 전부 (결정 E)
+    var now=new Date().toISOString();
+    if(gone&&gone.name){var pt=partsTombLoad();pt[(gone.name||'').toLowerCase()]=now;partsTombSave(pt);}
+    var stDb=partStLoad();
+    if(stDb[id]){
+      var tb=partTombLoad();if(!tb[id])tb[id]={};
+      Object.keys(stDb[id]).forEach(function(nm){tb[id][nm]=now;});
+      partTombSave(tb);
+      var nx=Object.assign({},stDb);delete nx[id];partStSave(nx);
+    }
+    if(stBackendMode()!=='none') stBackendSync(true).catch(function(){});
     if(selId===id) setSelId(null);
   }
   function confirmSt(){
@@ -5635,10 +5693,15 @@ React.createElement('button',{className:'btn btn-green',style:{fontSize:12},
                         React.createElement('button',{
                           style:{fontSize:11,padding:'3px 10px',background:'#450a0a',color:'#fca5a5',border:'1px solid #7f1d1d',borderRadius:6,cursor:'pointer'},
                           onClick:function(){
-                            if(!confirm('이 부품의 누적 ST 데이터를 전부 리셋하시겠습니까?\n복구할 수 없습니다.')) return;
+                            if(!confirm('이 부품의 누적 ST 데이터를 전부 리셋하시겠습니까?\n복구할 수 없습니다. (ST 누적 저장소 사용 시 다른 PC에서도 삭제됩니다)')) return;
                             var nx=Object.assign({},partSt);
+                            var tb=partTombLoad();if(!tb[selId])tb[selId]={};
+                            var now=new Date().toISOString();
+                            Object.keys(nx[selId]||{}).forEach(function(nm2){tb[selId][nm2]=now;});
+                            partTombSave(tb);
                             delete nx[selId];
                             partStSave(nx);setPartSt(nx);
+                            if(stBackendMode()!=='none') stBackendSync(true).catch(function(){});
                           }
                         },'🗑 누적 리셋'),
                       ),
@@ -5661,10 +5724,12 @@ React.createElement('button',{className:'btn btn-green',style:{fontSize:12},
                               React.createElement('button',{
                                 className:'btn btn-amber',style:{fontSize:10,padding:'1px 6px'},
                                 onClick:function(){
-                                  if(!confirm(nm+' 항목을 삭제하시겠습니까?')) return;
+                                  if(!confirm(nm+' 항목을 삭제하시겠습니까?\n(ST 누적 저장소 사용 시 다른 PC에서도 삭제됩니다)')) return;
                                   var nx=Object.assign({},partSt);
                                   if(nx[selId]){nx[selId]=Object.assign({},nx[selId]);delete nx[selId][nm];}
                                   partStSave(nx);setPartSt(nx);
+                                  var tb=partTombLoad();if(!tb[selId])tb[selId]={};tb[selId][nm]=new Date().toISOString();partTombSave(tb);
+                                  if(stBackendMode()!=='none') stBackendSync(true).catch(function(){});
                                 }
                               },'삭제'),
                             ),
@@ -11952,7 +12017,7 @@ function App() {
             filteredTasks.length===0
               ?React.createElement('div',{className:'flex flex-col items-center justify-center h-full text-slate-600 gap-2 text-center px-4'},
                   React.createElement('div',{className:'text-4xl'},'📋'),
-                  React.createElement('p',{className:'text-sm'},tasks.length>0?`사이클 ${cycleFilter}에 해당하는 작업이 없습니다`:'영상 위 좌클릭(시작) → 클릭(종료)으로 구간을 지정하세요'),
+                  React.createElement('p',{className:'text-sm'},tasks.length>0?(lang==='zh'?`没有属于循环 ${cycleFilter} 的作业`:`사이클 ${cycleFilter}에 해당하는 작업이 없습니다`):(lang==='zh'?'在视频上左键点击(开始) → 再点击(结束)来指定区间':'영상 위 좌클릭(시작) → 클릭(종료)으로 구간을 지정하세요')),
                 )
               :React.createElement('table',{className:'w-full text-xs border-collapse'},
                   React.createElement('thead',null,
@@ -12323,7 +12388,7 @@ function App() {
           // Timeline view
           ganttView==='timeline'&&React.createElement(React.Fragment,null,
             filteredTasks.length===0
-              ?React.createElement('div',{className:'flex flex-col items-center justify-center flex-1 text-slate-600 gap-2'},React.createElement('div',{className:'text-5xl'},'📊'),React.createElement('p',{className:'text-sm'},'분석 탭에서 작업 요소를 추가하세요.'))
+              ?React.createElement('div',{className:'flex flex-col items-center justify-center flex-1 text-slate-600 gap-2'},React.createElement('div',{className:'text-5xl'},'📊'),React.createElement('p',{className:'text-sm'},lang==='zh'?'请在分析标签中添加作业要素。':'분석 탭에서 작업 요소를 추가하세요.'))
               :React.createElement(GanttTimeline,{tasks:filteredTasks,totalDuration:totalDur||duration,currentTime:curTime,onSeek:seekTo,onLoopTask:t=>{setTab('analysis');setTimeout(()=>loopTask(t),50);},activeTask,colorBy}),
             // Legend
             filteredTasks.length>0&&React.createElement('div',{className:'flex flex-wrap gap-3 px-4 py-2 border-t border-slate-700 bg-slate-900 shrink-0'},
@@ -12336,7 +12401,7 @@ function App() {
           // By-name view
           ganttView==='byname'&&React.createElement(React.Fragment,null,
             filteredTasks.length===0
-              ?React.createElement('div',{className:'flex flex-col items-center justify-center flex-1 text-slate-600 gap-2'},React.createElement('div',{className:'text-5xl'},'📊'),React.createElement('p',{className:'text-sm'},'분석 탭에서 작업 요소를 추가하세요.'))
+              ?React.createElement('div',{className:'flex flex-col items-center justify-center flex-1 text-slate-600 gap-2'},React.createElement('div',{className:'text-5xl'},'📊'),React.createElement('p',{className:'text-sm'},lang==='zh'?'请在分析标签中添加作业要素。':'분석 탭에서 작업 요소를 추가하세요.'))
               :React.createElement(GanttByName,{tasks:filteredTasks,totalDuration:totalDur||duration,currentTime:curTime,onSeek:seekTo,onLoopTask:t=>{setTab('analysis');setTimeout(()=>loopTask(t),50);},activeTask}),
             // Cycle legend
             filteredTasks.length>0&&React.createElement('div',{className:'flex flex-wrap gap-3 px-4 py-2 border-t border-slate-700 bg-slate-900 shrink-0'},
