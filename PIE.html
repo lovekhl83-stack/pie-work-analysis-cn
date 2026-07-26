@@ -1240,7 +1240,31 @@ const LS_KEY='wvas_sessions';
 function lsList(){try{return JSON.parse(localStorage.getItem(LS_KEY)||'[]');}catch{return[];}}
 function lsGet(id){try{return JSON.parse(localStorage.getItem(LS_KEY+'_'+id));}catch{return null;}}
 function lsDel(id){const l=lsList().filter(s=>s.id!==id);localStorage.setItem(LS_KEY,JSON.stringify(l));localStorage.removeItem(LS_KEY+'_'+id);}
-function lsSave(meta,data){const l=lsList().filter(s=>s.id!==meta.id);l.unshift(meta);localStorage.setItem(LS_KEY,JSON.stringify(l.slice(0,30)));localStorage.setItem(LS_KEY+'_'+meta.id,JSON.stringify(data));}
+function lsSave(meta,data){
+  const l=lsList().filter(s=>s.id!==meta.id);
+  l.unshift(meta);
+  const kept=l.slice(0,30), dropped=l.slice(30);
+  try{
+    localStorage.setItem(LS_KEY+'_'+meta.id,JSON.stringify(data));
+    localStorage.setItem(LS_KEY,JSON.stringify(kept));
+    dropped.forEach(s=>localStorage.removeItem(LS_KEY+'_'+s.id));
+    return true;
+  }catch(e){
+    try{localStorage.removeItem(LS_KEY+'_'+meta.id);}catch(_){}
+    alert('세션 저장 실패: 브라우저 저장 공간이 가득 찼습니다.\n세션 목록에서 오래된 세션을 삭제한 뒤 다시 시도해주세요.');
+    return false;
+  }
+}
+// 세션 목록(30개 캡)에서 잘려나간 고아 본문 데이터 청소 (기동 시 1회)
+(function(){try{
+  const ids=new Set(lsList().map(s=>s.id));
+  const del=[];
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k&&k.indexOf(LS_KEY+'_')===0&&!ids.has(k.slice(LS_KEY.length+1)))del.push(k);
+  }
+  del.forEach(k=>localStorage.removeItem(k));
+}catch(e){}})();
 
 
 // ─────────────────────────────────────────
@@ -9834,9 +9858,9 @@ function LineAnalysisPanel({parts,taktTime,onDataChange,snapshotRef,projectToLoa
   function loadW(){try{return JSON.parse(localStorage.getItem(LS_W)||'[]');}catch{return[];}}
   function loadT(){try{return JSON.parse(localStorage.getItem(LS_T)||'{}');}catch{return{};}}
 
-  var _w=useState([]); var workers=_w[0],setWorkers=_w[1];
-  var _wt=useState({}); var workerTasks=_wt[0],setWorkerTasks=_wt[1];
-  var _aw=useState(null);
+  var _w=useState(loadW); var workers=_w[0],setWorkers=_w[1];
+  var _wt=useState(loadT); var workerTasks=_wt[0],setWorkerTasks=_wt[1];
+  var _aw=useState(function(){var w=loadW();return w[0]?w[0].id:null;});
   var activeWorkerId=_aw[0],setActiveWorkerId=_aw[1];
   var _wv=useState({}); var workerVideos=_wv[0],setWorkerVideos=_wv[1];
   var _pd=useState(null); var pending=_pd[0],setPending=_pd[1];

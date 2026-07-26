@@ -195,6 +195,10 @@ $btnInstall.Add_Click({
         if (Test-Path $uninstSrc) {
             Copy-Item $uninstSrc (Join-Path $InstallPath 'PIE_제거.bat') -Force
         }
+        $uninstPs = Join-Path $SrcDir 'PIE_uninstall.ps1'
+        if (Test-Path $uninstPs) {
+            Copy-Item $uninstPs (Join-Path $InstallPath 'PIE_uninstall.ps1') -Force
+        }
         $progress.Value = 60
 
         # 4. 바탕화면 바로가기
