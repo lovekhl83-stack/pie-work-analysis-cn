@@ -151,10 +151,20 @@ try {
         $bodyText = $reader.ReadToEnd()
         $incoming = $bodyText | ConvertFrom-Json
         $current = $null
-        try { $current = (Get-Content -Path $StoreFile -Raw -Encoding UTF8) | ConvertFrom-Json } catch {}
+        $readFailed = $false
+        try { $current = (Get-Content -Path $StoreFile -Raw -Encoding UTF8) | ConvertFrom-Json } catch { $readFailed = $true }
+        if ($readFailed) {
+          # 파손된 스토어는 조용히 덮어쓰지 않고 백업해 둔다 (누적 데이터 증발 방지)
+          $bak = $StoreFile + '.corrupt_' + (Get-Date -Format 'yyyyMMdd_HHmmss') + '.bak'
+          try { Copy-Item -Path $StoreFile -Destination $bak -Force } catch {}
+          Write-Host "[경고] st_store.json 판독 실패 - 기존 파일을 백업했습니다: $bak"
+        }
         $mergedObj = Merge-PartStPayload $current $incoming
         $mergedJson = $mergedObj | ConvertTo-Json -Depth 20 -Compress
-        $mergedJson | Out-File -FilePath $StoreFile -Encoding utf8 -NoNewline
+        # 원자적 쓰기: 임시 파일에 완성한 뒤 교체 (쓰기 중 크래시에도 원본 보존)
+        $tmpFile = $StoreFile + '.tmp'
+        $mergedJson | Out-File -FilePath $tmpFile -Encoding utf8 -NoNewline
+        Move-Item -Path $tmpFile -Destination $StoreFile -Force
         $bytes = [Text.Encoding]::UTF8.GetBytes($mergedJson)
         $response.ContentType = 'application/json; charset=utf-8'
         $response.OutputStream.Write($bytes, 0, $bytes.Length)

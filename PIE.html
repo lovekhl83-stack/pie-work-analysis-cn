@@ -1931,10 +1931,14 @@ function SettingsModal({lang,setLang,onClose}){
     if(h) setStFolderName(h.name);
   }
   async function testAndSync(){
+    // 테스트 동안만 임시 적용하고 원복 — 실제 저장은 '저장' 버튼(apply)에서
+    var prevMode=stBackendMode(),prevUrl=stBackendUrl();
     stBackendSetMode(stMode);
     stBackendSetUrl(stUrl);
     setStSyncing(true);setStSyncMsg('동기화 중...');
     var res=await stBackendSync(false);
+    stBackendSetMode(prevMode);
+    stBackendSetUrl(prevUrl);
     setStSyncing(false);
     setStSyncMsg(res.ok?'✅ 동기화 성공':'❌ 실패: '+(res.reason||'알 수 없는 오류'));
   }
@@ -7020,6 +7024,9 @@ function VideoCompareModal(props){
 
   function loadVidFile(side,file){
     if(!file) return;
+    if(file.type&&file.type.indexOf('video/')!==0){alert('영상 파일이 아닙니다: '+file.name);return;}
+    var prev=side==='left'?leftVid:rightVid;
+    if(prev&&prev.src&&prev.src.indexOf('blob:')===0)URL.revokeObjectURL(prev.src);
     var src=URL.createObjectURL(file);
     var name=file.name.replace(/\.[^.]+$/,'');
     var vid={id:uid(),name:file.name,src:src,tasks:[],fps:30};
@@ -9964,6 +9971,8 @@ function LineAnalysisPanel({parts,taktTime,onDataChange,snapshotRef,projectToLoa
   function handleVideoFile(file){
     if(!file||!activeWorkerId) return;
     if((workerTasks[activeWorkerId]||[]).length>0&&!confirm('이 작업자의 마크 데이터가 삭제됩니다. 계속하시겠습니까?')) return;
+    var prevV=workerVideos[activeWorkerId];
+    if(prevV&&prevV.src&&prevV.src.indexOf('blob:')===0)URL.revokeObjectURL(prevV.src);
     var src=URL.createObjectURL(file);
     setWorkerVideos(function(p){return Object.assign({},p,{[activeWorkerId]:{name:file.name,src:src}});});
     setWorkerTasks(function(p){return Object.assign({},p,{[activeWorkerId]:[]});});
@@ -10529,7 +10538,6 @@ function App() {
       }
       return merged;
     });
-    newVids.forEach(function(v){if(v.file) idbPut('vid_'+v.id,v.file);});
     if(activeVideoId){
       // if already have active, just add; don't auto-switch
     }
@@ -10537,8 +10545,7 @@ function App() {
   function relinkVideo(file,videoId){
     var vid=videoId||activeVideoId; if(!vid) return;
     var src=URL.createObjectURL(file);
-    idbPut('vid_'+vid,file);
-    setVideos(prev=>prev.map(v=>v.id===vid?{...v,src,file}:v));
+    setVideos(prev=>prev.map(v=>{if(v.id!==vid)return v;if(v.src&&v.src.indexOf('blob:')===0)URL.revokeObjectURL(v.src);return {...v,src,file};}));
     if(vid===activeVideoId){setVideoSrc(src);setVideoName(file.name);}
   }
   function switchToVideo(v){
@@ -10549,6 +10556,8 @@ function App() {
   }
   function removeVideo(id){
     setVideos(prev=>{
+      const gone=prev.find(v=>v.id===id);
+      if(gone&&gone.src&&gone.src.indexOf('blob:')===0)URL.revokeObjectURL(gone.src);
       const remaining=prev.filter(v=>v.id!==id);
       if(id===activeVideoId){
         if(remaining.length){
@@ -11074,6 +11083,7 @@ function App() {
   function loadFromStorage(id){
     const data=lsGet(id);
     if(!data){alert('불러오기 실패');return;}
+    if(tasks.length>0&&!confirm('현재 작업 내용을 덮어씁니다. 저장하지 않은 데이터는 사라집니다.\n계속할까요?'))return;
     if(data.analysisName!==undefined) setAnalysisName(data.analysisName);
     if(Array.isArray(data.videos)&&data.videos.length>0){
       const restoredVids=data.videos.map(v=>({...v,src:null}));
@@ -11105,6 +11115,7 @@ function App() {
 
   function importFromFile(file){
     if(!file) return;
+    if(tasks.length>0&&!confirm('현재 작업 내용을 덮어씁니다. 저장하지 않은 데이터는 사라집니다.\n계속할까요?'))return;
     const reader=new FileReader();
     reader.onload=e=>{
       try{
@@ -11130,6 +11141,7 @@ function App() {
   }
 
   function applyFileData(data){
+    if(tasks.length>0&&!confirm('현재 작업 내용을 덮어씁니다. 저장하지 않은 데이터는 사라집니다.\n계속할까요?'))return;
     if(data.analysisName!==undefined)setAnalysisName(data.analysisName);
     if(Array.isArray(data.videos)&&data.videos.length>0){
       const rv=data.videos.map(v=>({...v,src:null}));
@@ -11206,9 +11218,13 @@ function App() {
     // ID 중복 방지
     var now=Date.now();
     var newTasks=aiTasks.map(function(t,i){
+      var type=TT[t.type]?t.type:'auxiliary';
       return Object.assign({},t,{
         id: t.id||('ai_'+now+'_'+i),
-        workerId: t.workerId||activeWorker,
+        type: type,
+        color: t.color||TT[type].typeColor,
+        worker: t.worker||t.workerId||activeWorker,
+        hand: t.hand||'LH',
         cycle: t.cycle||currentCycle,
       });
     });
@@ -11477,7 +11493,7 @@ function App() {
                     s.videoName&&!s.videoCount&&React.createElement('div',{style:{fontSize:11,color:'#334155',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},`영상: ${s.videoName}`),
                   ),
                   React.createElement('button',{className:'btn btn-blue text-xs',style:{padding:'3px 10px',flexShrink:0},onClick:()=>loadFromStorage(s.id)},'불러오기'),
-                  React.createElement('button',{style:{color:'#475569',fontSize:16,cursor:'pointer',padding:'0 4px',flexShrink:0},onClick:e=>{e.stopPropagation();lsDel(s.id);refreshSessions();}},'×'),
+                  React.createElement('button',{style:{color:'#475569',fontSize:16,cursor:'pointer',padding:'0 4px',flexShrink:0},onClick:e=>{e.stopPropagation();if(!confirm('세션 "'+(s.name||s.id)+'"을(를) 삭제할까요? 복구할 수 없습니다.'))return;lsDel(s.id);refreshSessions();}},'×'),
                 ))
               ),
         ),
@@ -11674,7 +11690,7 @@ function App() {
                         s.analysisName&&React.createElement('div',{style:{fontSize:11,color:'#60a5fa',fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},`📌 ${s.analysisName}`),
                       ),
                       React.createElement('button',{className:'btn btn-blue text-xs',style:{padding:'3px 10px',flexShrink:0},onClick:e=>{e.stopPropagation();loadFromStorage(s.id);}},'불러오기'),
-                      React.createElement('button',{style:{color:'#475569',fontSize:16,cursor:'pointer',padding:'0 4px',flexShrink:0},onClick:e=>{e.stopPropagation();lsDel(s.id);refreshSessions();}},'×'),
+                      React.createElement('button',{style:{color:'#475569',fontSize:16,cursor:'pointer',padding:'0 4px',flexShrink:0},onClick:e=>{e.stopPropagation();if(!confirm('세션 "'+(s.name||s.id)+'"을(를) 삭제할까요? 복구할 수 없습니다.'))return;lsDel(s.id);refreshSessions();}},'×'),
                     ))
                   ),
                 ),
