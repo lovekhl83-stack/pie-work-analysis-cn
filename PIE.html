@@ -1152,6 +1152,68 @@ const STRINGS = {
 };
 
 // ─────────────────────────────────────────
+//  알림·확인창 중국어 대응 (결정 C) — 한국어 원문을 키로 조회, 없으면 원문 그대로
+// ─────────────────────────────────────────
+var MSG_ZH={
+  'AI 초기화 실패: ':'AI 初始化失败: ',
+  'Chrome/Edge 브라우저에서만 지원됩니다.':'仅支持 Chrome / Edge 浏览器。',
+  'MediaPipe 아직 로딩 중입니다.':'MediaPipe 正在加载中。',
+  'PDF 생성 실패: ':'PDF 生成失败: ',
+  '가져오기 완료: 부품 ':'导入完成: 部件 ',
+  '공정명을 입력하세요.':'请输入工序名称。',
+  '동기화 실패: ':'同步失败: ',
+  '동기화 완료!':'同步完成!',
+  '라이브러리 로딩 중... 잠시 후 다시 시도해주세요.':'正在加载库... 请稍后再试。',
+  '모델을 먼저 선택하세요.':'请先选择机种。',
+  '베스트 사이클의 작업이 없습니다.':'最佳循环中没有作业。',
+  '부품 목록 저장 완료 (':'部件列表保存完成 (',
+  '부품군을 입력하세요':'请输入部件组',
+  '부품이 지정된 작업이 없습니다.':'没有指定部件的作业。',
+  '분석된 작업 데이터가 없습니다.':'没有已分析的作业数据。',
+  '분석된 작업이 없습니다.':'没有已分析的作业。',
+  '불러오기 실패':'加载失败',
+  '불러오기 실패: ':'加载失败: ',
+  '불러오기 실패: 데이터 형식 오류':'加载失败: 数据格式错误',
+  '삭제 실패: ':'删除失败: ',
+  '설정에서 ST 누적 저장소(폴더/서버)를 먼저 등록하세요.':'请先在设置中注册 ST 累计存储(文件夹/服务器)。',
+  '영상 로딩 중입니다. 잠시 후 다시 클릭해주세요.':'视频正在加载中,请稍后再点击。',
+  '영상 파일이 아닙니다: ':'不是视频文件: ',
+  '영상을 먼저 업로드해주세요.':'请先上传视频。',
+  '유효하지 않은 파일입니다.':'无效的文件。',
+  '저장 실패: ':'保存失败: ',
+  '저장 완료 (':'保存完成 (',
+  '저장 완료!\n부품 ':'保存完成!\n部件 ',
+  '저장된 표준시간 데이터가 없습니다.':'没有已保存的标准时间数据。',
+  '저장할 분석 데이터가 없습니다. 먼저 작업을 기록하세요.':'没有可保存的分析数据。请先记录作业。',
+  '저장할 분석 데이터가 없습니다.':'没有可保存的分析数据。',
+  '종료 시점이 시작 시점보다 앞에 있습니다.':'结束时间点早于开始时间点。',
+  '파일 오류: ':'文件错误: ',
+  '파일 저장 실패: ':'文件保存失败: ',
+  '팝업이 차단되었습니다. 팝업 허용 후 다시 시도하세요.':'弹出窗口被拦截。请允许弹出窗口后重试。',
+  '폴더 선택 실패: ':'文件夹选择失败: ',
+  '표준시간이 저장되었습니다.':'标准时间已保存。',
+  '프로젝트 불러오기 완료!':'项目加载完成!',
+  '프로젝트 저장 완료!\n폴더: ':'项目保存完成!\n文件夹: ',
+  '현재 배치를 개선전 기준으로 저장했습니다.':'已将当前配置保存为改善前基准。',
+  '공정을 삭제하시겠습니까?':'要删除该工序吗?',
+  '모델을 삭제하시겠습니까?':'要删除该机种吗?',
+  '이 작업자의 마크 데이터가 삭제됩니다. 계속하시겠습니까?':'该作业者的标记数据将被删除。要继续吗?',
+  '이 작업자의 모든 마크 데이터가 삭제됩니다. 계속하시겠습니까?':'该作业者的所有标记数据将被删除。要继续吗?',
+  '현재 작업자의 마크를 모두 삭제하시겠습니까?':'要删除当前作业者的所有标记吗?',
+  '세션 저장 실패: 브라우저 저장 공간이 가득 찼습니다.\n세션 목록에서 오래된 세션을 삭제한 뒤 다시 시도해주세요.':'会话保存失败: 浏览器存储空间已满。\n请在会话列表中删除旧会话后重试。',
+  '이미 저장된 분석 내용입니다.\n(같은 데이터의 중복 누적으로 표본수 n이 부풀지 않도록 차단했습니다)':'该分析内容已保存过。\n(为防止相同数据重复累计导致样本数 n 虚增,已阻止本次保存)',
+  '저장할 데이터가 없습니다.\n부품을 선택하고 작업 요소를 측정해주세요.':'没有可保存的数据。\n请选择部件并测量作业要素。',
+  '기존 부품 데이터를 어떻게 처리할까요?\n\n확인 = 교체 (기존 삭제 후 가져오기)\n취소 = 병합 (기존 유지 + 새 항목 추가)':'如何处理现有部件数据?\n\n确定 = 替换(删除现有后导入)\n取消 = 合并(保留现有 + 添加新项目)',
+  '영상분석 이력 데이터를 기반으로 표준시간(레이팅·여유율 적용)을 확정 저장하시겠습니까?':'要基于视频分析履历数据确定保存标准时间(已应用评比·宽放率)吗?',
+  '이 부품을 삭제하시겠습니까?\n(ST 누적 저장소 사용 시 다른 PC에서도 삭제됩니다)':'要删除该部件吗?\n(使用 ST 累计存储时,其他电脑上也会被删除)',
+  '이 부품의 누적 ST 데이터를 전부 리셋하시겠습니까?\n복구할 수 없습니다. (ST 누적 저장소 사용 시 다른 PC에서도 삭제됩니다)':'要重置该部件的全部累计 ST 数据吗?\n无法恢复。(使用 ST 累计存储时,其他电脑上也会被删除)',
+  '이 부품의 측정 데이터를 초기화하시겠습니까?\n(표준시간 DB는 유지됩니다)':'要初始化该部件的测量数据吗?\n(标准时间 DB 将保留)',
+  '이 분석 내용은 이미 저장한 것과 동일합니다.\n중복 저장하시겠습니까?':'该分析内容与已保存的相同。\n要重复保存吗?',
+  '현재 작업 내용을 덮어씁니다. 저장하지 않은 데이터는 사라집니다.\n계속할까요?':'将覆盖当前作业内容。未保存的数据将丢失。\n要继续吗?',
+};
+function _m(s){try{return (localStorage.getItem('wvas_lang')==='zh'&&MSG_ZH[s])?MSG_ZH[s]:s;}catch(e){return s;}}
+
+// ─────────────────────────────────────────
 //  Constants
 // ─────────────────────────────────────────
 const TT = {
@@ -1251,7 +1313,7 @@ function lsSave(meta,data){
     return true;
   }catch(e){
     try{localStorage.removeItem(LS_KEY+'_'+meta.id);}catch(_){}
-    alert('세션 저장 실패: 브라우저 저장 공간이 가득 찼습니다.\n세션 목록에서 오래된 세션을 삭제한 뒤 다시 시도해주세요.');
+    alert(_m('세션 저장 실패: 브라우저 저장 공간이 가득 찼습니다.\n세션 목록에서 오래된 세션을 삭제한 뒤 다시 시도해주세요.'));
     return false;
   }
 }
@@ -1365,7 +1427,7 @@ async function fsPickFolder(){
     var h=await showDirectoryPicker({mode:'readwrite',startIn:'desktop'});
     await idbPut('dirHandle',h);
     return h;
-  }catch(e){if(e.name!=='AbortError')alert('폴더 선택 실패: '+e.message);return null;}
+  }catch(e){if(e.name!=='AbortError')alert(_m('폴더 선택 실패: ')+e.message);return null;}
 }
 async function fsRestoreFolder(){
   try{
@@ -1388,7 +1450,7 @@ async function fsSaveToFolder(dh,data){
     await w.write(JSON.stringify(data,null,2));
     await w.close();
     return fname;
-  }catch(e){alert('파일 저장 실패: '+e.message);return null;}
+  }catch(e){alert(_m('파일 저장 실패: ')+e.message);return null;}
 }
 async function fsListFiles(dh){
   var files=[];
@@ -1405,7 +1467,7 @@ async function fsReadFile(handle){
 }
 async function fsDeleteFile(dh,name){
   try{await dh.removeEntry(name);return true;}
-  catch(e){alert('삭제 실패: '+e.message);return false;}
+  catch(e){alert(_m('삭제 실패: ')+e.message);return false;}
 }
 
 // ─────────────────────────────────────────
@@ -1428,7 +1490,7 @@ async function stFolderPick(){
     await idbPut('stDirHandle',h);
     localStorage.setItem(ST_BACKEND_FOLDER_NAME_KEY,h.name);
     return h;
-  }catch(e){if(e.name!=='AbortError')alert('폴더 선택 실패: '+e.message);return null;}
+  }catch(e){if(e.name!=='AbortError')alert(_m('폴더 선택 실패: ')+e.message);return null;}
 }
 async function stFolderRestore(){
   try{
@@ -1963,7 +2025,7 @@ function SettingsModal({lang,setLang,onClose}){
     onClose();
   }
   async function pickStFolder(){
-    if(!window.showDirectoryPicker){alert('Chrome/Edge 브라우저에서만 지원됩니다.');return;}
+    if(!window.showDirectoryPicker){alert(_m('Chrome/Edge 브라우저에서만 지원됩니다.'));return;}
     var h=await stFolderPick();
     if(h) setStFolderName(h.name);
   }
@@ -2101,7 +2163,7 @@ function LoadProjectModal({lang,onLoad,onClose}){
       try{
         var data=JSON.parse(e.target.result);
         onLoad(data);
-      }catch(err){alert('파일 오류: '+err.message);}
+      }catch(err){alert(_m('파일 오류: ')+err.message);}
     };
     reader.readAsText(file);
   }
@@ -5234,7 +5296,7 @@ function FileManager({dirHandle,setDirHandle,onSave,onApply,onClose}){
     fsReadFile(handle).then(function(data){
       onApply(data,name);
       setMsg('✓ 불러옴: '+name.replace(/\.(wvas|json)$/,''));
-    }).catch(function(e){alert('불러오기 실패: '+e.message);});
+    }).catch(function(e){alert(_m('불러오기 실패: ')+e.message);});
   }
   function del(name){
     if(!confirm('"'+name+'" 파일을 삭제하시겠습니까?'))return;
@@ -5301,16 +5363,16 @@ function PartsManager({parts,onPartsChange}){
   var partReset=_pr[0],setPartReset=_pr[1];
   var _bsy=useState(false); var stSyncing=_bsy[0],setStSyncing=_bsy[1];
   async function doStBackendSync(){
-    if(stBackendMode()==='none'){alert('설정에서 ST 누적 저장소(폴더/서버)를 먼저 등록하세요.');return;}
+    if(stBackendMode()==='none'){alert(_m('설정에서 ST 누적 저장소(폴더/서버)를 먼저 등록하세요.'));return;}
     setStSyncing(true);
     var res=await stBackendSync(false);
     setStSyncing(false);
     if(res.ok){
       onPartsChange(partsList());
       setPartSt(partStLoad());
-      alert('동기화 완료!');
+      alert(_m('동기화 완료!'));
     } else {
-      alert('동기화 실패: '+(res.reason||'알 수 없는 오류'));
+      alert(_m('동기화 실패: ')+(res.reason||'알 수 없는 오류'));
     }
   }
 
@@ -5356,14 +5418,14 @@ function PartsManager({parts,onPartsChange}){
   function startAdd(){setForm({name:'',leadCount:'',insertType:'Axial'});setEditId(null);setShowForm(true);}
   function startEdit(p){setForm({name:p.name,leadCount:p.leadCount||'',insertType:p.insertType||'Axial'});setEditId(p.id);setShowForm(true);}
   function save(){
-    if(!form.name.trim()){alert('부품군을 입력하세요');return;}
+    if(!form.name.trim()){alert(_m('부품군을 입력하세요'));return;}
     var next;
     if(editId) next=parts.map(function(p){return p.id===editId?Object.assign({},p,form):p;});
     else next=parts.concat([Object.assign({id:uid()},form,{createdAt:new Date().toISOString()})]);
     partsSave(next);onPartsChange(next);setShowForm(false);
   }
   function del(id){
-    if(!confirm('이 부품을 삭제하시겠습니까?\n(ST 누적 저장소 사용 시 다른 PC에서도 삭제됩니다)')) return;
+    if(!confirm(_m('이 부품을 삭제하시겠습니까?\n(ST 누적 저장소 사용 시 다른 PC에서도 삭제됩니다)'))) return;
     var gone=parts.find(function(p){return p.id===id;});
     var next=parts.filter(function(p){return p.id!==id;});
     partsSave(next);onPartsChange(next);
@@ -5382,7 +5444,7 @@ function PartsManager({parts,onPartsChange}){
   }
   function confirmSt(){
     if(!selId||Object.keys(selTaskDb).length===0) return;
-    if(!confirm('영상분석 이력 데이터를 기반으로 표준시간(레이팅·여유율 적용)을 확정 저장하시겠습니까?')) return;
+    if(!confirm(_m('영상분석 이력 데이터를 기반으로 표준시간(레이팅·여유율 적용)을 확정 저장하시겠습니까?'))) return;
     var _ra=ratingLoad(); var _adj=(_ra.r/100)*(1+_ra.a/100); // 결정 D(2026-07-26): DB에는 보정 적용된 표준시간으로 통일
     var next=Object.assign({},partSt);
     if(!next[selId]) next[selId]={};
@@ -5394,10 +5456,10 @@ function PartsManager({parts,onPartsChange}){
     });
     partStSave(next);setPartSt(next);
     if(stBackendMode()!=='none') stBackendSync(true).then(function(r){if(r.ok)setPartSt(partStLoad());}).catch(function(){});
-    alert('표준시간이 저장되었습니다.');
+    alert(_m('표준시간이 저장되었습니다.'));
   }
   function exportStCsv(){
-    if(!selId||Object.keys(selStData).length===0){alert('저장된 표준시간 데이터가 없습니다.');return;}
+    if(!selId||Object.keys(selStData).length===0){alert(_m('저장된 표준시간 데이터가 없습니다.'));return;}
     var rows=[['부품군','삽입형태','Lead수','작업명','표준시간(초)','표준시간(분:초)','샘플수','확정일시']];
     Object.entries(selStData).forEach(function(e){
       var name=e[0]; var d=e[1];
@@ -5423,8 +5485,8 @@ function PartsManager({parts,onPartsChange}){
       reader.onload=function(ev){
         try{
           var data=JSON.parse(ev.target.result);
-          if(!Array.isArray(data.parts)){alert('유효하지 않은 파일입니다.');return;}
-          var mode=confirm('기존 부품 데이터를 어떻게 처리할까요?\n\n확인 = 교체 (기존 삭제 후 가져오기)\n취소 = 병합 (기존 유지 + 새 항목 추가)');
+          if(!Array.isArray(data.parts)){alert(_m('유효하지 않은 파일입니다.'));return;}
+          var mode=confirm(_m('기존 부품 데이터를 어떻게 처리할까요?\n\n확인 = 교체 (기존 삭제 후 가져오기)\n취소 = 병합 (기존 유지 + 새 항목 추가)'));
           var nextParts;
           if(mode){
             nextParts=data.parts;
@@ -5442,8 +5504,8 @@ function PartsManager({parts,onPartsChange}){
             var nextReset=mode?data.partReset:Object.assign({},data.partReset,partReset);
             partResetSave(nextReset);setPartReset(nextReset);
           }
-          alert('가져오기 완료: 부품 '+nextParts.length+'개');
-        }catch(err){alert('파일 오류: '+err.message);}
+          alert(_m('가져오기 완료: 부품 ')+nextParts.length+'개');
+        }catch(err){alert(_m('파일 오류: ')+err.message);}
       };
       reader.readAsText(file,'utf-8');
     };
@@ -5493,7 +5555,7 @@ function PartsManager({parts,onPartsChange}){
   title:'설정에서 등록한 ST 누적 저장소(폴더/서버)와 동기화합니다'},
   stSyncing?'⏳ 동기화 중...':'🔄 지금 동기화'),
 React.createElement('button',{className:'btn btn-green',style:{fontSize:12},
-          onClick:function(){partsSave(parts);onPartsChange(parts);alert('부품 목록 저장 완료 ('+parts.length+'개)');},
+          onClick:function(){partsSave(parts);onPartsChange(parts);alert(_m('부품 목록 저장 완료 (')+parts.length+'개)');},
           title:'현재 부품 목록을 저장합니다'},'💾 저장'),
         React.createElement('button',{className:'btn btn-blue',style:{fontSize:12},onClick:startAdd},'+ 부품 추가'),
       ),
@@ -5665,7 +5727,7 @@ React.createElement('button',{className:'btn btn-green',style:{fontSize:12},
                         style:{fontSize:12,padding:'4px 12px',background:'#450a0a',color:'#fca5a5',border:'1px solid #7f1d1d',borderRadius:6,cursor:'pointer'},
                         onClick:function(){
                           if(!selId) return;
-                          if(!confirm('이 부품의 측정 데이터를 초기화하시겠습니까?\n(표준시간 DB는 유지됩니다)')) return;
+                          if(!confirm(_m('이 부품의 측정 데이터를 초기화하시겠습니까?\n(표준시간 DB는 유지됩니다)'))) return;
                           var nx=Object.assign({},partReset,{[selId]:new Date().toISOString()});
                           partResetSave(nx);setPartReset(nx);
                         }
@@ -5693,7 +5755,7 @@ React.createElement('button',{className:'btn btn-green',style:{fontSize:12},
                         React.createElement('button',{
                           style:{fontSize:11,padding:'3px 10px',background:'#450a0a',color:'#fca5a5',border:'1px solid #7f1d1d',borderRadius:6,cursor:'pointer'},
                           onClick:function(){
-                            if(!confirm('이 부품의 누적 ST 데이터를 전부 리셋하시겠습니까?\n복구할 수 없습니다. (ST 누적 저장소 사용 시 다른 PC에서도 삭제됩니다)')) return;
+                            if(!confirm(_m('이 부품의 누적 ST 데이터를 전부 리셋하시겠습니까?\n복구할 수 없습니다. (ST 누적 저장소 사용 시 다른 PC에서도 삭제됩니다)'))) return;
                             var nx=Object.assign({},partSt);
                             var tb=partTombLoad();if(!tb[selId])tb[selId]={};
                             var now=new Date().toISOString();
@@ -5787,17 +5849,17 @@ function ModelBrowserModal(props){
   }
 
   function deleteModel(mid){
-    if(!window.confirm('모델을 삭제하시겠습니까?')) return;
+    if(!window.confirm(_m('모델을 삭제하시겠습니까?'))) return;
     save(models.filter(function(m){return m.id!==mid;}));
     if(selModelId===mid) setSelModelId(null);
   }
 
   function saveCurrentAsProcess(){
     if(!props.currentTasks||props.currentTasks.length===0){
-      alert('저장할 분석 데이터가 없습니다. 먼저 작업을 기록하세요.');return;
+      alert(_m('저장할 분석 데이터가 없습니다. 먼저 작업을 기록하세요.'));return;
     }
-    if(!selModelId){alert('모델을 먼저 선택하세요.');return;}
-    if(!newProcName.trim()){alert('공정명을 입력하세요.');return;}
+    if(!selModelId){alert(_m('모델을 먼저 선택하세요.'));return;}
+    if(!newProcName.trim()){alert(_m('공정명을 입력하세요.'));return;}
     var stdTotal=props.currentTasks.reduce(function(s,t){
       return s+t.duration*(props.ratingFactor/100)*(1+props.allowanceRate/100);
     },0);
@@ -5827,7 +5889,7 @@ function ModelBrowserModal(props){
   }
 
   function deleteProcess(mid,pid){
-    if(!window.confirm('공정을 삭제하시겠습니까?')) return;
+    if(!window.confirm(_m('공정을 삭제하시겠습니까?'))) return;
     save(models.map(function(m){
       if(m.id!==mid) return m;
       return {...m,processes:m.processes.filter(function(p){return p.id!==pid;})};
@@ -7106,7 +7168,7 @@ function VideoCompareModal(props){
 
   function loadVidFile(side,file){
     if(!file) return;
-    if(file.type&&file.type.indexOf('video/')!==0){alert('영상 파일이 아닙니다: '+file.name);return;}
+    if(file.type&&file.type.indexOf('video/')!==0){alert(_m('영상 파일이 아닙니다: ')+file.name);return;}
     var prev=side==='left'?leftVid:rightVid;
     if(prev&&prev.src&&prev.src.indexOf('blob:')===0)URL.revokeObjectURL(prev.src);
     var src=URL.createObjectURL(file);
@@ -8343,7 +8405,7 @@ function VisionAiModal(props){
     return function(e){
       e.preventDefault();
       var v=vRefs[vi].current;if(!v)return;
-      if(!v.duration||isNaN(v.duration)){alert('영상 로딩 중입니다. 잠시 후 다시 클릭해주세요.');return;}
+      if(!v.duration||isNaN(v.duration)){alert(_m('영상 로딩 중입니다. 잠시 후 다시 클릭해주세요.'));return;}
       var cur=v.currentTime;
       var phase=markPhaseRef.current;
       if(phase===0||phase===2){
@@ -8778,9 +8840,9 @@ function VisionAiModal(props){
   }
 
   function startAnalysis(){
-    if(!mpReady){alert('MediaPipe 아직 로딩 중입니다.');return;}
+    if(!mpReady){alert(_m('MediaPipe 아직 로딩 중입니다.'));return;}
     var units=buildUnits();
-    if(!units.length){alert('영상을 먼저 업로드해주세요.');return;}
+    if(!units.length){alert(_m('영상을 먼저 업로드해주세요.'));return;}
     var _mr=masterRangeRef.current||{};
     if(!(_mr.start>=0&&_mr.end>_mr.start)&&!confirm('마스터(기준) 구간이 지정되지 않았습니다.\n지정 없이 분석하면 대부분 "대기/낭비"로 판정되어 의미 있는 결과가 나오기 어렵습니다.\n\n계속할까요? (취소 후 영상 위를 2번 클릭하면 기준 구간을 지정할 수 있습니다)')) return;
     unitsRef.current=units;
@@ -8889,7 +8951,7 @@ function VisionAiModal(props){
         });
         rafRef.current=requestAnimationFrame(loop);
       })();
-    }).catch(function(e){setStatus('idle');alert('AI 초기화 실패: '+e.message);});
+    }).catch(function(e){setStatus('idle');alert(_m('AI 초기화 실패: ')+e.message);});
   }
 
   // ─── Westinghouse 레이팅 상수 ─────────────────────────────────
@@ -9538,7 +9600,7 @@ function VisionAiModal(props){
                     '<button onclick="window.close()" style="padding:6px 14px;background:#374151;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px;">✕ 닫기</button>'+
                     '</div>';
                   var w=window.open('','_blank','width=900,height=1050,scrollbars=yes');
-                  if(!w){alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도하세요.');return;}
+                  if(!w){alert(_m('팝업이 차단되었습니다. 팝업 허용 후 다시 시도하세요.'));return;}
                   w.document.write(html.replace('<body>','<body>'+printBtn));
                   w.document.close();
                 }
@@ -10046,7 +10108,7 @@ function LineAnalysisPanel({parts,taktTime,onDataChange,snapshotRef,projectToLoa
     setActiveWorkerId(w.id);
   }
   function removeWorker(id){
-    if(!confirm('이 작업자의 모든 마크 데이터가 삭제됩니다. 계속하시겠습니까?')) return;
+    if(!confirm(_m('이 작업자의 모든 마크 데이터가 삭제됩니다. 계속하시겠습니까?'))) return;
     setWorkers(function(p){return p.filter(function(w){return w.id!==id;});});
     setWorkerVideos(function(p){var n=Object.assign({},p);delete n[id];return n;});
     setWorkerTasks(function(p){var n=Object.assign({},p);delete n[id];return n;});
@@ -10065,7 +10127,7 @@ function LineAnalysisPanel({parts,taktTime,onDataChange,snapshotRef,projectToLoa
   }
   function handleVideoFile(file){
     if(!file||!activeWorkerId) return;
-    if((workerTasks[activeWorkerId]||[]).length>0&&!confirm('이 작업자의 마크 데이터가 삭제됩니다. 계속하시겠습니까?')) return;
+    if((workerTasks[activeWorkerId]||[]).length>0&&!confirm(_m('이 작업자의 마크 데이터가 삭제됩니다. 계속하시겠습니까?'))) return;
     var prevV=workerVideos[activeWorkerId];
     if(prevV&&prevV.src&&prevV.src.indexOf('blob:')===0)URL.revokeObjectURL(prevV.src);
     var src=URL.createObjectURL(file);
@@ -10085,7 +10147,7 @@ function LineAnalysisPanel({parts,taktTime,onDataChange,snapshotRef,projectToLoa
     if(!videoRef.current||!activeWorkerId||pending===null) return;
     videoRef.current.pause();
     var et=videoRef.current.currentTime;
-    if(et<=pending){alert('종료 시점이 시작 시점보다 앞에 있습니다.');return;}
+    if(et<=pending){alert(_m('종료 시점이 시작 시점보다 앞에 있습니다.'));return;}
     var task={
       id:'lt_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
       partId:selectedPartId||null,
@@ -10144,7 +10206,7 @@ function LineAnalysisPanel({parts,taktTime,onDataChange,snapshotRef,projectToLoa
   }
   function clearWorkerMarks(){
     if(!activeWorkerId) return;
-    if(!confirm('현재 작업자의 마크를 모두 삭제하시겠습니까?')) return;
+    if(!confirm(_m('현재 작업자의 마크를 모두 삭제하시겠습니까?'))) return;
     setWorkerTasks(function(p){return Object.assign({},p,{[activeWorkerId]:[]});});
     setPending(null);
   }
@@ -10679,7 +10741,7 @@ function App() {
   function finishMark(){
     const v=videoRef.current; if(!v||pending===null) return;
     const endTime=v.currentTime;
-    if(endTime<=pending){alert('종료 시점이 시작 시점보다 앞에 있습니다.');return;}
+    if(endTime<=pending){alert(_m('종료 시점이 시작 시점보다 앞에 있습니다.'));return;}
     v.pause();
     setTasks(prev=>{
       const cycleTaskCount=prev.filter(t=>(t.cycle||1)===currentCycle).length;
@@ -10764,7 +10826,7 @@ function App() {
   // ── Before/After snapshot ─────────────────────────────────────────────────
   function saveBeforeSnap(){
     setBeforeSnap({tasks:JSON.parse(JSON.stringify(tasks)),workers:workers.slice(),taktTime:taktTime});
-    alert('현재 배치를 개선전 기준으로 저장했습니다.');
+    alert(_m('현재 배치를 개선전 기준으로 저장했습니다.'));
   }
 
   function exportCSV(){
@@ -10795,7 +10857,7 @@ function App() {
     } else {
       allTasks=tasks.slice();
     }
-    if(!allTasks.length){alert('분석된 작업이 없습니다.');return;}
+    if(!allTasks.length){alert(_m('분석된 작업이 없습니다.'));return;}
     // 부품별 그룹핑 (낭비 제외)
     var partGroups={};
     allTasks.forEach(function(t){
@@ -10815,7 +10877,7 @@ function App() {
       return {p:partsMap[pid]||'미지정',t:parseFloat(e.total.toFixed(4)),c:e.cycles.size||1};
     }));
     if(localStorage.getItem('pie_last_upload_sig')===sig){
-      if(!confirm('이 분석 내용은 이미 저장한 것과 동일합니다.\n중복 저장하시겠습니까?')) return;
+      if(!confirm(_m('이 분석 내용은 이미 저장한 것과 동일합니다.\n중복 저장하시겠습니까?'))) return;
     }
     var db=partStLoad();
     var savedCount=0;
@@ -10833,11 +10895,11 @@ function App() {
       }
       savedCount++;
     });
-    if(!savedCount){alert('저장할 데이터가 없습니다.\n부품을 선택하고 작업 요소를 측정해주세요.');return;}
+    if(!savedCount){alert(_m('저장할 데이터가 없습니다.\n부품을 선택하고 작업 요소를 측정해주세요.'));return;}
     partStSave(db);
     localStorage.setItem('pie_last_upload_sig',sig);
     if(stBackendMode()!=='none') stBackendSync(true).catch(function(){});
-    alert('저장 완료!\n부품 '+savedCount+'개 저장됨 (부품관리 DB, 로컬)');
+    alert(_m('저장 완료!\n부품 ')+savedCount+'개 저장됨 (부품관리 DB, 로컬)');
   }
 
   // ── SOP: best cycle ──────────────────────────────────────────────────────
@@ -10874,11 +10936,11 @@ function App() {
   // ── SOP: main export function ─────────────────────────────────────────────
   async function exportSOP(){
     var info=sopCalcBestCycle();
-    if(!info){alert('분석된 작업 데이터가 없습니다.');return;}
+    if(!info){alert(_m('분석된 작업 데이터가 없습니다.'));return;}
     var bestTasks=tasks
       .filter(function(t){return(t.cycle||1)===info.cycle;})
       .sort(function(a,b){return a.startTime-b.startTime;});
-    if(!bestTasks.length){alert('베스트 사이클의 작업이 없습니다.');return;}
+    if(!bestTasks.length){alert(_m('베스트 사이클의 작업이 없습니다.'));return;}
 
     cancelSopRef.current=false;
     setSopDone(false);
@@ -11177,8 +11239,8 @@ function App() {
 
   function loadFromStorage(id){
     const data=lsGet(id);
-    if(!data){alert('불러오기 실패');return;}
-    if(tasks.length>0&&!confirm('현재 작업 내용을 덮어씁니다. 저장하지 않은 데이터는 사라집니다.\n계속할까요?'))return;
+    if(!data){alert(_m('불러오기 실패'));return;}
+    if(tasks.length>0&&!confirm(_m('현재 작업 내용을 덮어씁니다. 저장하지 않은 데이터는 사라집니다.\n계속할까요?')))return;
     if(data.analysisName!==undefined) setAnalysisName(data.analysisName);
     if(Array.isArray(data.videos)&&data.videos.length>0){
       const restoredVids=data.videos.map(v=>({...v,src:null}));
@@ -11191,7 +11253,7 @@ function App() {
       if(data.fps) setFps(data.fps);
       setTasks(data.tasks);
       if(data.videoName) setVideoName(data.videoName);
-    } else {alert('불러오기 실패');return;}
+    } else {alert(_m('불러오기 실패'));return;}
     setPending(null);setActiveTask(null);loopRef.current=null;setCurrentCycle(1);
     if(data.partId!==undefined) setSelectedPartId(data.partId);
     setTab('analysis');setShowSessionMgr(false);
@@ -11210,7 +11272,7 @@ function App() {
 
   function importFromFile(file){
     if(!file) return;
-    if(tasks.length>0&&!confirm('현재 작업 내용을 덮어씁니다. 저장하지 않은 데이터는 사라집니다.\n계속할까요?'))return;
+    if(tasks.length>0&&!confirm(_m('현재 작업 내용을 덮어씁니다. 저장하지 않은 데이터는 사라집니다.\n계속할까요?')))return;
     const reader=new FileReader();
     reader.onload=e=>{
       try{
@@ -11230,13 +11292,13 @@ function App() {
         } else throw new Error('작업 데이터가 없습니다');
         setPending(null);setActiveTask(null);loopRef.current=null;
         setTab('analysis');setShowSessionMgr(false);
-      }catch(err){alert('불러오기 실패: '+err.message);}
+      }catch(err){alert(_m('불러오기 실패: ')+err.message);}
     };
     reader.readAsText(file);
   }
 
   function applyFileData(data){
-    if(tasks.length>0&&!confirm('현재 작업 내용을 덮어씁니다. 저장하지 않은 데이터는 사라집니다.\n계속할까요?'))return;
+    if(tasks.length>0&&!confirm(_m('현재 작업 내용을 덮어씁니다. 저장하지 않은 데이터는 사라집니다.\n계속할까요?')))return;
     if(data.analysisName!==undefined)setAnalysisName(data.analysisName);
     if(Array.isArray(data.videos)&&data.videos.length>0){
       const rv=data.videos.map(v=>({...v,src:null}));
@@ -11249,7 +11311,7 @@ function App() {
       if(data.fps)setFps(data.fps);
       setTasks(data.tasks);
       if(data.videoName)setVideoName(data.videoName);
-    }else{alert('불러오기 실패: 데이터 형식 오류');return;}
+    }else{alert(_m('불러오기 실패: 데이터 형식 오류'));return;}
     setPending(null);setActiveTask(null);loopRef.current=null;setCurrentCycle(1);
     if(data.partId!==undefined)setSelectedPartId(data.partId);
     setTab('analysis');setShowFileMgr(false);
@@ -11270,7 +11332,7 @@ function App() {
   const markElapsed=pending!==null?Math.max(0,curTime-pending):null;
 
   async function exportPDF(){
-    if(!window.html2canvas||!window.jspdf){alert('라이브러리 로딩 중... 잠시 후 다시 시도해주세요.');return;}
+    if(!window.html2canvas||!window.jspdf){alert(_m('라이브러리 로딩 중... 잠시 후 다시 시도해주세요.'));return;}
     var btn=document.querySelector('[data-pdf-btn]');
     if(btn){btn.textContent='⏳ 기다려...';btn.disabled=true;}
     try{
@@ -11291,7 +11353,7 @@ function App() {
       }
       var dt=new Date().toLocaleDateString('ko').replace(/\./g,'-');
       pdf.save('WVAS-report-'+dt+'.pdf');
-    }catch(err){alert('PDF 생성 실패: '+err.message);}
+    }catch(err){alert(_m('PDF 생성 실패: ')+err.message);}
     finally{if(btn){btn.textContent='📥 PDF';btn.disabled=false;}}
   }
 
@@ -11336,11 +11398,11 @@ function App() {
     setTab('analysis');
   }
   async function saveUnifiedProject(){
-    if(!window.showDirectoryPicker){alert('Chrome/Edge 브라우저에서만 지원됩니다.');return;}
+    if(!window.showDirectoryPicker){alert(_m('Chrome/Edge 브라우저에서만 지원됩니다.'));return;}
     var lineSnap=lineSnapshotRef.current||{};
     var hasA=tasks.length>0||videos.some(function(v){return(v.tasks||[]).length>0;});
     var hasL=(lineSnap.workers||[]).length>0;
-    if(!hasA&&!hasL){alert('저장할 분석 데이터가 없습니다.');return;}
+    if(!hasA&&!hasL){alert(_m('저장할 분석 데이터가 없습니다.'));return;}
     try{
       var dh=await window.showDirectoryPicker({mode:'readwrite',startIn:'downloads'});
       var videosMeta=[];
@@ -11380,11 +11442,11 @@ function App() {
       var jwr=await jfh.createWritable();
       await jwr.write(JSON.stringify(pdata,null,2));await jwr.close();
       var tot=videosMeta.filter(function(v){return v.savedFile;}).length+Object.keys(lineVFN).length;
-      alert('프로젝트 저장 완료!\n폴더: '+dh.name+(tot>0?'\n영상 '+tot+'개 포함':''));
-    }catch(e){if(e.name!=='AbortError')alert('저장 실패: '+e.message);}
+      alert(_m('프로젝트 저장 완료!\n폴더: ')+dh.name+(tot>0?'\n영상 '+tot+'개 포함':''));
+    }catch(e){if(e.name!=='AbortError')alert(_m('저장 실패: ')+e.message);}
   }
   async function loadUnifiedProject(){
-    if(!window.showDirectoryPicker){alert('Chrome/Edge 브라우저에서만 지원됩니다.');return;}
+    if(!window.showDirectoryPicker){alert(_m('Chrome/Edge 브라우저에서만 지원됩니다.'));return;}
     try{
       var dh=await window.showDirectoryPicker({mode:'readwrite'});
       var jfh=await dh.getFileHandle('project.json');
@@ -11422,9 +11484,9 @@ function App() {
       setLineProjectToLoad({workers:ln.workers||[],workerTasks:ln.workerTasks||{},
         modelName:ln.modelName||pdata.modelName||'',workerVideos:newWV});
       var tot2=(an.videos||[]).filter(function(v){return v.savedFile;}).length+Object.keys(newWV).length;
-      alert('프로젝트 불러오기 완료!'+(tot2>0?'\n영상 '+tot2+'개 복원':''));
+      alert(_m('프로젝트 불러오기 완료!')+(tot2>0?'\n영상 '+tot2+'개 복원':''));
       return true;
-    }catch(e){if(e.name!=='AbortError')alert('불러오기 실패: '+e.message); return false;}
+    }catch(e){if(e.name!=='AbortError')alert(_m('불러오기 실패: ')+e.message); return false;}
   }
   async function handleStartupLoad(){
     var ok=await loadUnifiedProject();
@@ -11448,7 +11510,7 @@ function App() {
       if(data.partId!==undefined)setSelectedPartId(data.partId);
       setPending(null);setActiveTask(null);setCurrentCycle(1);
       setTab('analysis');setShowLoadProject(false);
-    }catch(err){alert('불러오기 실패: '+err.message);}
+    }catch(err){alert(_m('불러오기 실패: ')+err.message);}
   }
 
   return React.createElement(React.Fragment,null,
@@ -11968,9 +12030,9 @@ function App() {
                     grouped[pid][t.name].push(t.duration);
                   });
                   var pids=Object.keys(grouped);
-                  if(!pids.length){alert('부품이 지정된 작업이 없습니다.');return;}
+                  if(!pids.length){alert(_m('부품이 지정된 작업이 없습니다.'));return;}
                   var saveSig=JSON.stringify([ratingFactor,allowanceRate,tasks.filter(function(t){return t.partId&&t.type!=='waste';}).map(function(t){return[t.id,t.partId,t.name,+t.duration.toFixed(4)];})]);
-                  if(localStorage.getItem('pie_last_tablesave_sig')===saveSig){alert('이미 저장된 분석 내용입니다.\n(같은 데이터의 중복 누적으로 표본수 n이 부풀지 않도록 차단했습니다)');return;}
+                  if(localStorage.getItem('pie_last_tablesave_sig')===saveSig){alert(_m('이미 저장된 분석 내용입니다.\n(같은 데이터의 중복 누적으로 표본수 n이 부풀지 않도록 차단했습니다)'));return;}
                   pids.forEach(function(pid){
                     if(!db[pid]) db[pid]={};
                     Object.keys(grouped[pid]).forEach(function(name){
@@ -11991,7 +12053,7 @@ function App() {
                   localStorage.setItem('pie_last_tablesave_sig',saveSig);
                   if(stBackendMode()!=='none') stBackendSync(true).catch(function(){});
 
-                  alert('저장 완료 ('+pids.length+'개 부품)');
+                  alert(_m('저장 완료 (')+pids.length+'개 부품)');
                 },
               },'💾 부품 ST 저장'),
             ),
