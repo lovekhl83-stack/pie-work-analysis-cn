@@ -3047,7 +3047,7 @@ function CycleStats(props){
   var normal=cycleData.filter(function(d){return!d.isOutlier;});
   var repMean=normal.length?normal.reduce(function(s,d){return s+d.obs;},0)/normal.length:mean;
   var repStd=repMean*(ratingFactor/100)*(1+allowanceRate/100);
-  var reqN=n>1?Math.max(1,Math.ceil(Math.pow(40*stdDev/mean,2))):1;
+  var reqN=n>1?Math.max(3,Math.ceil(Math.pow(40*stdDev/mean,2))):3; // 최소 3회 관측 요구 — n=1이 "충분"으로 판정되던 오류 방지
 
   var bestC=cycleData.find(function(d){return d.isBest;});
   var bestTasks=bestC?tasks.filter(function(t){return(t.cycle||1)===bestC.c;}):[];
