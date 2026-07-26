@@ -5324,14 +5324,15 @@ function PartsManager({parts,onPartsChange}){
   }
   function confirmSt(){
     if(!selId||Object.keys(selTaskDb).length===0) return;
-    if(!confirm('영상분석 이력 데이터를 기반으로 표준시간을 확정 저장하시겠습니까?')) return;
+    if(!confirm('영상분석 이력 데이터를 기반으로 표준시간(레이팅·여유율 적용)을 확정 저장하시겠습니까?')) return;
+    var _ra=ratingLoad(); var _adj=(_ra.r/100)*(1+_ra.a/100); // 결정 D(2026-07-26): DB에는 보정 적용된 표준시간으로 통일
     var next=Object.assign({},partSt);
     if(!next[selId]) next[selId]={};
     else next[selId]=Object.assign({},next[selId]);
     Object.entries(selTaskDb).forEach(function(e){
       var name=e[0]; var durs=e[1];
       var avg=durs.reduce(function(s,d){return s+d;},0)/durs.length;
-      next[selId][name]={st:avg,n:durs.length,updatedAt:new Date().toISOString()};
+      next[selId][name]={st:parseFloat((avg*_adj).toFixed(4)),n:durs.length,updatedAt:new Date().toISOString()};
     });
     partStSave(next);setPartSt(next);
     if(stBackendMode()!=='none') stBackendSync(true).then(function(r){if(r.ok)setPartSt(partStLoad());}).catch(function(){});
@@ -10756,7 +10757,7 @@ function App() {
     Object.keys(partGroups).forEach(function(pid){
       var entry=partGroups[pid];
       var nCycles=entry.cycles.size||1;
-      var avgSec=parseFloat((entry.total/nCycles).toFixed(4));
+      var avgSec=parseFloat(((entry.total/nCycles)*(ratingFactor/100)*(1+allowanceRate/100)).toFixed(4)); // 결정 D: 보정 적용 ST로 저장 ("부품 ST 저장" 경로와 단위 일치)
       if(!db[pid]) db[pid]={};
       var name='전체작업';
       if(db[pid][name]){
