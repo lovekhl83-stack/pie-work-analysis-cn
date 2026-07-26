@@ -1085,12 +1085,12 @@ const STRINGS = {
   },
   zh:{
     appName:'PIE',
-    tab_analysis:'📹 分석', tab_gantt:'图表',
+    tab_analysis:'📹 分析', tab_gantt:'图表', tab_lineanalysis:'📊 产线分析',
     tab_yamazumi:'⚖ 山积表', tab_yamazumi_b:'⚖ 作业分配',
     tab_sim:'🔀 模拟',      tab_sim_b:'🔀 布局实验',
-    tab_stats:'📊 统计',    tab_stats_b:'📊 分석结果',
+    tab_stats:'📊 统计',    tab_stats_b:'📊 分析结果',
     side_home:'🏠 主页',
-    side_parts:'🔧 零件管理', side_st:'⏱ ST分석',
+    side_parts:'🔧 零件管理', side_st:'⏱ ST分析',
     side_assign:'📋 作业平衡', side_line:'📈 产线预测',
     menu:'菜单', menu_new:'🆕 新建项目', menu_load:'📂 加载项目', menu_settings:'⚙️ 设置',
     new_confirm:'确定清除当前项目并新建？\n未保存的数据将丢失。',
@@ -1105,20 +1105,20 @@ const STRINGS = {
     settings_lang:'语言 / Language',
     settings_theme:'主题',
     settings_save:'保存',
-    btn_save:'💾 保存分석', btn_session:'会话', btn_file:'文件', btn_csv:'CSV',
-    btn_model:'模型管理', btn_ai:'AI分석',
+    btn_save:'💾 保存分析', btn_session:'会话', btn_file:'文件', btn_csv:'CSV',
+    btn_model:'模型管理', btn_ai:'AI分析',
     btn_compare:'🎬 对比', btn_pdf:'PDF', btn_sop:'SOP',
     btn_report:'📊 产出报告',
     btn_waste_cmp:'🔴 浪费区间对比',
     btn_cycle_cmp:'⚡ 循环速度对比',
     btn_help:'使用说明', btn_glossary:'术语表',
     ok:'确认', cancel:'取消', save:'保存', del:'删除', add:'添加',
-    placeholder_name:'输入分석名称 (例: 1线组装工序)',
+    placeholder_name:'输入分析名称 (例: 1线组装工序)',
     part_none:'未选零件',
   },
   vi:{
     appName:'PIE',
-    tab_analysis:'📹 Phân tích', tab_gantt:'Biểu đồ',
+    tab_analysis:'📹 Phân tích', tab_gantt:'Biểu đồ', tab_lineanalysis:'📊 Phân tích chuyền',
     tab_yamazumi:'⚖ Yamazumi',      tab_yamazumi_b:'⚖ Phân bổ CT',
     tab_sim:'🔀 Mô phỏng',       tab_sim_b:'🔀 Thử nghiệm',
     tab_stats:'📊 Thống kê',     tab_stats_b:'📊 Kết quả',
@@ -2386,15 +2386,16 @@ function StartupModal({onNew,onLoad}){
 
 function StepGuide(props){
   if(!props.beginnerMode) return null;
+  var zh=localStorage.getItem('wvas_lang')==='zh';
   var step,msg,color;
   if(!props.hasVideo){
-    step=1; msg='1단계: 영상 파일을 이 화면에 끌어다 놓으세요 (드래그 앤 드롭)'; color='#3b82f6';
+    step=1; msg=zh?'第1步: 将视频文件拖放到此画面 (拖拽即可)':'1단계: 영상 파일을 이 화면에 끌어다 놓으세요 (드래그 앤 드롭)'; color='#3b82f6';
   } else if(!props.hasTasks){
-    step=2; msg='2단계: 영상 재생 중 작업 시작 시 클릭, 끝날 때 다시 클릭하여 기록하세요'; color='#f59e0b';
+    step=2; msg=zh?'第2步: 播放视频时, 作业开始时点击一次, 结束时再点击一次进行记录':'2단계: 영상 재생 중 작업 시작 시 클릭, 끝날 때 다시 클릭하여 기록하세요'; color='#f59e0b';
   } else if(props.taskCount<3){
-    step=3; msg='3단계: 작업을 더 기록해보세요. 3개 이상이면 분석이 풍부해집니다 ('+props.taskCount+'개 기록됨)'; color='#22c55e';
+    step=3; msg=zh?('第3步: 请继续记录作业。记录3个以上分析会更丰富 (已记录 '+props.taskCount+'个)'):'3단계: 작업을 더 기록해보세요. 3개 이상이면 분석이 풍부해집니다 ('+props.taskCount+'개 기록됨)'; color='#22c55e';
   } else {
-    step=4; msg='4단계 완료! 상단 탭에서 차트·분석결과·작업배분 등을 눠러 결과를 확인하세요! ('+props.taskCount+'개 기록됨)'; color='#a855f7';
+    step=4; msg=zh?('第4步完成! 点击上方标签查看图表·分析结果·作业分配等结果 (已记录 '+props.taskCount+'个)'):'4단계 완료! 상단 탭에서 차트·분석결과·작업배분 등을 눌러 결과를 확인하세요! ('+props.taskCount+'개 기록됨)'; color='#a855f7';
   }
   return React.createElement('div',{
     style:{
@@ -7986,6 +7987,7 @@ function VisionAiModal(props){
       if(rafRef.current)cancelAnimationFrame(rafRef.current);
       if(idleRafRef.current)cancelAnimationFrame(idleRafRef.current);
       urlsRef.current.forEach(function(u){if(u)URL.revokeObjectURL(u);});
+      (poseRef.current||[]).forEach(function(p){try{if(p&&p.close)p.close();}catch(e){}});
     };
   },[]);
 
@@ -8020,7 +8022,7 @@ function VisionAiModal(props){
     }
     idleRafRef.current=requestAnimationFrame(drawIdle);
     return function(){if(idleRafRef.current)cancelAnimationFrame(idleRafRef.current);};
-  },[status,vidCount]);
+  },[status,vidCount,showTraj]);
 
   function renderTrajToCanvas(oc,pts,fw,fh){
     if(!pts||!pts.length) return;
@@ -8683,6 +8685,7 @@ function VisionAiModal(props){
     unitsRef.current=units;
     setStatus('loading');
     logRef.current=[];setLogItems([]);setResultSegs([]);
+    (poseRef.current||[]).forEach(function(p){try{if(p&&p.close)p.close();}catch(e){}}); // 이전 인스턴스 해제 (wasm/GL 누수 방지)
     poseRef.current=new Array(units.length).fill(null);
     rdyRef.current=new Array(units.length).fill(true);
     masterStatusRef.current=new Array(units.length).fill('none');
@@ -10392,12 +10395,12 @@ function LineAnalysisPanel({parts,taktTime,onDataChange,snapshotRef,projectToLoa
                 resultParts.map(function(p){
                   return React.createElement('tr',{key:p.id,style:{borderBottom:'1px solid rgba(30,41,59,0.5)'}},
                     React.createElement('td',{style:{color:'#cbd5e1',padding:'2px 4px',whiteSpace:'nowrap',fontWeight:600}},p.name),
-                    workers.map(function(w){var v=lineResults[w.id]&&lineResults[w.id][p.id];return React.createElement('td',{key:w.id,style:{color:v?'#4ade80':'#475569',padding:'2px 4px',textAlign:'center'}},v?fmtD(v):'-');})
+                    workers.map(function(w){var v=lineResults.matrix[p.id]&&lineResults.matrix[p.id][w.id];return React.createElement('td',{key:w.id,style:{color:v?'#4ade80':'#475569',padding:'2px 4px',textAlign:'center'}},v?fmtD(v.avg):'-');})
                   );
                 }),
                 React.createElement('tr',{style:{borderTop:'1px solid #334155'}},
                   React.createElement('td',{style:{color:'#60a5fa',padding:'2px 4px',fontWeight:700}},'합계'),
-                  workers.map(function(w){var tot=resultParts.reduce(function(s,p){return s+((lineResults[w.id]&&lineResults[w.id][p.id])||0);},0);return React.createElement('td',{key:w.id,style:{color:taktTime>0?(tot<=taktTime?'#4ade80':'#f87171'):'#60a5fa',padding:'2px 4px',textAlign:'center',fontWeight:700}},tot>0?fmtD(tot):'-');})
+                  workers.map(function(w){var tot=lineResults.workerTotals[w.id]||0;return React.createElement('td',{key:w.id,style:{color:taktTime>0?(tot<=taktTime?'#4ade80':'#f87171'):'#60a5fa',padding:'2px 4px',textAlign:'center',fontWeight:700}},tot>0?fmtD(tot):'-');})
                 )
               )
             )
@@ -10494,17 +10497,23 @@ function App() {
       if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
       if(tab!=='analysis') return;
       const v=videoRef.current; if(!v) return;
-      switch(e.key){
-        case ' ':e.preventDefault();v.paused?v.play():v.pause();break;
-        case 'ArrowRight':e.preventDefault();v.currentTime=Math.min(v.duration,v.currentTime+(e.shiftKey?5:1/fps));break;
-        case 'ArrowLeft':e.preventDefault();v.currentTime=Math.max(0,v.currentTime-(e.shiftKey?5:1/fps));break;
-        case 'i':case 'I':handleClick();break;
-        case 'o':case 'O':if(pending!==null)finishMark();break;
-        case 'Escape':clearLoop();break;
-      }
+      if(e.key===' '){e.preventDefault();v.paused?v.play():v.pause();}
+      else if(e.key==='ArrowRight'){e.preventDefault();v.currentTime=Math.min(v.duration,v.currentTime+(e.shiftKey?5:1/fps));}
+      else if(e.key==='ArrowLeft'){e.preventDefault();v.currentTime=Math.max(0,v.currentTime-(e.shiftKey?5:1/fps));}
+      else if(e.key==='i'||e.key==='I'||e.code==='KeyI'){handleClick();} // e.code: 한글·중문 IME 모드에서도 물리 키 인식
+      else if(e.key==='o'||e.key==='O'||e.code==='KeyO'){if(pending!==null)finishMark();}
+      else if(e.key==='Escape'){clearLoop();}
     }
     window.addEventListener('keydown',onKey); return()=>window.removeEventListener('keydown',onKey);
-  },[fps,pending,tasks,tab]);
+  },[fps,pending,tasks,tab,currentCycle,activeHand,activeWorker,selectedPartId]);
+  useEffect(()=>{
+    function onBeforeUnload(e){
+      const hasWork=tasks.length>0||videos.some(v=>v.tasks&&v.tasks.length>0);
+      if(hasWork){e.preventDefault();e.returnValue='';}
+    }
+    window.addEventListener('beforeunload',onBeforeUnload);
+    return()=>window.removeEventListener('beforeunload',onBeforeUnload);
+  },[tasks,videos]);
 
   function addVideos(fileList){
     const files=Array.from(fileList||[]).filter(f=>f?.type?.startsWith('video/'));
@@ -11849,6 +11858,8 @@ function App() {
                   });
                   var pids=Object.keys(grouped);
                   if(!pids.length){alert('부품이 지정된 작업이 없습니다.');return;}
+                  var saveSig=JSON.stringify([ratingFactor,allowanceRate,tasks.filter(function(t){return t.partId&&t.type!=='waste';}).map(function(t){return[t.id,t.partId,t.name,+t.duration.toFixed(4)];})]);
+                  if(localStorage.getItem('pie_last_tablesave_sig')===saveSig){alert('이미 저장된 분석 내용입니다.\n(같은 데이터의 중복 누적으로 표본수 n이 부풀지 않도록 차단했습니다)');return;}
                   pids.forEach(function(pid){
                     if(!db[pid]) db[pid]={};
                     Object.keys(grouped[pid]).forEach(function(name){
@@ -11866,6 +11877,7 @@ function App() {
                     });
                   });
                   partStSave(db);
+                  localStorage.setItem('pie_last_tablesave_sig',saveSig);
                   if(stBackendMode()!=='none') stBackendSync(true).catch(function(){});
 
                   alert('저장 완료 ('+pids.length+'개 부품)');
@@ -12048,7 +12060,8 @@ function App() {
                 React.createElement(Tip,{label:'레이팅계수:',color:'#a78bfa',text:'관측한 작업자의 속도가 정상 대비 몇%인지 나타냅니다. 보통 작업자라면 100%, 빠르면 110%, 느리면 90% 정도입니다.'}),
                 React.createElement('input',{type:'number',value:ratingFactor,min:50,max:200,
                   style:{width:'52px',background:'#1e293b',border:'1px solid #334155',borderRadius:'4px',padding:'1px 4px',color:'#a78bfa',fontSize:'12px',textAlign:'center'},
-                  onChange:function(e){var v=+e.target.value;setRatingFactor(v);ratingSave(v,allowanceRate);}
+                  onChange:function(e){var v=+e.target.value;if(!isFinite(v))return;setRatingFactor(v);if(v>=50&&v<=200)ratingSave(v,allowanceRate);},
+                  onBlur:function(e){var v=+e.target.value;if(!isFinite(v)||v<=0)v=100;v=Math.min(200,Math.max(50,Math.round(v)));setRatingFactor(v);ratingSave(v,allowanceRate);}
                 }),
                 '%'
               ),
@@ -12056,7 +12069,8 @@ function App() {
                 React.createElement(Tip,{label:'여유율:',color:'#a78bfa',text:'화장실, 피로, 예상치 못한 지연 등을 위해 더해주는 시간 비율입니다. 보통 10~20% 정도 씁니다.'}),
                 React.createElement('input',{type:'number',value:allowanceRate,min:0,max:50,
                   style:{width:'44px',background:'#1e293b',border:'1px solid #334155',borderRadius:'4px',padding:'1px 4px',color:'#a78bfa',fontSize:'12px',textAlign:'center'},
-                  onChange:function(e){var v=+e.target.value;setAllowanceRate(v);ratingSave(ratingFactor,v);}
+                  onChange:function(e){var v=+e.target.value;if(!isFinite(v))return;setAllowanceRate(v);if(v>=0&&v<=50)ratingSave(ratingFactor,v);},
+                  onBlur:function(e){var v=+e.target.value;if(!isFinite(v)||v<0)v=15;v=Math.min(50,Math.max(0,Math.round(v)));setAllowanceRate(v);ratingSave(ratingFactor,v);}
                 }),
                 '%'
               ),
@@ -12139,7 +12153,7 @@ function App() {
             React.createElement('div',{style:{fontSize:12,color:'#475569',textAlign:'center',maxWidth:320,lineHeight:1.6}},'📊 라인 분석 탭에서 각 작업자의 영상을 업로드하고 부품별 마크를 완료하면 여기서 야마즈미 차트를 확인할 수 있습니다.'),
           );
         }
-        var lyTasksA=lyTasks.map(function(t){return yamaAssignments[t.id]?Object.assign({},t,{worker:yamaAssignments[t.id]}):t;});
+        var lyTasksA=lyTasks.map(function(t){var a=yamaAssignments[t.id];return a&&lyWorkers.some(function(w){return w.id===a;})?Object.assign({},t,{worker:a}):t;});
         function lineSetTasks(updater){
           var upd=updater(lyTasksA);
           var na=Object.assign({},yamaAssignments);
@@ -12160,7 +12174,7 @@ function App() {
       // ══ SIM TAB (라인 분석 데이터 사용) ══
       (function(){
         var lyTasks2raw=lineYamaData.tasks;
-        var lyTasks2=lyTasks2raw.map(function(t){return yamaAssignments[t.id]?Object.assign({},t,{worker:yamaAssignments[t.id]}):t;});
+        var lyTasks2=lyTasks2raw.map(function(t){var a=yamaAssignments[t.id];return a&&lineYamaData.workers.some(function(w){return w.id===a;})?Object.assign({},t,{worker:a}):t;});
         var lyWorkers2=lineYamaData.workers;
         var hasLineData2=lyTasks2.length>0&&lyWorkers2.length>0;
         if(!hasLineData2&&tab==='sim'){
