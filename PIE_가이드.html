@@ -126,12 +126,13 @@ svg{display:block;width:100%;}
         <div class="step-num">1</div>
         <div class="step-icon">📦</div>
         <div class="step-title">배포 폴더 준비</div>
-        <div class="step-desc">USB 또는 폴더 안에 아래 3개 파일이 있어야 합니다</div>
+        <div class="step-desc">받은 폴더를 <strong style="color:#fca5a5;">통째로</strong> 복사합니다 (파일만 골라 복사하면 AI 기능이 동작하지 않습니다)</div>
         <div style="margin-top:12px;background:#0f172a;border-radius:8px;padding:10px;text-align:left;">
           <div style="font-size:11px;color:#64748b;line-height:2;">
             📄 <span style="color:#60a5fa;">PIE.html</span><br>
-            ⚙️ <span style="color:#fde68a;">PIE_설치.bat</span><br>
-            🗑️ <span style="color:#fca5a5;">PIE_제거.bat</span>
+            ▶️ <span style="color:#4ade80;">PIE(중국).bat</span><br>
+            📁 <span style="color:#c4b5fd;">mediapipe\</span> (AI 자산)<br>
+            ⚙️ <span style="color:#fde68a;">PIE_설치.bat</span> / 🗑️ <span style="color:#fca5a5;">PIE_제거.bat</span>
           </div>
         </div>
       </div>
@@ -186,7 +187,7 @@ svg{display:block;width:100%;}
         <div style="margin-top:14px;text-align:center;">
           <div style="display:inline-block;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:10px 14px;">
             <div style="font-size:28px;">🔵</div>
-            <div style="font-size:11px;color:#e2e8f0;margin-top:4px;">PIE 작업分석</div>
+            <div style="font-size:11px;color:#e2e8f0;margin-top:4px;">PIE 작업분석</div>
           </div>
         </div>
       </div>
@@ -215,7 +216,7 @@ svg{display:block;width:100%;}
             <!-- desktop icon -->
             <rect x="160" y="30" width="80" height="80" rx="12" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2"/>
             <text x="200" y="82" text-anchor="middle" font-size="32" fill="#60a5fa">🔵</text>
-            <text x="200" y="126" text-anchor="middle" font-size="11" fill="#e2e8f0">PIE 작업分석</text>
+            <text x="200" y="126" text-anchor="middle" font-size="11" fill="#e2e8f0">PIE 작업분석</text>
             <!-- cursor -->
             <polygon points="195,105 195,125 200,120 204,130 207,129 203,119 210,119" fill="#fff" opacity=".9"/>
             <!-- arrow -->
@@ -282,9 +283,8 @@ svg{display:block;width:100%;}
         <!-- right header -->
         <rect x="760" y="13" width="60" height="22" rx="5" fill="#1e293b" stroke="#334155"/>
         <text x="790" y="28" text-anchor="middle" font-size="10" fill="#94a3b8">⚙️ 전문가</text>
-        <rect x="828" y="13" width="62" height="22" rx="11" fill="rgba(34,197,94,0.08)" stroke="rgba(74,222,128,0.4)"/>
-        <circle cx="840" cy="24" r="4" fill="#4ade80"/>
-        <text x="872" y="28" text-anchor="middle" font-size="10" fill="#4ade80">온라인</text>
+        <rect x="828" y="13" width="62" height="22" rx="11" fill="rgba(59,130,246,0.10)" stroke="rgba(147,197,253,0.4)"/>
+        <text x="859" y="28" text-anchor="middle" font-size="10" fill="#93c5fd">🇰🇷 / 🇨🇳</text>
         <!-- left sidebar -->
         <rect x="0" y="48" width="56" height="452" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
         <text x="28" y="90" text-anchor="middle" font-size="18">📹</text>
@@ -368,7 +368,7 @@ svg{display:block;width:100%;}
     </div>
 
     <div class="callouts">
-      <div class="callout"><div class="callout-num" style="background:#3b82f6;">①</div><div class="callout-text"><strong>상단 메뉴바</strong>메뉴 버튼 · 분석명 입력 · 부품 선택 · 온라인/오프라인 상태</div></div>
+      <div class="callout"><div class="callout-num" style="background:#3b82f6;">①</div><div class="callout-text"><strong>상단 메뉴바</strong>메뉴 버튼 · 분석명 입력 · 부품 선택 · 언어 전환(한국어/中文)</div></div>
       <div class="callout"><div class="callout-num" style="background:#a78bfa;">②</div><div class="callout-text"><strong>좌측 탭 메뉴</strong>분석 · 간트차트 · 야마즈미 · 시뮬레이션 · 통계 · 부품관리 · ST분석</div></div>
       <div class="callout"><div class="callout-num" style="background:#22c55e;">③</div><div class="callout-text"><strong>영상 재생 영역</strong>드래그하여 영상 불러오기. 클릭으로 작업 구간을 마킹합니다</div></div>
       <div class="callout"><div class="callout-num" style="background:#f59e0b;">④</div><div class="callout-text"><strong>작업 목록 패널</strong>마킹된 작업 요소 목록 · 시간 · 편집 · 삭제</div></div>
@@ -521,38 +521,41 @@ svg{display:block;width:100%;}
     </div>
   </div>
 
-  <!-- S7: 온라인/오프라인 -->
+  <!-- S7: 오프라인 동작 & 데이터 공유 -->
   <div class="section">
     <div class="section-header">
       <div class="sec-num">7</div>
-      <div><div class="sec-title">온라인 / 오프라인 기능</div><div class="sec-sub">인터넷 없이도 대부분의 기능을 사용할 수 있습니다</div></div>
+      <div><div class="sec-title">오프라인 동작 & 데이터 공유</div><div class="sec-sub">이 버전은 인터넷 없이 100% 동작합니다</div></div>
     </div>
     <div class="status-row">
       <div class="status-box offline">
         <div class="status-dot off"></div>
-        <div class="status-label off">📴 오프라인</div>
+        <div class="status-label off">📴 인터넷 없이 사용</div>
         <ul class="status-list">
           <li>영상 분석 · 작업 마킹</li>
           <li>간트 · 야마즈미 · 시뮬</li>
           <li>통계 · ST · 레이팅</li>
           <li>PDF · Excel · CSV 내보내기</li>
           <li>부품관리 · 작업편성</li>
-          <li class="na">Google Sheets 동기화</li>
-          <li class="na">AI 비전 분석 (서버 필요)</li>
+          <li>AI 비전 분석 (Pose) — 프로그램에 포함</li>
         </ul>
       </div>
       <div class="status-box online">
         <div class="status-dot on"></div>
-        <div class="status-label on">🌐 온라인</div>
+        <div class="status-label on">🔗 여러 PC에서 ST 공유 (선택)</div>
         <ul class="status-list">
-          <li>모든 오프라인 기능 포함</li>
-          <li>Google Sheets 자동 저장</li>
-          <li>AI 비전 분석 (서버 연결 시)</li>
+          <li>사내 LAN만 사용 — 인터넷 불필요</li>
+          <li>공유 폴더 방식 또는 서버 방식</li>
+          <li>부품 표준시간(ST)이 자동 합쳐짐</li>
         </ul>
         <div style="margin-top:12px;background:#0f172a;border-radius:6px;padding:8px;font-size:11px;color:#4ade80;">
-          💡 오른쪽 상단의 <strong>● 온라인</strong> 뱃지로 상태를 실시간 확인
+          💡 서버 방식: 한 PC에서 <strong>PIE_ST_server_시작.bat</strong> 실행 → 다른 PC는 설정 &gt; ST 누적 저장소에 그 PC 주소 입력
         </div>
       </div>
+    </div>
+    <div class="note">
+      <div class="note-icon">💡</div>
+      <div>이 버전은 <strong>구글 시트 연동이 없습니다.</strong> 모든 데이터는 사내 PC와 공유 폴더에만 저장됩니다.</div>
     </div>
   </div>
 
@@ -594,12 +597,13 @@ svg{display:block;width:100%;}
         <div class="step-num">1</div>
         <div class="step-icon">📦</div>
         <div class="step-title">准备安装包</div>
-        <div class="step-desc">USB或文件夹中需包含以下3个文件</div>
+        <div class="step-desc">请<strong style="color:#fca5a5;">整个文件夹一起复制</strong>（只挑选部分文件会导致 AI 功能无法使用）</div>
         <div style="margin-top:12px;background:#0f172a;border-radius:8px;padding:10px;text-align:left;">
           <div style="font-size:11px;color:#64748b;line-height:2;">
             📄 <span style="color:#60a5fa;">PIE.html</span><br>
-            ⚙️ <span style="color:#fde68a;">PIE_설치.bat</span><br>
-            🗑️ <span style="color:#fca5a5;">PIE_제거.bat</span>
+            ▶️ <span style="color:#4ade80;">PIE(중국).bat</span> (启动)<br>
+            📁 <span style="color:#c4b5fd;">mediapipe\</span> (AI 资源)<br>
+            ⚙️ <span style="color:#fde68a;">PIE_설치.bat</span> (安装) / 🗑️ <span style="color:#fca5a5;">PIE_제거.bat</span> (卸载)
           </div>
         </div>
       </div>
@@ -667,7 +671,7 @@ svg{display:block;width:100%;}
   <div class="section">
     <div class="section-header"><div class="sec-num">3</div><div><div class="sec-title">主界面说明</div><div class="sec-sub">了解各区域的功能</div></div></div>
     <div class="callouts">
-      <div class="callout"><div class="callout-num" style="background:#3b82f6;">①</div><div class="callout-text"><strong>顶部菜单栏</strong>菜单按钮 · 分析名称 · 零件选择 · 在线/离线状态</div></div>
+      <div class="callout"><div class="callout-num" style="background:#3b82f6;">①</div><div class="callout-text"><strong>顶部菜单栏</strong>菜单按钮 · 分析名称 · 零件选择 · 语言切换(한국어/中文)</div></div>
       <div class="callout"><div class="callout-num" style="background:#a78bfa;">②</div><div class="callout-text"><strong>左侧标签菜单</strong>分析·甘特图·山积表·模拟·统计·零件管理·ST分析</div></div>
       <div class="callout"><div class="callout-num" style="background:#22c55e;">③</div><div class="callout-text"><strong>视频播放区域</strong>拖放视频文件加载。点击标记工序区间</div></div>
       <div class="callout"><div class="callout-num" style="background:#f59e0b;">④</div><div class="callout-text"><strong>工序列表面板</strong>已标记工序列表 · 时间 · 编辑 · 删除</div></div>
@@ -699,29 +703,70 @@ svg{display:block;width:100%;}
   </div>
 
   <div class="section">
-    <div class="section-header"><div class="sec-num">6</div><div><div class="sec-title">在线 / 离线功能</div><div class="sec-sub">无网络也可使用大部分功能</div></div></div>
+    <div class="section-header"><div class="sec-num">6</div><div><div class="sec-title">导出</div><div class="sec-sub">在 ☰ 菜单按钮中可找到导出功能</div></div></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;">
+      <div class="feat-card">
+        <div class="feat-icon">📄</div>
+        <div class="feat-title">SOP (作业标准书)</div>
+        <div class="feat-desc">自动截取最佳循环的画面，生成 PDF 与 Excel</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📊</div>
+        <div class="feat-title">产出报告</div>
+        <div class="feat-desc">T/T · 总 ST · 最少人数 · 平衡率汇总画面</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📥</div>
+        <div class="feat-title">PDF · CSV</div>
+        <div class="feat-desc">当前画面存为 PDF，作业清单存为 CSV(Excel 可打开)</div>
+      </div>
+    </div>
+    <div class="note"><div class="note-icon">💡</div><div>导出的文件保存在浏览器的<strong>下载文件夹</strong>中。</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><div class="sec-num">7</div><div><div class="sec-title">离线运行 & 数据共享</div><div class="sec-sub">此版本无需网络即可 100% 运行</div></div></div>
     <div class="status-row">
       <div class="status-box offline">
         <div class="status-dot off"></div>
-        <div class="status-label off">📴 离线</div>
+        <div class="status-label off">📴 无需网络即可使用</div>
         <ul class="status-list">
           <li>视频分析 · 工序标记</li>
           <li>甘特图 · 山积表 · 模拟</li>
           <li>统计 · ST · 评定</li>
           <li>PDF · Excel · CSV 导出</li>
           <li>零件管理 · 工序编制</li>
-          <li class="na">Google Sheets 同步</li>
-          <li class="na">AI视觉分析（需服务器）</li>
+          <li>AI 视觉分析 (Pose) — 已内置于程序中</li>
         </ul>
       </div>
       <div class="status-box online">
         <div class="status-dot on"></div>
-        <div class="status-label on">🌐 在线</div>
+        <div class="status-label on">🔗 多台电脑共享 ST (可选)</div>
         <ul class="status-list">
-          <li>包含所有离线功能</li>
-          <li>Google Sheets 自动保存</li>
-          <li>AI视觉分析（连接服务器时）</li>
+          <li>仅使用公司内部局域网 — 无需互联网</li>
+          <li>共享文件夹方式 或 服务器方式</li>
+          <li>零件标准时间(ST)自动合并</li>
         </ul>
+        <div style="margin-top:12px;background:#0f172a;border-radius:6px;padding:8px;font-size:11px;color:#4ade80;">
+          💡 服务器方式：在一台电脑上运行 <strong>PIE_ST_server_시작.bat</strong> → 其他电脑在 设置 &gt; ST 累计存储 中输入该电脑地址
+        </div>
+      </div>
+    </div>
+    <div class="note"><div class="note-icon">💡</div><div>此版本<strong>不含 Google 表格联动</strong>。所有数据仅保存在公司内部电脑与共享文件夹中。</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><div class="sec-num">8</div><div><div class="sec-title">卸载程序</div><div class="sec-sub">有两种卸载方法</div></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="feat-card">
+        <div class="feat-icon">🗑️</div>
+        <div class="feat-title">方法 1 — 运行卸载文件</div>
+        <div class="feat-desc">双击安装文件夹中的<br><strong style="color:#fca5a5;">PIE_제거.bat</strong></div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">⚙️</div>
+        <div class="feat-title">方法 2 — Windows 设置</div>
+        <div class="feat-desc">设置 → 应用 → 搜索 <strong style="color:#fca5a5;">PIE - Powernet</strong> → 卸载</div>
       </div>
     </div>
   </div>
@@ -748,8 +793,9 @@ svg{display:block;width:100%;}
         <div style="margin-top:12px;background:#0f172a;border-radius:8px;padding:10px;text-align:left;">
           <div style="font-size:11px;color:#64748b;line-height:2;">
             📄 <span style="color:#60a5fa;">PIE.html</span><br>
-            ⚙️ <span style="color:#fde68a;">PIE_설치.bat</span><br>
-            🗑️ <span style="color:#fca5a5;">PIE_제거.bat</span>
+            ▶️ <span style="color:#4ade80;">PIE(중국).bat</span> (khởi động)<br>
+            📁 <span style="color:#c4b5fd;">mediapipe\</span> (tài nguyên AI)<br>
+            ⚙️ <span style="color:#fde68a;">PIE_설치.bat</span> / 🗑️ <span style="color:#fca5a5;">PIE_제거.bat</span>
           </div>
         </div>
       </div>
@@ -834,29 +880,48 @@ svg{display:block;width:100%;}
   </div>
 
   <div class="section">
-    <div class="section-header"><div class="sec-num">7</div><div><div class="sec-title">Tính năng Online / Offline</div><div class="sec-sub">Hầu hết các tính năng có thể dùng không cần internet</div></div></div>
+    <div class="section-header"><div class="sec-num">7</div><div><div class="sec-title">Hoạt động Offline & Chia sẻ dữ liệu</div><div class="sec-sub">Phiên bản này hoạt động 100% không cần internet</div></div></div>
     <div class="status-row">
       <div class="status-box offline">
         <div class="status-dot off"></div>
-        <div class="status-label off">📴 Offline</div>
+        <div class="status-label off">📴 Dùng không cần internet</div>
         <ul class="status-list">
           <li>Phân tích video · Đánh dấu CT</li>
           <li>Gantt · Yamazumi · Mô phỏng</li>
           <li>Thống kê · ST · Đánh giá</li>
           <li>Xuất PDF · Excel · CSV</li>
           <li>Quản lý LP · Cân bằng chuyền</li>
-          <li class="na">Đồng bộ Google Sheets</li>
-          <li class="na">Phân tích AI (cần server)</li>
+          <li>Phân tích AI (Pose) — đã tích hợp sẵn</li>
         </ul>
       </div>
       <div class="status-box online">
         <div class="status-dot on"></div>
-        <div class="status-label on">🌐 Online</div>
+        <div class="status-label on">🔗 Chia sẻ ST giữa nhiều máy (tùy chọn)</div>
         <ul class="status-list">
-          <li>Bao gồm tất cả tính năng offline</li>
-          <li>Tự động lưu Google Sheets</li>
-          <li>Phân tích AI (khi kết nối server)</li>
+          <li>Chỉ dùng mạng LAN nội bộ — không cần internet</li>
+          <li>Kiểu thư mục chia sẻ hoặc kiểu máy chủ</li>
+          <li>Thời gian chuẩn (ST) của linh kiện tự động gộp</li>
         </ul>
+        <div style="margin-top:12px;background:#0f172a;border-radius:6px;padding:8px;font-size:11px;color:#4ade80;">
+          💡 Kiểu máy chủ: chạy <strong>PIE_ST_server_시작.bat</strong> trên một máy → các máy khác nhập địa chỉ máy đó vào Cài đặt &gt; Kho ST
+        </div>
+      </div>
+    </div>
+    <div class="note"><div class="note-icon">💡</div><div>Phiên bản này <strong>không có liên kết Google Sheets</strong>. Mọi dữ liệu chỉ lưu trên máy nội bộ và thư mục chia sẻ.</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><div class="sec-num">8</div><div><div class="sec-title">Gỡ cài đặt</div><div class="sec-sub">Có hai cách để gỡ cài đặt</div></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="feat-card">
+        <div class="feat-icon">🗑️</div>
+        <div class="feat-title">Cách 1 — Chạy tệp gỡ cài đặt</div>
+        <div class="feat-desc">Nhấp đúp vào <strong style="color:#fca5a5;">PIE_제거.bat</strong> trong thư mục cài đặt</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">⚙️</div>
+        <div class="feat-title">Cách 2 — Cài đặt Windows</div>
+        <div class="feat-desc">Settings → Apps → tìm <strong style="color:#fca5a5;">PIE - Powernet</strong> → Uninstall</div>
       </div>
     </div>
   </div>
