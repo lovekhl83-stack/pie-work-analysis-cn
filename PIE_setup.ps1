@@ -182,10 +182,16 @@ $btnInstall.Add_Click({
         if (-not (Test-Path $InstallPath)) { New-Item -ItemType Directory -Path $InstallPath -Force | Out-Null }
         $progress.Value = 20
 
-        # 2. 파일 복사
-        $lblStatus.Text = "[2/5] PIE.html 복사 중..."
+        # 2. 파일 복사 — 프로그램 전체 (mediapipe 자산·로컬 서버 포함, Pose 기능에 필수)
+        $lblStatus.Text = "[2/5] 프로그램 파일 복사 중..."
         $form.Refresh()
-        Copy-Item (Join-Path $SrcDir 'PIE.html') (Join-Path $InstallPath 'PIE.html') -Force
+        $CopyItems = @('PIE.html','PIE(중국).bat','PIE_local_server.ps1','PIE_ST_server.ps1','PIE_ST_server_시작.bat','README.md','PIE_가이드.html')
+        foreach ($ci in $CopyItems) {
+            $srcF = Join-Path $SrcDir $ci
+            if (Test-Path $srcF) { Copy-Item $srcF (Join-Path $InstallPath $ci) -Force }
+        }
+        $mpSrc = Join-Path $SrcDir 'mediapipe'
+        if (Test-Path $mpSrc) { Copy-Item $mpSrc $InstallPath -Recurse -Force -Container }
         $progress.Value = 40
 
         # 3. 제거 프로그램 복사
@@ -208,7 +214,8 @@ $btnInstall.Add_Click({
             $ws = New-Object -ComObject WScript.Shell
             $lnkPath = Join-Path ([Environment]::GetFolderPath('Desktop')) 'PIE 작업분석.lnk'
             $lnk = $ws.CreateShortcut($lnkPath)
-            $lnk.TargetPath = Join-Path $InstallPath 'PIE.html'
+            $lnk.TargetPath = Join-Path $InstallPath 'PIE(중국).bat'   # bat 경유 실행 — 로컬 서버로 열어야 Pose 기능 동작
+            $lnk.WorkingDirectory = $InstallPath
             $lnk.Description = 'PIE - Powernet Industrial Engineering'
             $lnk.Save()
         }
@@ -222,7 +229,8 @@ $btnInstall.Add_Click({
             if (-not (Test-Path $smDir)) { New-Item -ItemType Directory -Path $smDir -Force | Out-Null }
             $ws2 = New-Object -ComObject WScript.Shell
             $lnk2 = $ws2.CreateShortcut("$smDir\PIE 작업분석.lnk")
-            $lnk2.TargetPath = Join-Path $InstallPath 'PIE.html'
+            $lnk2.TargetPath = Join-Path $InstallPath 'PIE(중국).bat'
+            $lnk2.WorkingDirectory = $InstallPath
             $lnk2.Save()
             # 제거 바로가기
             $uninstLnk = $ws2.CreateShortcut("$smDir\PIE 제거.lnk")
@@ -250,7 +258,7 @@ $btnInstall.Add_Click({
             "PIE 설치가 완료되었습니다. / Installation complete! / Cài đặt hoàn tất!`n`n설치 위치 / Install path: $InstallPath`n`n지금 PIE를 실행하시겠습니까? / Launch PIE now?",
             "설치 완료 / Install Complete", "YesNo", "Information")
         if ($result -eq "Yes") {
-            Start-Process (Join-Path $InstallPath 'PIE.html')
+            Start-Process (Join-Path $InstallPath 'PIE(중국).bat') -WorkingDirectory $InstallPath
         }
         $form.Close()
     }
