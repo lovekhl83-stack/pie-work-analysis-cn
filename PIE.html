@@ -2416,7 +2416,9 @@ function LeftSidebar({tab,setTab,lang,beginnerMode,onCompare,onVision}){
   var TOOL_ITEMS=[
     {key:'parts',  icon:'🔧', label:s.side_parts||'부품관리'},
     // 'ST분석' 메뉴 통합(2026-07-26): 내용이 부품관리 > 영상분석이력 탭과 완전히 중복(그쪽이 CV%까지 더 제공)이라 메뉴 제거
-    {key:'assign', icon:'📋', label:s.side_assign||'작업편성'},
+    // '작업편성' 메뉴 숨김(2026-07-27, 사용자 결정) — 역할이 작업배분/배치실험과 중복이고,
+    // 모델관리에 공정을 따로 저장해야만 동작해 실제 운영 흐름(라인분석→작업배분)과 데이터 경로가 다름.
+    // WorkAssignmentTab 코드는 보존 — 필요해지면 이 줄만 되살리면 복구됨.
     {key:'line',   icon:'📈', label:s.side_line||'라인예측'},
     {key:'__vision', icon:'🤖', label:'AI 비전 분석 (무료)', action:onVision},
     {key:'__visionResult', icon:'📊', label:'AI 분석결과'},
@@ -4957,7 +4959,7 @@ function WorkAssignmentTab(props){
             );
           }),
           React.createElement('div',{style:{display:'flex',gap:12,marginTop:10,paddingTop:10,borderTop:'1px solid #1e293b',flexWrap:'wrap'}},
-            [['value-added','#22c55e','\u2705 정미작업'],['auxiliary','#f59e0b','🔧 부수작업'],['waste','#ef4444','\u274c 낙비']].map(function(item){
+            [['value-added','#22c55e','\u2705 정미작업'],['auxiliary','#f59e0b','🔧 부수작업'],['waste','#ef4444','\u274c 낭비']].map(function(item){
               var count=groups.filter(function(g){return g.type===item[0];}).length;
               return React.createElement('div',{key:item[0],style:{display:'flex',alignItems:'center',gap:4,fontSize:10,color:'#64748b'}},
                 React.createElement('div',{style:{width:8,height:8,borderRadius:2,background:item[1]}}),
@@ -6587,7 +6589,7 @@ function AiAnalysisModal(props){
           [
             {label:'구간 합계',val:result.tasks.length,c:'#60a5fa'},
             {label:'작업',val:result.tasks.filter(function(t){return t.type!=='waste';}).length,c:'#4ade80'},
-            {label:'대기(낙비)',val:result.tasks.filter(function(t){return t.type==='waste';}).length,c:'#f87171'},
+            {label:'대기(낭비)',val:result.tasks.filter(function(t){return t.type==='waste';}).length,c:'#f87171'},
           ].map(function(k){
             return React.createElement('div',{key:k.label,style:{background:'#0f172a',borderRadius:6,padding:'4px 10px',textAlign:'center'}},
               React.createElement('div',{style:{fontSize:16,fontWeight:700,color:k.c}},k.val),
