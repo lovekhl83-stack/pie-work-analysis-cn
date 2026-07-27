@@ -11711,6 +11711,7 @@ function App() {
     setTasks([]);setPending(null);setActiveTask(null);setAnalysisName('');
     setCurrentCycle(1);setSelectedPartId(null);
     setLineProjectToLoad({_clear:true});
+    setYamaAssignments({});setYamaExtraWorkers([]); // 작업배분 검토 상태도 초기화
     setTab('analysis');
   }
   async function saveUnifiedProject(){
@@ -11753,7 +11754,10 @@ function App() {
         analysis:{analysisName:analysisName,videoName:videoName,fps:fps,tasks:tasks,
           videos:videosMeta,activeVideoId:activeVideoId,selectedPartId:selectedPartId,taktTime:taktTime},
         lineanalysis:{modelName:lineSnap.modelName||'',workers:lineSnap.workers||[],
-          workerTasks:lineSnap.workerTasks||{},workerVideoFileNames:lineVFN,workerVideoDisplayNames:lineVDN}};
+          workerTasks:lineSnap.workerTasks||{},workerVideoFileNames:lineVFN,workerVideoDisplayNames:lineVDN},
+        // 작업배분(야마즈미) 검토 상태 — 부품 재배분·추가 작업자·보정값까지 저장해야 이어서 작업 가능 (2026-07-27)
+        balance:{assignments:yamaAssignments,extraWorkers:yamaExtraWorkers,
+          ratingFactor:ratingFactor,allowanceRate:allowanceRate}};
       var jfh=await dh.getFileHandle('project.json',{create:true});
       var jwr=await jfh.createWritable();
       await jwr.write(JSON.stringify(pdata,null,2));await jwr.close();
@@ -11799,6 +11803,12 @@ function App() {
       }
       setLineProjectToLoad({workers:ln.workers||[],workerTasks:ln.workerTasks||{},
         modelName:ln.modelName||pdata.modelName||'',workerVideos:newWV});
+      // 작업배분 검토 상태 복원 (구버전 파일에는 balance가 없으므로 초기화)
+      var bal=pdata.balance||{};
+      setYamaAssignments(bal.assignments||{});
+      setYamaExtraWorkers(bal.extraWorkers||[]);
+      if(typeof bal.ratingFactor==='number'&&isFinite(bal.ratingFactor)) setRatingFactor(bal.ratingFactor);
+      if(typeof bal.allowanceRate==='number'&&isFinite(bal.allowanceRate)) setAllowanceRate(bal.allowanceRate);
       var tot2=(an.videos||[]).filter(function(v){return v.savedFile;}).length+Object.keys(newWV).length;
       alert(_m('프로젝트 불러오기 완료!')+(tot2>0?'\n영상 '+tot2+'개 복원':''));
       return true;
