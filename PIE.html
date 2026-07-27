@@ -2301,7 +2301,7 @@ function LeftSidebar({tab,setTab,lang,beginnerMode,onCompare,onVision}){
   ];
   var TOOL_ITEMS=[
     {key:'parts',  icon:'🔧', label:s.side_parts||'부품관리'},
-    {key:'st',     icon:'⏱', label:s.side_st||'ST분석'},
+    // 'ST분석' 메뉴 통합(2026-07-26): 내용이 부품관리 > 영상분석이력 탭과 완전히 중복(그쪽이 CV%까지 더 제공)이라 메뉴 제거
     {key:'assign', icon:'📋', label:s.side_assign||'작업편성'},
     {key:'line',   icon:'📈', label:s.side_line||'라인예측'},
     {key:'__vision', icon:'🤖', label:'AI 비전 분석 (무료)', action:onVision},
@@ -4987,6 +4987,7 @@ function RebalanceWorkspace(props){
   );
 }
 
+// [미사용] 2026-07-26 부품관리 > 영상분석이력 탭으로 통합됨 (내용 중복). 호출부 없음 — 참고용 보존
 function STAnalysis({parts}){
   const [selPartId,setSelPartId]=useState('');
   const allSessions=useMemo(()=>lsList().map(m=>lsGet(m.id)).filter(Boolean),[]);
@@ -5667,8 +5668,9 @@ React.createElement('button',{className:'btn btn-green',style:{fontSize:12},
                     React.createElement('div',{style:{fontSize:22,fontWeight:900,color:'#a78bfa'}},Object.keys(selTaskDb).length+'종'),
                   ),
                   React.createElement('div',{className:'stat-card',style:{minWidth:120}},
-                    React.createElement('div',{style:{fontSize:11,color:'#94a3b8',marginBottom:2}},'총 평균 ST'),
+                    React.createElement('div',{style:{fontSize:11,color:'#94a3b8',marginBottom:2}},'총 평균 측정시간'),
                     React.createElement('div',{style:{fontSize:22,fontWeight:900,color:'#22c55e'}},fmtS(Object.values(selTaskDb).reduce(function(s,d){return s+d.reduce(function(a,v){return a+v;},0)/d.length;},0))),
+                    React.createElement('div',{style:{fontSize:9,color:'#64748b',marginTop:2}},'보정 전'),
                   ),
                 ),
                 selSessions.length>0&&React.createElement('div',{style:{marginBottom:14}},
@@ -5693,10 +5695,11 @@ React.createElement('button',{className:'btn btn-green',style:{fontSize:12},
                   )
                   :React.createElement('div',null,
                     React.createElement('div',{style:{fontSize:11,fontWeight:700,color:'#94a3b8',marginBottom:6}},'작업별 측정 시간 집계'),
+                    React.createElement('div',{style:{fontSize:10,color:'#64748b',marginBottom:6}},'※ 아래는 영상에서 잰 실측 시간입니다 (레이팅·여유율 적용 전). 표준시간은 아래 버튼으로 확정하면 「표준시간 DB」 탭에 저장됩니다.'),
                     React.createElement('table',{className:'w-full cy-matrix text-xs',style:{marginBottom:14}},
                       React.createElement('thead',null,
                         React.createElement('tr',null,
-                          ['작업명','횟수','최솟값','평균 ST','최댓값','표준편차','CV%'].map(function(h){return React.createElement('th',{key:h},h);})
+                          ['작업명','횟수','최솟값','평균 측정시간','최댓값','표준편차','CV%'].map(function(h){return React.createElement('th',{key:h},h);})
                         )
                       ),
                       React.createElement('tbody',null,
@@ -5715,7 +5718,7 @@ React.createElement('button',{className:'btn btn-green',style:{fontSize:12},
                           );
                         }),
                         React.createElement('tr',{className:'total-row'},
-                          React.createElement('td',{className:'name-cell',colSpan:3},'합계 (평균 ST 합산)'),
+                          React.createElement('td',{className:'name-cell',colSpan:3},'합계 (평균 측정시간 합산)'),
                           React.createElement('td',{className:'stat-avg'},fmtS(Object.values(selTaskDb).reduce(function(s,d){return s+d.reduce(function(a,v){return a+v;},0)/d.length;},0))),
                           React.createElement('td',null,''),React.createElement('td',null,''),React.createElement('td',null,''),
                         ),
@@ -5723,6 +5726,7 @@ React.createElement('button',{className:'btn btn-green',style:{fontSize:12},
                     ),
                     React.createElement('div',{style:{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}},
                       React.createElement('button',{className:'btn btn-green',style:{fontSize:12},onClick:confirmSt},'⏱ 이 데이터로 표준시간 확정 저장'),
+                      React.createElement('span',{style:{fontSize:10,color:'#64748b'}},'측정시간 × 레이팅 × (1+여유율) = 표준시간으로 저장'),
                       React.createElement('button',{
                         style:{fontSize:12,padding:'4px 12px',background:'#450a0a',color:'#fca5a5',border:'1px solid #7f1d1d',borderRadius:6,cursor:'pointer'},
                         onClick:function(){
@@ -12294,7 +12298,7 @@ function App() {
       tab==='parts'&&React.createElement(PartsManager,{parts:parts,onPartsChange:function(p){partsSave(p);setParts(p);}}),
 
       // ST ANALYSIS TAB
-      tab==='st'&&React.createElement(STAnalysis,{parts:parts}),
+      tab==='st'&&React.createElement(PartsManager,{parts:parts,onPartsChange:setParts}), // 구 ST분석 → 부품관리로 통합
 
       // LINE PREDICT TAB
       tab==='assign'&&React.createElement(WorkAssignmentTab,{tasks:tasks,workers:workers,taktTime:taktTime}),
