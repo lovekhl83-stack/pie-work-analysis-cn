@@ -1172,6 +1172,16 @@ var MSG_ZH={
   '여기로 끌기':'拖到此处',
   '삭제':'删除',
   '📥 편성안 내보내기':'📥 导出编成方案',
+  '🎬 배치 시뮬레이션':'🎬 布局模拟',
+  '사이클타임':'节拍周期',
+  '시간당 생산':'每小时产量',
+  '개':'个',
+  '밸런스율':'平衡率',
+  '총 유휴':'总空闲',
+  '택트 초과 — 목표 생산량 미달':'超出节拍 — 无法达成目标产量',
+  '라인 속도 결정':'决定生产线速度',
+  '유휴':'空闲',
+  '유휴 없음':'无空闲',
   '현재 편성안을 Excel로 저장합니다':'将当前编成方案保存为 Excel',
   '내보낼 편성 데이터가 없습니다.':'没有可导出的编成数据。',
   '클릭하여 이름 변경':'点击修改名称',
@@ -4608,6 +4618,24 @@ function WorkerSim({tasks,setTasks,workers,taktTime,simTasks,simWorkers,yamaAppl
     return Math.max.apply(null,data.map(function(d){return d.total;}).concat([taktTime||1,0.01]));
   },[data,taktTime]);
 
+  // 병목 점검 지표 — 이 배분으로 라인을 돌렸을 때의 결론 (2026-07-27)
+  var lineStats=useMemo(function(){
+    if(!data.length) return null;
+    var totals=data.map(function(d){return d.total;});
+    var ct=Math.max.apply(null,totals);            // 사이클타임 = 가장 오래 걸리는 작업자
+    var sum=totals.reduce(function(a,b){return a+b;},0);
+    var bn=data.find(function(d){return d.total>=ct;});
+    return {
+      ct:ct,
+      bottleneckId:bn?bn.w.id:null,
+      bottleneckName:bn?(bn.w.label||bn.w.name):'-',
+      perHour:ct>0?Math.floor(3600/ct):0,          // 시간당 생산량(개)
+      balance:ct>0&&data.length?Math.round(sum/(ct*data.length)*100):0,
+      idleTotal:data.reduce(function(s,d){return s+(ct-d.total);},0), // 라인 전체 유휴
+      overTakt:taktTime>0&&ct>taktTime
+    };
+  },[data,taktTime]);
+
   var _pl=useState(false);var playing=_pl[0],setPlaying=_pl[1];
   var _st=useState(0);var simTime=_st[0],setSimTime=_st[1];
   var _sp=useState(4);var simSpeed=_sp[0],setSimSpeed=_sp[1];
@@ -4643,7 +4671,7 @@ function WorkerSim({tasks,setTasks,workers,taktTime,simTasks,simWorkers,yamaAppl
   return React.createElement('div',{style:{display:'flex',flexDirection:'column',flex:1,overflow:'hidden',background:'#030712'}},
     React.createElement('div',{style:{flexShrink:0,background:'#0f172a',borderBottom:'1px solid #1e293b'}},
       React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8,padding:'8px 16px',flexWrap:'wrap'}},
-        React.createElement('span',{style:{color:'#fff',fontWeight:700,fontSize:14}},'🎬 배치 시뮤레이션'),
+        React.createElement('span',{style:{color:'#fff',fontWeight:700,fontSize:14}},_m('🎬 배치 시뮬레이션')),
         isMulti&&React.createElement('span',{style:{fontSize:10,background:'#1e3a5f',color:'#93c5fd',borderRadius:4,padding:'1px 6px',fontWeight:700}},'멀티 영상'),
         yamaApplied&&React.createElement('span',{style:{fontSize:11,background:'rgba(34,197,94,0.12)',color:'#4ade80',borderRadius:4,padding:'2px 8px',fontWeight:700,border:'1px solid rgba(34,197,94,0.25)'}},'✅ 작업배분 반영'),
         selTask&&React.createElement('span',{style:{fontSize:11,color:'#fbbf24',fontWeight:600}},'\u270e "'+selTask.name+'" \u2014 \uc774\ub3d9\ud560 \uc791\uc5c5\uc790 \uc120\ud0dd'),
@@ -4670,11 +4698,29 @@ function WorkerSim({tasks,setTasks,workers,taktTime,simTasks,simWorkers,yamaAppl
         React.createElement('div',{style:{width:cycPct+'%',height:'100%',background:playing?'#3b82f6':'#475569'}}),
         ttPct&&React.createElement('div',{style:{position:'absolute',top:0,left:ttPct+'%',width:2,height:'100%',background:'#f59e0b'},title:'\ud0dd\ud2b8\ud0c0\uc784'}),
       ),
+      // \u2500\u2500 \ubcd1\ubaa9 \uc810\uac80 \uc694\uc57d \u2014 \uc774 \ubc30\ubd84\uc73c\ub85c \ub77c\uc778\uc744 \ub3cc\ub838\uc744 \ub54c\uc758 \uacb0\ub860 \u2500\u2500
+      lineStats&&React.createElement('div',{style:{display:'flex',alignItems:'center',gap:14,padding:'7px 16px',background:'#0a1020',borderTop:'1px solid #1e293b',flexWrap:'wrap',fontSize:11}},
+        React.createElement('span',{style:{fontWeight:700,color:'#fca5a5',background:'rgba(127,29,29,0.35)',border:'1px solid rgba(239,68,68,0.4)',borderRadius:4,padding:'2px 9px'}},
+          '\ud83d\udd34 '+_m('\ubcd1\ubaa9')+': '+lineStats.bottleneckName+' ('+fmtS(lineStats.ct)+')'),
+        React.createElement('span',{style:{color:'#94a3b8'}},
+          _m('\uc0ac\uc774\ud074\ud0c0\uc784'),' ',React.createElement('strong',{style:{color:lineStats.overTakt?'#f87171':'#7dd3fc',fontFamily:'monospace'}},fmtS(lineStats.ct)),
+          taktTime>0?React.createElement('span',{style:{color:'#475569'}},' / TT '+fmtS(taktTime)):null),
+        React.createElement('span',{style:{color:'#94a3b8'}},
+          _m('\uc2dc\uac04\ub2f9 \uc0dd\uc0b0'),' ',React.createElement('strong',{style:{color:'#4ade80',fontFamily:'monospace'}},lineStats.perHour+_m('\uac1c'))),
+        React.createElement('span',{style:{color:'#94a3b8'}},
+          _m('\ubc38\ub7f0\uc2a4\uc728'),' ',React.createElement('strong',{style:{color:lineStats.balance>=85?'#4ade80':lineStats.balance>=70?'#fbbf24':'#f87171',fontFamily:'monospace'}},lineStats.balance+'%')),
+        React.createElement('span',{style:{color:'#94a3b8'}},
+          _m('\ucd1d \uc720\ud734'),' ',React.createElement('strong',{style:{color:'#fbbf24',fontFamily:'monospace'}},fmtS(lineStats.idleTotal))),
+        lineStats.overTakt&&React.createElement('span',{style:{color:'#fca5a5',fontWeight:700}},
+          '\u26a0 '+_m('\ud0dd\ud2b8 \ucd08\uacfc \u2014 \ubaa9\ud45c \uc0dd\uc0b0\ub7c9 \ubbf8\ub2ec')),
+      ),
     ),
     React.createElement('div',{style:{display:'flex',flex:1,overflowX:'auto',overflowY:'hidden'}},
       data.map(function(d){
         var pct=taktTime>0?(d.total/taktTime*100):0;
         var over=taktTime>0&&d.total>taktTime;
+        var isBottleneck=!!(lineStats&&lineStats.bottleneckId===d.w.id);
+        var idle=lineStats?Math.max(0,lineStats.ct-d.total):0; // 병목 대비 노는 시간
         var activeIdx=d.tasks.findIndex(function(t){return simTime>=t._s&&simTime<t._e;});
         return React.createElement('div',{
           key:d.w.id,
@@ -4682,13 +4728,17 @@ function WorkerSim({tasks,setTasks,workers,taktTime,simTasks,simWorkers,yamaAppl
         },
           React.createElement('div',{style:{flexShrink:0,padding:'10px 12px',borderBottom:'1px solid #1e293b',background:over?'#450a0a':'#0f172a'}},
             React.createElement('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
-              React.createElement('span',{style:{fontWeight:700,fontSize:13,color:over?'#fca5a5':'#e2e8f0'}},d.w.name),
+              React.createElement('span',{style:{fontWeight:700,fontSize:13,color:over?'#fca5a5':'#e2e8f0'}},
+                (isBottleneck?'🔴 ':'')+(d.w.label||d.w.name)),
               React.createElement('span',{style:{fontSize:11,fontFamily:'monospace',color:over?'#f87171':'#7dd3fc'}},fmtS(d.total)),
             ),
             React.createElement('div',{style:{marginTop:5,position:'relative',height:4,background:'#1e293b',borderRadius:2}},
-              React.createElement('div',{style:{width:Math.min(100,pct)+'%',height:'100%',borderRadius:2,background:over?'#ef4444':'#22c55e'}}),
+              React.createElement('div',{style:{width:Math.min(100,pct)+'%',height:'100%',borderRadius:2,background:over?'#ef4444':isBottleneck?'#f59e0b':'#22c55e'}}),
             ),
             React.createElement('div',{style:{marginTop:3,fontSize:10,color:'#475569'}},pct.toFixed(0)+'% / TT '+fmtS(taktTime)),
+            // 병목 대비 유휴 시간 — 이 작업자가 사이클당 얼마나 노는지
+            React.createElement('div',{style:{marginTop:2,fontSize:10,color:isBottleneck?'#fca5a5':idle>0.05?'#fbbf24':'#475569',fontWeight:isBottleneck?700:400}},
+              isBottleneck?('⬅ '+_m('라인 속도 결정')):(idle>0.05?(_m('유휴')+' '+fmtS(idle)):_m('유휴 없음'))),
             React.createElement('div',{style:{marginTop:4,fontSize:11,fontWeight:700,color:activeIdx>=0?'#4ade80':'#334155'}},activeIdx>=0?'\u2699 \uc791\uc5c5 \uc911':'\u25ef \ub300\uae30'),
             selTask&&!isMulti&&selTask.worker!==d.w.id&&React.createElement('button',{
               onClick:function(){move(selTask.id,d.w.id);},
