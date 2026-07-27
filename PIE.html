@@ -1168,6 +1168,9 @@ var MSG_ZH={
   '작업)':'项作业)',
   '⚖ 양손 균형도 (HBR)':'⚖ 双手平衡度 (HBR)',
   '🎬 영상 비교 분석':'🎬 视频对比分析',
+  '새 작업자':'新作业者',
+  '여기로 끌기':'拖到此处',
+  '삭제':'删除',
   '📊 작업 분석 비교':'📊 作业分析对比',
   '📊 분석 연결':'📊 关联分析',
   '분석 세션 선택':'选择分析会话',
@@ -3575,7 +3578,9 @@ function Yamazumi(props){
       taktTime=props.taktTime,setTaktTime=props.setTaktTime,
       ratingFactor=props.ratingFactor||100,allowanceRate=props.allowanceRate||15,
       allVideos=props.allVideos||[],activeVideoId=props.activeVideoId||null,
-      parts=props.parts||[],propPartId=props.selectedPartId||null;
+      parts=props.parts||[],propPartId=props.selectedPartId||null,
+      onAddWorker=props.onAddWorker,onRemoveWorker=props.onRemoveWorker; // 빈 공간 드롭 → 작업자 신설 (2026-07-26)
+  var NEW_W='__NEW_WORKER__';
 
   // ── 일 생산목표 / 가용시간 → 택트타임 자동계산 ──
   var _dt=useState(''); var dailyTarget=_dt[0],setDailyTarget=_dt[1];
@@ -3857,7 +3862,7 @@ function Yamazumi(props){
         y+=std;
       });
       return {worker:w,stacked:stacked,total:y};
-    }).filter(function(d){return d.total>0;});
+    }).filter(function(d){return d.total>0||d.worker.isExtra;}); // 추가한 작업자는 비어 있어도 표시 (삭제 가능하도록)
     res._partList=partList;
     return res;
   }
@@ -3873,7 +3878,7 @@ function Yamazumi(props){
   var partData=useMemo(function(){
     if(yamaView!=='part') return [];
     return calcPartData(yamaTasks);
-  },[yamaTasks,parts,yamaView,ratingFactor,allowanceRate]);
+  },[yamaTasks,parts,yamaView,ratingFactor,allowanceRate,workers]); // workers 누락 시 작업자 증감이 부품 뷰에 반영되지 않음 (2026-07-26 수정)
   var partPreviewData=useMemo(function(){
     if(yamaView!=='part'||!dragging||!dragging.isPartDrag||!dragOver||dragOver===dragging.worker) return null;
     var fromWid=dragging.worker,toWid=dragOver,pid=dragging.partId;
@@ -3933,13 +3938,22 @@ function Yamazumi(props){
   var maxT=displayData.reduce(function(m,d){return Math.max(m,d.total);},0);
 
   // ── Drag events ──
+  // 드롭 처리 함수는 항상 최신 props/state를 봐야 하므로 ref로 고정 (stale closure 방지, 2026-07-26)
+  var dropRef=useRef({});
+  dropRef.current={applyMove:applyMove,applyPartMove:applyPartMove,onAddWorker:onAddWorker};
   useEffect(function(){
     if(!dragging) return;
     var cap=dragging;
     function onMove(e){setMousePos({x:e.clientX,y:e.clientY});}
     function onUp(){
       var target=dragOverRef.current;
-      if(target&&target!==cap.worker){if(cap.isPartDrag)applyPartMove(cap.partId,cap.worker,target);else applyMove(cap.id,target);}
+      var H=dropRef.current;
+      if(target===NEW_W&&H.onAddWorker){ // 빈 공간에 놓음 → 작업자 신설 후 그쪽으로 이동
+        var nid=H.onAddWorker();
+        if(nid){ if(cap.isPartDrag)H.applyPartMove(cap.partId,cap.worker,nid); else H.applyMove(cap.id,nid); }
+      } else if(target&&target!==cap.worker){
+        if(cap.isPartDrag)H.applyPartMove(cap.partId,cap.worker,target);else H.applyMove(cap.id,target);
+      }
       setDragging(null);setDragOver(null);dragOverRef.current=null;
     }
     window.addEventListener('mousemove',onMove);
@@ -3976,11 +3990,12 @@ function Yamazumi(props){
   var barW=80,padL=60,padB=40,padT=24,svgH=340;
   var chartH=svgH-padB-padT;
   var gap=28;
-  var svgW=padL+16+workers.length*(barW+gap)+8;
+  var showNewZone=!!onAddWorker; // '+ 새 작업자' 드롭존 표시 여부
+  var svgW=padL+16+(workers.length+(showNewZone?1:0))*(barW+gap)+8;
   var scale=chartH/maxTotal;
 
   var fromName=dragging?(function(){var w=workers.find(function(x){return x.id===dragging.worker;});return w?(w.label||w.name||w.id):'?';})():'';
-  var toName=dragOver?(function(){var w=workers.find(function(x){return x.id===dragOver;});return w?(w.label||w.name||w.id):'?';})():'';
+  var toName=dragOver===NEW_W?_m('새 작업자'):(dragOver?(function(){var w=workers.find(function(x){return x.id===dragOver;});return w?(w.label||w.name||w.id):'?';})():'');
 
   // ── Render ──
   return React.createElement('div',{style:{display:'flex',flexDirection:'column',height:'100%',overflow:'hidden'}},
@@ -4279,9 +4294,30 @@ function Yamazumi(props){
                 // Worker label
                 React.createElement('text',{x:x+barW/2,y:svgH-padB+15,textAnchor:'middle',fontSize:10,
                   fill:isOver?'#60a5fa':isViolated?'#f87171':'#94a3b8',fontWeight:isOver||isViolated?700:400},
-                  d.worker.label||d.worker.name)
+                  d.worker.label||d.worker.name),
+                // 비어 있는 추가 작업자는 삭제 가능
+                d.worker.isExtra&&d.total<=0&&onRemoveWorker&&React.createElement('text',{
+                  x:x+barW/2,y:svgH-padB+28,textAnchor:'middle',fontSize:10,fill:'#f87171',
+                  style:{cursor:'pointer'},onClick:function(){onRemoveWorker(d.worker.id);}},'✕ '+_m('삭제'))
               );
-            })
+            }),
+            // ── '+ 새 작업자' 드롭존: 여기에 부품을 놓으면 작업자가 추가된다 ──
+            showNewZone&&(function(){
+              var nx=padL+16+workers.length*(barW+gap);
+              var over=dragOver===NEW_W;
+              return React.createElement('g',{key:'newzone',
+                onMouseEnter:function(){if(dragging)enterWorker(NEW_W);}},
+                React.createElement('rect',{x:nx,y:padT,width:barW,height:chartH,
+                  fill:over?'#052e16':'transparent',stroke:over?'#22c55e':'#334155',strokeWidth:2,
+                  strokeDasharray:'6,4',rx:6,opacity:over?0.95:(dragging?0.8:0.45)}),
+                React.createElement('text',{x:nx+barW/2,y:padT+chartH/2-6,textAnchor:'middle',fontSize:22,
+                  fill:over?'#22c55e':'#475569',pointerEvents:'none'},'＋'),
+                React.createElement('text',{x:nx+barW/2,y:padT+chartH/2+14,textAnchor:'middle',fontSize:9,
+                  fill:over?'#4ade80':'#475569',pointerEvents:'none'},_m('새 작업자')),
+                React.createElement('text',{x:nx+barW/2,y:svgH-padB+15,textAnchor:'middle',fontSize:9,
+                  fill:over?'#4ade80':'#475569',pointerEvents:'none'},_m('여기로 끌기'))
+              );
+            })()
           )
         ),
 
@@ -10790,6 +10826,7 @@ function App() {
   const [showAdvCols,   setShowAdvCols]   = useState(function(){return localStorage.getItem('wvas_adv_cols')==='true';});
   const [yamaAssignments,setYamaAssignments]=useState({});
   const [lineYamaData,setLineYamaData]=useState({workers:[],tasks:[]});
+  const [yamaExtraWorkers,setYamaExtraWorkers]=useState([]); // 작업배분에서 가정으로 추가한 작업자 (원본 라인분석 불변)
   const lineSnapshotRef=React.useRef(null);
   const [lineProjectToLoad,setLineProjectToLoad]=useState(null);
   const [activeHand,setActiveHand]=useState('LH');
@@ -12508,8 +12545,8 @@ function App() {
       // ══ YAMAZUMI TAB ══
       (function(){
         var lyTasks=lineYamaData.tasks;
-        var lyWorkers=lineYamaData.workers;
-        var hasLineData=lyTasks.length>0&&lyWorkers.length>0;
+        var lyWorkers=lineYamaData.workers.concat(yamaExtraWorkers); // 가정 추가 작업자 포함
+        var hasLineData=lyTasks.length>0&&lineYamaData.workers.length>0;
         if(!hasLineData&&tab==='yamazumi'){
           return React.createElement('div',{style:{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16,color:'#64748b'}},
             React.createElement('div',{style:{fontSize:40}},'📊'),
@@ -12524,6 +12561,19 @@ function App() {
           upd.forEach(function(t){var orig=lyTasks.find(function(o){return o.id===t.id;});if(orig){if(t.worker!==orig.worker){na[t.id]=t.worker;}else{delete na[t.id];}}});
           setYamaAssignments(na);
         }
+        // 빈 공간 드롭 → 가정 작업자 신설 (라인분석 원본은 그대로 둠)
+        function addYamaWorker(){
+          var id='xw_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+          var nw={id:id,name:(lang==='zh'?'作业者':'작업자')+' '+(lyWorkers.length+1),isExtra:true};
+          setYamaExtraWorkers(function(p){return p.concat([nw]);});
+          return id;
+        }
+        function removeYamaWorker(id){
+          setYamaExtraWorkers(function(p){return p.filter(function(w){return w.id!==id;});});
+          setYamaAssignments(function(prev){
+            var n={};Object.keys(prev).forEach(function(k){if(prev[k]!==id)n[k]=prev[k];});return n;
+          });
+        }
         return tab==='yamazumi'&&React.createElement(Yamazumi,{
           tasks:lyTasksA,setTasks:lineSetTasks,
           workers:lyWorkers,
@@ -12532,15 +12582,16 @@ function App() {
           allVideos:[],activeVideoId:null,
           parts:parts,selectedPartId:null,
           yamaAssignments:yamaAssignments,setYamaAssignments:setYamaAssignments,
+          onAddWorker:addYamaWorker,onRemoveWorker:removeYamaWorker,
         });
       })(),
 
       // ══ SIM TAB (라인 분석 데이터 사용) ══
       (function(){
         var lyTasks2raw=lineYamaData.tasks;
-        var lyTasks2=lyTasks2raw.map(function(t){var a=yamaAssignments[t.id];return a&&lineYamaData.workers.some(function(w){return w.id===a;})?Object.assign({},t,{worker:a}):t;});
-        var lyWorkers2=lineYamaData.workers;
-        var hasLineData2=lyTasks2.length>0&&lyWorkers2.length>0;
+        var lyWorkers2=lineYamaData.workers.concat(yamaExtraWorkers); // 작업배분에서 추가한 작업자도 시뮬에 반영
+        var lyTasks2=lyTasks2raw.map(function(t){var a=yamaAssignments[t.id];return a&&lyWorkers2.some(function(w){return w.id===a;})?Object.assign({},t,{worker:a}):t;});
+        var hasLineData2=lyTasks2.length>0&&lineYamaData.workers.length>0;
         if(!hasLineData2&&tab==='sim'){
           return React.createElement('div',{style:{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16,color:'#64748b'}},
             React.createElement('div',{style:{fontSize:40}},'🔀'),
