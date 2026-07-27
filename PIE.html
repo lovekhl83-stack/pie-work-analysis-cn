@@ -1167,6 +1167,17 @@ var MSG_ZH={
   ' — 총 ':' — 共 ',
   '작업)':'项作业)',
   '⚖ 양손 균형도 (HBR)':'⚖ 双手平衡度 (HBR)',
+  '🎬 영상 비교 분석':'🎬 视频对比分析',
+  '📊 작업 분석 비교':'📊 作业分析对比',
+  '📊 분석 연결':'📊 关联分析',
+  '분석 세션 선택':'选择分析会话',
+  '작업분석에서 저장한 세션의 작업 기록을 이 영상에 연결합니다':'将工作分析中保存的会话作业记录关联到此视频',
+  '저장된 분석 세션이 없습니다':'没有已保存的分析会话',
+  '저장된 분석 세션을 연결하면 아래에 작업별 비교표가 표시됩니다':'关联已保存的分析会话后,下方会显示各作业对比表',
+  '연결 해제':'取消关联',
+  '분석만 연결':'仅关联分析',
+  '개 작업':'项作业',
+  '클릭: 양쪽 영상이 이 작업 시작점으로 이동':'点击: 两侧视频跳转到该作业起点',
   'LH 왼손':'LH 左手',
   'RH 오른손':'RH 右手',
   ' 유휴(빈손) ':' 空闲(空手) ',
@@ -7175,6 +7186,7 @@ function VideoCompareModal(props){
   var _ll=useState('숙련자'); var leftLabel=_ll[0],setLeftLabel=_ll[1];
   var _rl=useState('초보자'); var rightLabel=_rl[0],setRightLabel=_rl[1];
   var _sa=useState(true); var showAnalysis=_sa[0],setShowAnalysis=_sa[1];
+  var _pk=useState(null); var pickerSide=_pk[0],setPickerSide=_pk[1]; // 분석 세션 선택 대상('left'|'right')
   var leftRef=useRef(null), rightRef=useRef(null), rafRef=useRef(null);
   var leftFps=(leftVid&&leftVid.fps)||30, rightFps=(rightVid&&rightVid.fps)||30;
 
@@ -7267,6 +7279,37 @@ function VideoCompareModal(props){
     inp.click();
   }
 
+  // 저장된 분석 세션을 좌/우에 연결 — 작업별 비교표를 채우는 데이터 입구 (2026-07-26 복원)
+  function attachSession(side,meta){
+    var d=lsGet(meta.id);
+    if(!d){alert(_m('불러오기 실패'));setPickerSide(null);return;}
+    var ts=(Array.isArray(d.videos)&&d.videos.length
+      ?d.videos.reduce(function(a,v){return a.concat(v.tasks||[]);},[])
+      :(d.tasks||[])).slice();
+    var cur=side==='left'?leftVid:rightVid;
+    var vid=cur?Object.assign({},cur,{tasks:ts})
+               :{id:uid(),name:'('+_m('분석만 연결')+') '+(meta.name||''),src:null,tasks:ts,fps:30};
+    if(side==='left'){setLeftVid(vid);if(!cur&&meta.name)setLeftLabel(meta.name);}
+    else{setRightVid(vid);if(!cur&&meta.name)setRightLabel(meta.name);}
+    setPickerSide(null);
+  }
+  function detachSession(side){
+    var cur=side==='left'?leftVid:rightVid;
+    if(!cur){setPickerSide(null);return;}
+    if(cur.src){var v2=Object.assign({},cur,{tasks:[]});if(side==='left')setLeftVid(v2);else setRightVid(v2);}
+    else{if(side==='left')setLeftVid(null);else setRightVid(null);}
+    setPickerSide(null);
+  }
+  // 작업 행 클릭 → 양쪽 영상을 그 작업의 시작점으로 점프 (교육용: "이 작업만 다시 보기")
+  function jumpToTask(name){
+    doPause();
+    var lv=leftRef.current,rv=rightRef.current;
+    var lt=((leftVid&&leftVid.tasks)||[]).find(function(t){return t.name===name;});
+    var rt2=((rightVid&&rightVid.tasks)||[]).find(function(t){return t.name===name;});
+    if(lv&&lt&&isFinite(lt.startTime)) lv.currentTime=lt.startTime;
+    if(rv&&rt2&&isFinite(rt2.startTime)) rv.currentTime=rt2.startTime;
+  }
+
   function fmtT(t){
     var m=Math.floor(t/60), s=Math.floor(t%60), ms=Math.round((t%1)*100);
     return m+':'+(s<10?'0'+s:s)+'.'+(ms<10?'0'+ms:ms);
@@ -7278,7 +7321,7 @@ function VideoCompareModal(props){
   return React.createElement('div',{style:{position:'fixed',inset:0,zIndex:3000,background:'#000',display:'flex',flexDirection:'column'}},
 
     React.createElement('div',{style:{display:'flex',alignItems:'center',padding:'6px 12px',background:'#0f172a',borderBottom:'1px solid #1e293b',gap:8,flexShrink:0}},
-      React.createElement('span',{style:{fontSize:13,fontWeight:700,color:'#e2e8f0'}},'🎬 영상 비교 分석'),
+      React.createElement('span',{style:{fontSize:13,fontWeight:700,color:'#e2e8f0'}},_m('🎬 영상 비교 분석')),
       React.createElement('span',{style:{fontSize:11,color:'#475569'}},'Space=재생/정지  방향키=프레임이동  Esc=닫기'),
       React.createElement('div',{style:{marginLeft:'auto',display:'flex',gap:4,alignItems:'center'}},
         React.createElement('span',{style:{fontSize:11,color:'#64748b'}},'배속:'),
@@ -7308,12 +7351,16 @@ function VideoCompareModal(props){
           React.createElement('button',{onClick:function(){openFilePicker('left');},
             style:{background:'#14532d',color:'#4ade80',border:'1px solid #16a34a',borderRadius:4,padding:'2px 8px',fontSize:10,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}
           },leftVid?'📁 변경':'📁 열기'),
+          React.createElement('button',{onClick:function(){setPickerSide(pickerSide==='left'?null:'left');},
+            title:_m('저장된 분석 세션을 연결하면 아래에 작업별 비교표가 표시됩니다'),
+            style:{background:'#14532d',color:(leftVid&&leftVid.tasks&&leftVid.tasks.length)?'#86efac':'#4ade80',border:'1px solid #16a34a',borderRadius:4,padding:'2px 8px',fontSize:10,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}
+          },(leftVid&&leftVid.tasks&&leftVid.tasks.length)?'📊 '+leftVid.tasks.length:_m('📊 분석 연결')),
           React.createElement('button',{onClick:setLeftSync,
             style:{background:'#14532d',color:'#4ade80',border:'1px solid #16a34a',borderRadius:4,padding:'2px 8px',fontSize:10,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}
           },'📍 동기점'),
           React.createElement('span',{style:{fontSize:11,color:'#4ade80',fontFamily:'monospace',whiteSpace:'nowrap',flexShrink:0}},fmtT(leftTime))
         ),
-        leftVid
+        leftVid&&leftVid.src
           ?React.createElement('video',{ref:leftRef,src:leftVid.src,
               style:{flex:1,width:'100%',objectFit:'contain',background:'#000'},
               onLoadedMetadata:function(e){setLeftDur(e.target.duration);}})
@@ -7346,12 +7393,16 @@ function VideoCompareModal(props){
           React.createElement('button',{onClick:function(){openFilePicker('right');},
             style:{background:'#78350f',color:'#fbbf24',border:'1px solid #92400e',borderRadius:4,padding:'2px 8px',fontSize:10,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}
           },rightVid?'📁 변경':'📁 열기'),
+          React.createElement('button',{onClick:function(){setPickerSide(pickerSide==='right'?null:'right');},
+            title:_m('저장된 분석 세션을 연결하면 아래에 작업별 비교표가 표시됩니다'),
+            style:{background:'#78350f',color:(rightVid&&rightVid.tasks&&rightVid.tasks.length)?'#fde68a':'#fbbf24',border:'1px solid #92400e',borderRadius:4,padding:'2px 8px',fontSize:10,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}
+          },(rightVid&&rightVid.tasks&&rightVid.tasks.length)?'📊 '+rightVid.tasks.length:_m('📊 분석 연결')),
           React.createElement('button',{onClick:setRightSync,
             style:{background:'#78350f',color:'#fbbf24',border:'1px solid #92400e',borderRadius:4,padding:'2px 8px',fontSize:10,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}
           },'📍 동기점'),
           React.createElement('span',{style:{fontSize:11,color:'#fbbf24',fontFamily:'monospace',whiteSpace:'nowrap',flexShrink:0}},fmtT(rightTime))
         ),
-        rightVid
+        rightVid&&rightVid.src
           ?React.createElement('video',{ref:rightRef,src:rightVid.src,
               style:{flex:1,width:'100%',objectFit:'contain',background:'#000'},
               onLoadedMetadata:function(e){setRightDur(e.target.duration);}})
@@ -7389,7 +7440,7 @@ function VideoCompareModal(props){
           style:{display:'flex',alignItems:'center',padding:'5px 14px',cursor:'pointer',userSelect:'none',gap:8},
           onClick:function(){setShowAnalysis(function(v){return !v;});}
         },
-          React.createElement('span',{style:{fontSize:11,fontWeight:700,color:'#94a3b8'}},'📊 작업 分석 비교'),
+          React.createElement('span',{style:{fontSize:11,fontWeight:700,color:'#94a3b8'}},_m('📊 작업 분석 비교')),
           React.createElement('span',{style:{fontSize:10,color:'#475569',flex:1}},
             ' · '+leftLabel+': '+lTotal.toFixed(1)+'s  /  '+rightLabel+': '+rTotal.toFixed(1)+'s'
             +(lTotal>0&&rTotal>0?' · 차이: '+(Math.abs(lTotal-rTotal)).toFixed(1)+'s ('+(((Math.max(lTotal,rTotal)-Math.min(lTotal,rTotal))/Math.min(lTotal,rTotal))*100).toFixed(0)+'%)':'')),
@@ -7401,10 +7452,14 @@ function VideoCompareModal(props){
             allNames.map(function(name){
               var l=lByName[name],r=rByName[name];
               var slower=l&&r&&l.dur>r.dur*1.1;
-              return React.createElement('div',{key:'l_'+name,style:{display:'flex',gap:4,padding:'2px 0',fontSize:10,borderBottom:'1px solid #0f172a'}},
+              return React.createElement('div',{key:'l_'+name,
+                onClick:function(){jumpToTask(name);},
+                title:_m('클릭: 양쪽 영상이 이 작업 시작점으로 이동'),
+                style:{display:'flex',gap:4,padding:'2px 0',fontSize:10,borderBottom:'1px solid #0f172a',cursor:'pointer'}},
                 React.createElement('span',{style:{width:8,height:8,borderRadius:2,background:(l&&l.color)||'#475569',flexShrink:0,marginTop:2}}),
-                React.createElement('span',{style:{flex:1,color:'#e2e8f0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'},title:name},name),
-                l?React.createElement('span',{style:{fontFamily:'monospace',fontWeight:600,flexShrink:0,color:slower?'#f87171':'#94a3b8'}},l.dur.toFixed(1)+'s')
+                React.createElement('span',{style:{flex:1,color:'#e2e8f0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},name),
+                l?React.createElement('span',{style:{fontFamily:'monospace',fontWeight:600,flexShrink:0,color:slower?'#f87171':'#94a3b8'}},
+                    l.dur.toFixed(1)+'s'+(slower&&r.dur>0?' ×'+(l.dur/r.dur).toFixed(1):''))
                  :React.createElement('span',{style:{color:'#334155',flexShrink:0}},'-')
               );
             }),
@@ -7416,10 +7471,14 @@ function VideoCompareModal(props){
             allNames.map(function(name){
               var l=lByName[name],r=rByName[name];
               var slower=r&&l&&r.dur>l.dur*1.1;
-              return React.createElement('div',{key:'r_'+name,style:{display:'flex',gap:4,padding:'2px 0',fontSize:10,borderBottom:'1px solid #0f172a'}},
+              return React.createElement('div',{key:'r_'+name,
+                onClick:function(){jumpToTask(name);},
+                title:_m('클릭: 양쪽 영상이 이 작업 시작점으로 이동'),
+                style:{display:'flex',gap:4,padding:'2px 0',fontSize:10,borderBottom:'1px solid #0f172a',cursor:'pointer'}},
                 React.createElement('span',{style:{width:8,height:8,borderRadius:2,background:(r&&r.color)||(l&&l.color)||'#475569',flexShrink:0,marginTop:2}}),
-                React.createElement('span',{style:{flex:1,color:'#e2e8f0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'},title:name},name),
-                r?React.createElement('span',{style:{fontFamily:'monospace',fontWeight:600,flexShrink:0,color:slower?'#f87171':'#94a3b8'}},r.dur.toFixed(1)+'s')
+                React.createElement('span',{style:{flex:1,color:'#e2e8f0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},name),
+                r?React.createElement('span',{style:{fontFamily:'monospace',fontWeight:600,flexShrink:0,color:slower?'#f87171':'#94a3b8'}},
+                    r.dur.toFixed(1)+'s'+(slower&&l.dur>0?' ×'+(r.dur/l.dur).toFixed(1):''))
                  :React.createElement('span',{style:{color:'#334155',flexShrink:0}},'-')
               );
             }),
@@ -7429,6 +7488,45 @@ function VideoCompareModal(props){
         )
       );
     })(),
+
+    // ── 분석 세션 선택 오버레이 ──
+    pickerSide&&React.createElement('div',{
+      style:{position:'absolute',inset:0,zIndex:20,background:'rgba(0,0,0,0.65)',display:'flex',alignItems:'center',justifyContent:'center'},
+      onClick:function(){setPickerSide(null);}
+    },
+      React.createElement('div',{
+        style:{background:'#0f172a',border:'1px solid #334155',borderRadius:10,padding:16,width:380,maxHeight:'70%',overflow:'auto',boxShadow:'0 12px 48px rgba(0,0,0,0.6)'},
+        onClick:function(e){e.stopPropagation();}
+      },
+        React.createElement('div',{style:{fontSize:13,fontWeight:700,color:'#e2e8f0',marginBottom:4}},
+          (pickerSide==='left'?leftLabel:rightLabel)+' — '+_m('분석 세션 선택')),
+        React.createElement('div',{style:{fontSize:10,color:'#64748b',marginBottom:10}},_m('작업분석에서 저장한 세션의 작업 기록을 이 영상에 연결합니다')),
+        (function(){
+          var list=lsList();
+          if(!list.length) return React.createElement('div',{style:{fontSize:11,color:'#475569',textAlign:'center',padding:'16px 0'}},_m('저장된 분석 세션이 없습니다'));
+          return list.map(function(meta){
+            return React.createElement('div',{
+              key:meta.id,
+              onClick:function(){attachSession(pickerSide,meta);},
+              style:{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',borderRadius:6,cursor:'pointer',border:'1px solid #1e293b',marginBottom:5,background:'#0b1120'},
+              onMouseEnter:function(e){e.currentTarget.style.background='#172554';},
+              onMouseLeave:function(e){e.currentTarget.style.background='#0b1120';}
+            },
+              React.createElement('span',{style:{fontSize:12,color:'#e2e8f0',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},meta.name||meta.id),
+              React.createElement('span',{style:{fontSize:10,color:'#64748b',flexShrink:0}},(meta.savedAt||'').slice(0,10)),
+              React.createElement('span',{style:{fontSize:10,color:'#60a5fa',flexShrink:0}},(meta.taskCount||0)+_m('개 작업'))
+            );
+          });
+        })(),
+        (function(){
+          var cur=pickerSide==='left'?leftVid:rightVid;
+          return cur&&cur.tasks&&cur.tasks.length>0&&React.createElement('button',{
+            onClick:function(){detachSession(pickerSide);},
+            style:{marginTop:8,width:'100%',background:'#450a0a',color:'#fca5a5',border:'1px solid #7f1d1d',borderRadius:6,padding:'6px 0',fontSize:11,cursor:'pointer'}
+          },_m('연결 해제'));
+        })()
+      )
+    ),
 
     React.createElement('div',{style:{padding:'8px 16px',background:'#0f172a',borderTop:'1px solid #1e293b',display:'flex',alignItems:'center',gap:10,flexShrink:0,flexWrap:'wrap'}},
       React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:3,minWidth:120}},
