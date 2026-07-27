@@ -1171,6 +1171,30 @@ var MSG_ZH={
   '새 작업자':'新作业者',
   '여기로 끌기':'拖到此处',
   '삭제':'删除',
+  '📥 편성안 내보내기':'📥 导出编成方案',
+  '현재 편성안을 Excel로 저장합니다':'将当前编成方案保存为 Excel',
+  '내보낼 편성 데이터가 없습니다.':'没有可导出的编成数据。',
+  '클릭하여 이름 변경':'点击修改名称',
+  '작업자 이름':'作业者名称',
+  '작업자':'作业者',
+  '부품/작업':'部件/作业',
+  '시간(초)':'时间(秒)',
+  '작업자 합계(초)':'作业者合计(秒)',
+  '택트 대비':'对比节拍',
+  '비고':'备注',
+  '추가 작업자':'新增作业者',
+  '병목':'瓶颈',
+  '합계':'合计',
+  '구분':'项目',
+  '값':'数值',
+  '작업자 수':'作业者人数',
+  '택트타임':'节拍时间',
+  '최대 작업자 부하':'最大作业者负荷',
+  '총 공수':'总工时',
+  '레이팅/여유율':'评比/宽放率',
+  '보기 기준':'查看基准',
+  '부품 기준':'部件基准',
+  '작업자 기준':'作业者基准',
   '📊 작업 분석 비교':'📊 作业分析对比',
   '📊 분석 연결':'📊 关联分析',
   '분석 세션 선택':'选择分析会话',
@@ -3579,7 +3603,7 @@ function Yamazumi(props){
       ratingFactor=props.ratingFactor||100,allowanceRate=props.allowanceRate||15,
       allVideos=props.allVideos||[],activeVideoId=props.activeVideoId||null,
       parts=props.parts||[],propPartId=props.selectedPartId||null,
-      onAddWorker=props.onAddWorker,onRemoveWorker=props.onRemoveWorker; // 빈 공간 드롭 → 작업자 신설 (2026-07-26)
+      onAddWorker=props.onAddWorker,onRemoveWorker=props.onRemoveWorker,onRenameWorker=props.onRenameWorker; // 빈 공간 드롭 → 작업자 신설 (2026-07-26)
   var NEW_W='__NEW_WORKER__';
 
   // ── 일 생산목표 / 가용시간 → 택트타임 자동계산 ──
@@ -3986,6 +4010,59 @@ function Yamazumi(props){
   }
   function enterWorker(wid){setDragOver(wid);dragOverRef.current=wid;}
 
+  // 편성안 Excel 내보내기 — 검토한 배분 결과를 현장에 공유 (2026-07-26)
+  function exportBalanceExcel(){
+    var rows=displayData||[];
+    if(!rows.length){alert(_m('내보낼 편성 데이터가 없습니다.'));return;}
+    var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+    var th=function(s,bg){return '<th style="background:'+bg+';color:#fff;padding:6px 10px;border:1px solid #ccc;font-weight:bold;white-space:nowrap">'+esc(s)+'</th>';};
+    var td=function(s,bg,color,align){return '<td style="background:'+(bg||'#fff')+';color:'+(color||'#222')+';padding:5px 8px;border:1px solid #ccc;text-align:'+(align||'center')+'">'+esc(s)+'</td>';};
+    var totals=rows.map(function(d){return d.total;});
+    var maxT2=Math.max.apply(null,totals.concat([0]));
+    var sumT=totals.reduce(function(a,b){return a+b;},0);
+    var eff=(maxT2>0&&rows.length)?Math.round(sumT/(maxT2*rows.length)*100):0;
+    var html='<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"/></head><body>';
+    html+='<table><tr>'+th(_m('작업자'),'#1e293b')+th(_m('부품/작업'),'#1e293b')+th(_m('시간(초)'),'#1e293b')+th(_m('작업자 합계(초)'),'#1e40af')+th(_m('택트 대비'),'#92400e')+th(_m('비고'),'#374151')+'</tr>';
+    rows.forEach(function(d){
+      var segs=d.stacked||[];
+      var isBottleneck=d.total>=maxT2&&maxT2>0;
+      var over=taktTime>0?Math.round(d.total/taktTime*100):0;
+      var note=(d.worker.isExtra?_m('추가 작업자'):'')+(isBottleneck?(d.worker.isExtra?' / ':'')+_m('병목'):'');
+      if(!segs.length){
+        html+='<tr>'+td(d.worker.label||d.worker.name,'#f8fafc','#1e293b','left')+td('-','#fff')+td('0.0','#fff')
+             +td(d.total.toFixed(1),'#dbeafe','#1e3a8a')+td(over+'%','#fffbeb')+td(note,'#fff','#b91c1c','left')+'</tr>';
+        return;
+      }
+      segs.forEach(function(seg,i){
+        html+='<tr>'+td(i===0?(d.worker.label||d.worker.name):'','#f8fafc','#1e293b','left')
+             +td(seg.partName||(seg.task&&seg.task.name)||'','#fff','#222','left')
+             +td((seg.h||0).toFixed(1),'#fff')
+             +(i===0?td(d.total.toFixed(1),'#dbeafe','#1e3a8a'):td('','#dbeafe'))
+             +(i===0?td(over+'%','#fffbeb'):td('','#fffbeb'))
+             +(i===0?td(note,'#fff','#b91c1c','left'):td('','#fff'))+'</tr>';
+      });
+    });
+    html+='<tr>'+td(_m('합계'),'#e2e8f0','#1e293b','left')+td('','#e2e8f0')+td('','#e2e8f0')
+         +td(sumT.toFixed(1),'#dbeafe','#1e3a8a')+td('','#e2e8f0')+td('','#e2e8f0')+'</tr>';
+    html+='</table><br/><table>';
+    html+='<tr>'+th(_m('구분'),'#374151')+th(_m('값'),'#374151')+'</tr>';
+    [[_m('작업자 수'),rows.length+_m('명')],
+     [_m('택트타임'),taktTime+'s'],
+     [_m('최대 작업자 부하'),maxT2.toFixed(1)+'s'],
+     [_m('총 공수'),sumT.toFixed(1)+'s'],
+     [_m('라인 편성효율'),eff+'%'],
+     [_m('레이팅/여유율'),ratingFactor+'% / '+allowanceRate+'%'],
+     [_m('보기 기준'),yamaView==='part'?_m('부품 기준'):_m('작업자 기준')]
+    ].forEach(function(r){html+='<tr>'+td(r[0],'#f9fafb','#1e293b','left')+td(r[1],'#fff','#222','left')+'</tr>';});
+    html+='</table></body></html>';
+    var blob=new Blob(['﻿'+html],{type:'application/vnd.ms-excel;charset=utf-8'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='작업배분_편성안_'+new Date().toISOString().slice(0,10)+'.xls';
+    a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);},60000);
+  }
+
   // ── SVG layout ──
   var barW=80,padL=60,padB=40,padT=24,svgH=340;
   var chartH=svgH-padB-padT;
@@ -4078,7 +4155,12 @@ function Yamazumi(props){
           React.createElement('button',{
             onClick:function(){setShowTaskList(function(v){return !v;});},
             style:{background:'#1e293b',color:'#94a3b8',border:'1px solid #334155',borderRadius:6,padding:'4px 10px',fontSize:11,cursor:'pointer'}
-          },showTaskList?'◀ 목록숨김':'▶ 작업목록')
+          },showTaskList?'◀ 목록숨김':'▶ 작업목록'),
+          React.createElement('button',{
+            onClick:exportBalanceExcel,
+            title:_m('현재 편성안을 Excel로 저장합니다'),
+            style:{background:'#14532d',color:'#4ade80',border:'1px solid #16a34a',borderRadius:6,padding:'4px 10px',fontSize:11,cursor:'pointer'}
+          },_m('📥 편성안 내보내기'))
         ),
 
         // ── Part view banner ──
@@ -4293,7 +4375,13 @@ function Yamazumi(props){
                 React.createElement('line',{x1:x,y1:svgH-padB,x2:x+barW,y2:svgH-padB,stroke:'#334155',strokeWidth:1}),
                 // Worker label
                 React.createElement('text',{x:x+barW/2,y:svgH-padB+15,textAnchor:'middle',fontSize:10,
-                  fill:isOver?'#60a5fa':isViolated?'#f87171':'#94a3b8',fontWeight:isOver||isViolated?700:400},
+                  fill:isOver?'#60a5fa':isViolated?'#f87171':'#94a3b8',fontWeight:isOver||isViolated?700:400,
+                  style:(d.worker.isExtra&&onRenameWorker)?{cursor:'pointer',textDecoration:'underline dotted'}:null,
+                  title:(d.worker.isExtra&&onRenameWorker)?_m('클릭하여 이름 변경'):null,
+                  onClick:(d.worker.isExtra&&onRenameWorker)?function(){
+                    var nm=prompt(_m('작업자 이름'),d.worker.name||'');
+                    if(nm&&nm.trim())onRenameWorker(d.worker.id,nm.trim());
+                  }:null},
                   d.worker.label||d.worker.name),
                 // 비어 있는 추가 작업자는 삭제 가능
                 d.worker.isExtra&&d.total<=0&&onRemoveWorker&&React.createElement('text',{
@@ -12574,6 +12662,9 @@ function App() {
             var n={};Object.keys(prev).forEach(function(k){if(prev[k]!==id)n[k]=prev[k];});return n;
           });
         }
+        function renameYamaWorker(id,name){
+          setYamaExtraWorkers(function(p){return p.map(function(w){return w.id===id?Object.assign({},w,{name:name}):w;});});
+        }
         return tab==='yamazumi'&&React.createElement(Yamazumi,{
           tasks:lyTasksA,setTasks:lineSetTasks,
           workers:lyWorkers,
@@ -12582,7 +12673,7 @@ function App() {
           allVideos:[],activeVideoId:null,
           parts:parts,selectedPartId:null,
           yamaAssignments:yamaAssignments,setYamaAssignments:setYamaAssignments,
-          onAddWorker:addYamaWorker,onRemoveWorker:removeYamaWorker,
+          onAddWorker:addYamaWorker,onRemoveWorker:removeYamaWorker,onRenameWorker:renameYamaWorker,
         });
       })(),
 
