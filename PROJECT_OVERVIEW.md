@@ -109,6 +109,14 @@
   "videos":[{id,name,tasks,fps,completed}], // 다중 영상. src는 저장 안 함(null)
   "activeVideoId":"", "partId":"" }
 ```
+### 저장 경로별 복원 범위 (2026-07-27 실측)
+| 저장 방법 | 복원 | 미복원 |
+|---|---|---|
+| 메뉴 > 분석 저장 (폴더, `project.json` v4) | 작업분석 + 라인분석 + **작업배분(balance)** + 레이팅·여유율·택트 + **영상 파일** | — |
+| 세션 저장 (localStorage, 30개 캡) | 작업분석 구간 | 영상·라인분석·작업배분 |
+| `.wvas` 내보내기 | 작업분석 구간 | 영상·라인분석·작업배분 |
+| 부품 ST DB | 항상 유지(+LAN 서버 공유) | — |
+
 - 세션(localStorage)/.wvas/E드라이브 경로는 **영상 원본을 저장하지 않는다** — 불러오면 `src:null`, 영상 재선택 필요. 단 **메뉴의 통합 프로젝트 저장(version:4, saveUnifiedProject 11194)은 예외**: 사용자 지정 폴더에 `project.json`+영상 바이너리(분석 영상 `analysis_N_이름`, 라인분석 작업자 영상 `line_wid_이름`)를 저장하고 loadUnifiedProject(11242)가 복원
 - 같은 로드 로직이 loadFromStorage/importFromFile/applyFileData 3곳 중복(11041~11116). LoadProjectModal(2021)+loadProjectData(11289)는 호출 경로 없는 4번째 사본(죽은 코드)
 
