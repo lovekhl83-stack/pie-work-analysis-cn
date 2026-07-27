@@ -1155,6 +1155,47 @@ const STRINGS = {
 //  알림·확인창 중국어 대응 (결정 C) — 한국어 원문을 키로 조회, 없으면 원문 그대로
 // ─────────────────────────────────────────
 var MSG_ZH={
+  '작업표준서 (SOP) 생성':'作业标准书 (SOP) 生成',
+  '베스트 사이클 #':'最佳循环 #',
+  '✅ 문서가 준비되었습니다. PDF 또는 Excel 로 다운로드하세요.':'✅ 文档已准备好。请下载 PDF 或 Excel。',
+  '📕 PDF 다운로드':'📕 下载 PDF',
+  '📗 Excel 다운로드':'📗 下载 Excel',
+  '취소':'取消',
+  '닫기':'关闭',
+  '📊 산출보고서':'📊 产出报告',
+  '명':'人',
+  ' — 총 ':' — 共 ',
+  '작업)':'项作业)',
+  '✕ 닫기':'✕ 关闭',
+  '① 요약 통계':'① 汇总统计',
+  '② 분류별\n비율':'② 分类\n比例',
+  '③ 작업별 안정도 통계':'③ 各作业稳定度统计',
+  '④ 시각 데이터 (작업 시작 시점 스크린샷)':'④ 视觉数据 (作业开始时点截图)',
+  '목표 T/T':'目标 T/T',
+  '총 표준공수':'总标准工时',
+  '필요 최소 인원':'所需最少人数',
+  '라인 편성효율':'生产线平衡率',
+  '정미작업':'增值作业',
+  '부수작업':'辅助作业',
+  '낭비':'浪费',
+  '작업명':'作业名',
+  '평균(s)':'平均(s)',
+  '최소(s)':'最小(s)',
+  '최대(s)':'最大(s)',
+  '안정도':'稳定度',
+  '불안정':'不稳定',
+  '안정':'稳定',
+  '보통':'一般',
+  '준비':'准备',
+  '📷 대기':'📷 待机',
+  '📸 캡처 시작':'📸 开始截图',
+  '캡처 중… (':'截图中… (',
+  '캡처 중…':'截图中…',
+  '시작: ':'开始: ',
+  '(영상 없음)':'(无视频)',
+  '분석 데이터가 없습니다.':'没有分析数据。',
+  '※ 사이클이 2개 이상일 때 변동계수(CoV)를 계산합니다. 현재 ':'※ 循环数 2 个以上时才计算变异系数(CoV)。当前 ',
+  '개 사이클.':' 个循环。',
   'AI 초기화 실패: ':'AI 初始化失败: ',
   'Chrome/Edge 브라우저에서만 지원됩니다.':'仅支持 Chrome / Edge 浏览器。',
   'MediaPipe 아직 로딩 중입니다.':'MediaPipe 正在加载中。',
@@ -7411,7 +7452,7 @@ function SopExportModal(props){
         React.createElement('span',{style:{fontSize:'22px'}},'📄'),
         React.createElement('div',null,
           React.createElement('div',{style:{fontWeight:'700',fontSize:'15px',color:'#e2e8f0'}},
-            '작업표준서 (SOP) 생성'
+            _m('작업표준서 (SOP) 생성')
           ),
           !done&&React.createElement('div',{style:{fontSize:'12px',color:'#64748b',marginTop:'2px'}},status)
         )
@@ -7420,7 +7461,7 @@ function SopExportModal(props){
         style:{background:'#0f172a',borderRadius:'8px',padding:'12px',marginBottom:'16px'}
       },
         React.createElement('div',{style:{fontSize:'12px',color:'#60a5fa',fontWeight:'700',marginBottom:'6px'}},
-          '베스트 사이클 #'+bestCycle+' — 총 '+(totalTime||0).toFixed(1)+'s ('+bestTasks.length+'작업)'
+          _m('베스트 사이클 #')+bestCycle+_m(' — 총 ')+(totalTime||0).toFixed(1)+'s ('+bestTasks.length+_m('작업)')
         ),
         React.createElement('div',{
           style:{maxHeight:'130px',overflowY:'auto',display:'flex',flexDirection:'column',gap:'2px'}
@@ -7459,23 +7500,23 @@ function SopExportModal(props){
       done&&React.createElement('div',{
         style:{background:'#064e3b',border:'1px solid #065f46',borderRadius:'8px',
                padding:'12px',marginBottom:'16px',fontSize:'13px',color:'#6ee7b7',textAlign:'center'}
-      },'✅ 문서가 준비되었습니다. PDF 또는 Excel 로 다운로드하세요.'),
+      },_m('✅ 문서가 준비되었습니다. PDF 또는 Excel 로 다운로드하세요.')),
       React.createElement('div',{style:{display:'flex',gap:'10px'}},
         done&&React.createElement('button',{
           onClick:onDownloadPdf,
           style:{flex:1,background:'#dc2626',color:'#fff',border:'none',borderRadius:'8px',
                  padding:'10px',cursor:'pointer',fontWeight:'700',fontSize:'13px'}
-        },'📕 PDF 다운로드'),
+        },_m('📕 PDF 다운로드')),
         done&&React.createElement('button',{
           onClick:onDownloadExcel,
           style:{flex:1,background:'#16a34a',color:'#fff',border:'none',borderRadius:'8px',
                  padding:'10px',cursor:'pointer',fontWeight:'700',fontSize:'13px'}
-        },'📗 Excel 다운로드'),
+        },_m('📗 Excel 다운로드')),
         React.createElement('button',{
           onClick:onClose,
           style:{flex:done?'0 0 80px':'1',background:'#334155',color:'#e2e8f0',
                  border:'none',borderRadius:'8px',padding:'10px',cursor:'pointer',fontSize:'13px'}
-        },done?'닫기':'취소')
+        },done?_m('닫기'):_m('취소'))
       )
     )
   );
@@ -7568,9 +7609,9 @@ function ReportModal({tasks,videos,taktTime,workers,ratingFactor,allowanceRate,l
   // ── SVG Pie chart ──────────────────────────────────────────
   function pieSlices(){
     var data=[
-      {label:'정미작업',val:typeSums.value,color:'#22c55e'},
-      {label:'부수작업',val:typeSums.auxiliary,color:'#3b82f6'},
-      {label:'낭비',val:typeSums.waste,color:'#ef4444'},
+      {label:_m('정미작업'),val:typeSums.value,color:'#22c55e'},
+      {label:_m('부수작업'),val:typeSums.auxiliary,color:'#3b82f6'},
+      {label:_m('낭비'),val:typeSums.waste,color:'#ef4444'},
     ];
     var total=totalTypeST||1;
     var start=-90,slices=[];
@@ -7716,23 +7757,23 @@ function ReportModal({tasks,videos,taktTime,workers,ratingFactor,allowanceRate,l
       },
         // Header
         React.createElement('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}},
-          React.createElement('h2',{style:{fontSize:18,fontWeight:700,color:'#f1f5f9',margin:0}},'📊 산출보고서'),
+          React.createElement('h2',{style:{fontSize:18,fontWeight:700,color:'#f1f5f9',margin:0}},_m('📊 산출보고서')),
           React.createElement('button',{
             onClick:onClose,
             style:{background:'#1e293b',border:'1px solid #334155',color:'#94a3b8',borderRadius:8,padding:'4px 12px',cursor:'pointer',fontSize:13},
-          },'✕ 닫기')
+          },_m('✕ 닫기'))
         ),
 
         // ── Section 1: Summary Stats ─────────────────────────
         React.createElement('div',{style:{background:'#1e293b',borderRadius:12,padding:16,marginBottom:16}},
           React.createElement('h3',{style:{fontSize:13,fontWeight:700,color:'#7dd3fc',marginBottom:12,margin:'0 0 12px'}},
-            '① 요약 통계'),
+            _m('① 요약 통계')),
           React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10}},
             [
-              {label:'목표 T/T',value:taktTime+'s',color:'#60a5fa',sub:'Takt Time'},
-              {label:'총 표준공수',value:fmt(totalST),color:'#4ade80',sub:'Total ST'},
-              {label:'필요 최소 인원',value:(typeof minHeadcount==='number'?minHeadcount+'명':minHeadcount),color:'#f59e0b',sub:'Min Headcount'},
-              {label:'라인 편성효율',value:lbe+'%',color:lbe>=80?'#22c55e':lbe>=60?'#f59e0b':'#ef4444',sub:'LBE'},
+              {label:_m('목표 T/T'),value:taktTime+'s',color:'#60a5fa',sub:'Takt Time'},
+              {label:_m('총 표준공수'),value:fmt(totalST),color:'#4ade80',sub:'Total ST'},
+              {label:_m('필요 최소 인원'),value:(typeof minHeadcount==='number'?minHeadcount+_m('명'):minHeadcount),color:'#f59e0b',sub:'Min Headcount'},
+              {label:_m('라인 편성효율'),value:lbe+'%',color:lbe>=80?'#22c55e':lbe>=60?'#f59e0b':'#ef4444',sub:'LBE'},
             ].map(function(item){
               return React.createElement('div',{
                 key:item.label,
@@ -7748,7 +7789,7 @@ function ReportModal({tasks,videos,taktTime,workers,ratingFactor,allowanceRate,l
 
         // ── Section 2: Type Breakdown (Pie) ─────────────────
         React.createElement('div',{style:{background:'#1e293b',borderRadius:12,padding:16,marginBottom:16,display:'flex',gap:24,alignItems:'center'}},
-          React.createElement('h3',{style:{fontSize:13,fontWeight:700,color:'#7dd3fc',margin:0,minWidth:80}},'② 분류별\n비율'),
+          React.createElement('h3',{style:{fontSize:13,fontWeight:700,color:'#7dd3fc',margin:0,minWidth:80}},_m('② 분류별\n비율')),
           // SVG Pie
           React.createElement('svg',{width:120,height:120,viewBox:'0 0 120 120'},
             slices.map(function(sl,i){
@@ -7776,15 +7817,15 @@ function ReportModal({tasks,videos,taktTime,workers,ratingFactor,allowanceRate,l
 
         // ── Section 3: Task Stability (CoV) ─────────────────
         React.createElement('div',{style:{background:'#1e293b',borderRadius:12,padding:16,marginBottom:16}},
-          React.createElement('h3',{style:{fontSize:13,fontWeight:700,color:'#7dd3fc',margin:'0 0 10px'}},'③ 작업별 안정도 통계'),
+          React.createElement('h3',{style:{fontSize:13,fontWeight:700,color:'#7dd3fc',margin:'0 0 10px'}},_m('③ 작업별 안정도 통계')),
           cycles.length<2
             ?React.createElement('div',{style:{color:'#64748b',fontSize:12,padding:'8px 0'}},
-                '※ 사이클이 2개 이상일 때 변동계수(CoV)를 계산합니다. 현재 '+cycles.length+'개 사이클.')
+                _m('※ 사이클이 2개 이상일 때 변동계수(CoV)를 계산합니다. 현재 ')+cycles.length+_m('개 사이클.'))
             :React.createElement('div',{style:{overflowX:'auto'}},
               React.createElement('table',{style:{width:'100%',borderCollapse:'collapse',fontSize:12}},
                 React.createElement('thead',null,
                   React.createElement('tr',null,
-                    ['#','작업명','평균(s)','최소(s)','최대(s)','CoV%','안정도'].map(function(h){
+                    ['#',_m('작업명'),_m('평균(s)'),_m('최소(s)'),_m('최대(s)'),'CoV%',_m('안정도')].map(function(h){
                       return React.createElement('th',{key:h,style:{padding:'6px 8px',textAlign:'left',borderBottom:'1px solid #334155',color:'#94a3b8',fontWeight:600,whiteSpace:'nowrap'}},h);
                     })
                   )
@@ -7792,7 +7833,7 @@ function ReportModal({tasks,videos,taktTime,workers,ratingFactor,allowanceRate,l
                 React.createElement('tbody',null,
                   names.map(function(n,ni){
                     var avg=nameAvg(n),mn=nameMin(n),mx=nameMax(n),cv=nameCov(n);
-                    var stab=cv<10?{label:'안정',c:'#22c55e'}:cv<20?{label:'보통',c:'#f59e0b'}:{label:'불안정',c:'#ef4444'};
+                    var stab=cv<10?{label:_m('안정'),c:'#22c55e'}:cv<20?{label:_m('보통'),c:'#f59e0b'}:{label:_m('불안정'),c:'#ef4444'};
                     return React.createElement('tr',{key:n,style:{borderBottom:'1px solid #1e293b'}},
                       React.createElement('td',{style:{padding:'5px 8px',color:'#475569'}},ni+1),
                       React.createElement('td',{style:{padding:'5px 8px',color:'#e2e8f0',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},n),
@@ -7813,17 +7854,17 @@ function ReportModal({tasks,videos,taktTime,workers,ratingFactor,allowanceRate,l
         // ── Section 4: Video Screenshots ─────────────────────
         React.createElement('div',{style:{background:'#1e293b',borderRadius:12,padding:16}},
           React.createElement('div',{style:{display:'flex',alignItems:'center',gap:12,marginBottom:12}},
-            React.createElement('h3',{style:{fontSize:13,fontWeight:700,color:'#7dd3fc',margin:0}},'④ 시각 데이터 (작업 시작 시점 스크린샷)'),
-            !firstVideoFile&&React.createElement('span',{style:{fontSize:11,color:'#ef4444'}},'(영상 없음)'),
+            React.createElement('h3',{style:{fontSize:13,fontWeight:700,color:'#7dd3fc',margin:0}},_m('④ 시각 데이터 (작업 시작 시점 스크린샷)')),
+            !firstVideoFile&&React.createElement('span',{style:{fontSize:11,color:'#ef4444'}},_m('(영상 없음)')),
             firstVideoFile&&!capturing&&React.createElement('button',{
               onClick:startCapture,
               style:{background:'#1d4ed8',border:'none',color:'#fff',borderRadius:8,padding:'5px 14px',cursor:'pointer',fontSize:12,fontWeight:600},
-            },'📸 캡처 시작'),
+            },_m('📸 캡처 시작')),
             capturing&&React.createElement('span',{style:{fontSize:11,color:'#fcd34d'}},
-              '캡처 중… ('+(capIdx>=0?names[capIdx]:'준비')+')')
+              _m('캡처 중… (')+(capIdx>=0?names[capIdx]:_m('준비'))+')')
           ),
           // Grid of screenshots
-          names.length===0&&React.createElement('div',{style:{color:'#475569',fontSize:12}},'분석 데이터가 없습니다.'),
+          names.length===0&&React.createElement('div',{style:{color:'#475569',fontSize:12}},_m('분석 데이터가 없습니다.')),
           names.length>0&&React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))',gap:10}},
             names.map(function(n,ni){
               var img=screenshots[n];
@@ -7832,11 +7873,11 @@ function ReportModal({tasks,videos,taktTime,workers,ratingFactor,allowanceRate,l
                 img
                   ?React.createElement('img',{src:img,alt:n,style:{width:'100%',height:101,objectFit:'cover',display:'block'}})
                   :React.createElement('div',{style:{width:'100%',height:101,display:'flex',alignItems:'center',justifyContent:'center',background:'#1e293b',color:'#475569',fontSize:11}},
-                      capturing&&capIdx===ni?'캡처 중…':'📷 대기'),
+                      capturing&&capIdx===ni?_m('캡처 중…'):_m('📷 대기')),
                 React.createElement('div',{style:{padding:'6px 8px'}},
                   React.createElement('div',{style:{fontSize:10,color:'#e2e8f0',fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},n),
                   React.createElement('div',{style:{fontSize:9,color:'#64748b',marginTop:2}},
-                    firstTask?'시작: '+(firstTask.startTime||0).toFixed(1)+'s':'')
+                    firstTask?_m('시작: ')+(firstTask.startTime||0).toFixed(1)+'s':'')
                 )
               );
             })
