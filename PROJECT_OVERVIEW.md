@@ -150,7 +150,8 @@
 ### 내비게이션 (LeftSidebar 2161, 상단 ProjectMenuDropdown 2105)
 - **작업**: 작업분석(analysis) / 차트(gantt: timeline·byname·cycle 3뷰) / 통계(stats) / 영상비교(모달)
 - **라인**: 라인분석(lineanalysis) / 야마즈미=작업배분(yamazumi) / 시뮬=배치실험(sim)
-- **도구**: 부품관리(parts) / ST분석(st) / 작업편성(assign) / 라인예측(line) / AI 비전 분석·AI 분석결과(vision)
+- **도구**: 부품관리(parts) / 라인예측(line) / AI 비전 분석·AI 분석결과(vision)
+  - ~~ST분석~~ → 부품관리 > 영상분석이력 탭으로 통합(2026-07-26), ~~작업편성~~ → 숨김(2026-07-27, 역할 중복). 두 컴포넌트 코드는 보존
 - **메뉴**: 세션, CSV·PDF 내보내기, 모델, AI 동작분석, 낭비 구간 비교, 사이클 속도 비교, SOP, 산출보고서, 도움말, 용어집, 설정
 - 초보자 모드(기본): 탭 이름이 쉬운 말로 바뀌고(야마즈미→작업배분) StepGuide 4단계 안내 표시. `wvas_expert` 설정 시 해제
 
