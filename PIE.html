@@ -1166,6 +1166,12 @@ var MSG_ZH={
   '명':'人',
   ' — 총 ':' — 共 ',
   '작업)':'项作业)',
+  '⚖ 양손 균형도 (HBR)':'⚖ 双手平衡度 (HBR)',
+  'LH 왼손':'LH 左手',
+  'RH 오른손':'RH 右手',
+  ' 유휴(빈손) ':' 空闲(空手) ',
+  ' → 작업 재배분 검토':' → 建议重新分配作业',
+  '낭비 ':'浪费 ',
   '✕ 닫기':'✕ 关闭',
   '① 요약 통계':'① 汇总统计',
   '② 분류별\n비율':'② 分类\n比例',
@@ -1315,6 +1321,25 @@ function fmtS(sec) { // compact seconds display
   return sec>=60 ? `${Math.floor(sec/60)}m${(sec%60).toFixed(1)}s` : `${sec.toFixed(3)}s`;
 }
 function uid(){ return Math.random().toString(36).slice(2,9); }
+// 시간 구간 합집합(벽시계 기준) — 왼손/오른손 이중 마킹처럼 겹치는 구간은 한 번만 계산 (2026-07-26)
+// 한 손만 마킹한 세션은 겹침이 없어 duration 합산과 결과가 동일하다.
+function unionDur(arr){
+  var iv=[],rest=0;
+  (arr||[]).forEach(function(t){
+    var s=t.startTime,e=t.endTime;
+    if(isFinite(s)&&isFinite(e)&&e>s) iv.push([s,e]);
+    else rest+=(t.duration||0); // 구간 정보 없는 항목은 종전대로 합산
+  });
+  iv.sort(function(a,b){return a[0]-b[0];});
+  var sum=0,cs=null,ce=null;
+  iv.forEach(function(p){
+    if(cs===null){cs=p[0];ce=p[1];}
+    else if(p[0]<=ce){ if(p[1]>ce) ce=p[1]; }
+    else { sum+=ce-cs; cs=p[0]; ce=p[1]; }
+  });
+  if(cs!==null) sum+=ce-cs;
+  return sum+rest;
+}
 
 // ─────────────────────────────────────────
 //  Auto cycle assignment
@@ -3166,17 +3191,20 @@ function CycleStats(props){
     var cnums=[...new Set(taskArr.map(function(t){return t.cycle||1;}))].sort(function(a,b){return a-b;});
     return cnums.map(function(c){
       var ct=taskArr.filter(function(t){return(t.cycle||1)===c;});
-      var obs=ct.reduce(function(s,t){return s+t.duration;},0);
+      var rawSum=ct.reduce(function(s,t){return s+t.duration;},0);
+      var obs=unionDur(ct); // 벽시계 기준 — 양손 이중 마킹의 겹침은 1번만 계산 (한 손 마킹이면 rawSum과 동일)
+      var overlap=Math.max(0,rawSum-obs);
       var std=obs*(ratingFactor/100)*(1+allowanceRate/100);
       var va=ct.filter(function(t){return t.type==='value-added';}).reduce(function(s,t){return s+t.duration;},0);
       var aux=ct.filter(function(t){return t.type==='auxiliary';}).reduce(function(s,t){return s+t.duration;},0);
       var wst=ct.filter(function(t){return t.type==='waste';}).reduce(function(s,t){return s+t.duration;},0);
       var waitT=ct.filter(function(t){return t.wasteType==='wait';}).reduce(function(s,t){return s+t.duration;},0);
-      return{c:c,obs:obs,std:std,count:ct.length,va:va,aux:aux,wst:wst,waitT:waitT};
+      return{c:c,obs:obs,overlap:overlap,std:std,count:ct.length,va:va,aux:aux,wst:wst,waitT:waitT};
     });
   }
 
   var cycleData=calcCycleData(tasks);
+  var overlapTotal=cycleData.reduce(function(s,d){return s+(d.overlap||0);},0); // 양손 이중 마킹으로 제외된 겹침 합
   var n=cycleData.length;
   var vals=cycleData.map(function(d){return d.obs;});
   var mean=vals.reduce(function(s,v){return s+v;},0)/n;
@@ -3224,6 +3252,10 @@ function CycleStats(props){
   return React.createElement('div',{
     style:{padding:'16px',overflow:'auto',height:'100%',boxSizing:'border-box',fontFamily:'sans-serif'}
   },
+    // ── 양손 이중 마킹 안내 (겹침이 실제로 제외된 경우에만 표시) ──
+    overlapTotal>0.1&&React.createElement('div',{style:{fontSize:11,color:'#93c5fd',background:'rgba(30,58,138,0.25)',border:'1px solid rgba(59,130,246,0.35)',borderRadius:6,padding:'6px 10px',marginBottom:10,lineHeight:1.6}},
+      '🖐 양손(LH/RH) 이중 마킹 감지 — 관측시간은 벽시계 기준으로 계산해 겹치는 '+fmtS(overlapTotal)+'는 한 번만 반영했습니다. (유형별 정미/부수/낭비 시간은 손 작업량 기준 합산)'
+    ),
     // ── Title ──
     React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'12px',marginBottom:'14px'}},
       React.createElement('h2',{style:{margin:0,fontSize:'16px',fontWeight:'700',color:'#e2e8f0'}},
@@ -3444,9 +3476,15 @@ function CycleStats(props){
       var byPart={};
       tasks.forEach(function(t){
         if(!t.partId||t.type==='waste') return; // 부품 ST DB 저장 로직과 동일 기준: 낭비 제외
-        if(!byPart[t.partId]) byPart[t.partId]={total:0,cyc:{}};
-        byPart[t.partId].total+=t.duration;
-        byPart[t.partId].cyc[t.cycle||1]=1;
+        if(!byPart[t.partId]) byPart[t.partId]={byCycle:{}};
+        var c=t.cycle||1;
+        if(!byPart[t.partId].byCycle[c]) byPart[t.partId].byCycle[c]=[];
+        byPart[t.partId].byCycle[c].push(t);
+      });
+      Object.keys(byPart).forEach(function(pid2){
+        var g=byPart[pid2];
+        g.cyc=g.byCycle;
+        g.total=Object.keys(g.byCycle).reduce(function(s,c){return s+unionDur(g.byCycle[c]);},0); // 벽시계 합집합 (저장 로직과 동일)
       });
       var pdata=parts.filter(function(p){return byPart[p.id];}).map(function(p){
         var nCyc=Object.keys(byPart[p.id].cyc).length||1;
@@ -10697,6 +10735,10 @@ function App() {
     rafRef.current=requestAnimationFrame(tick); return()=>cancelAnimationFrame(rafRef.current);
   },[]);
   useEffect(()=>{fsRestoreFolder().then(function(h){if(h)setDirHandle(h);});},[]);
+  useEffect(()=>{ // 시작 시 ST 누적 저장소 자동 동기화(pull) — 다른 PC가 쌓은 표준공수를 켤 때마다 자동 반영 (2026-07-26)
+    if(stBackendMode()==='none') return;
+    stBackendSync(true).then(function(r){ if(r&&r.ok) setParts(partsList()); }).catch(function(){});
+  },[]);
   useEffect(()=>{
     const v=videoRef.current; if(!v) return;
     const onP=()=>setPlaying(true),onPa=()=>setPlaying(false);
@@ -10903,16 +10945,22 @@ function App() {
       allTasks=tasks.slice();
     }
     if(!allTasks.length){alert(_m('분석된 작업이 없습니다.'));return;}
-    // 부품별 그룹핑 (낭비 제외)
+    // 부품별 그룹핑 (낭비 제외) — 사이클별 벽시계 합집합으로 집계 (양손 이중 마킹 겹침 제거)
     var partGroups={};
     allTasks.forEach(function(t){
       if(!t.duration||t.duration<=0) return;
       if(t.type==='waste') return;
       var pid=t.partId||'__none__';
-      if(!partGroups[pid]) partGroups[pid]={total:0,cycles:new Set(),worker:''};
-      partGroups[pid].total+=t.duration;
-      partGroups[pid].cycles.add(t.cycle!=null?t.cycle:1);
+      if(!partGroups[pid]) partGroups[pid]={byCycle:{},cycles:new Set(),worker:''};
+      var c=(t.cycle!=null?t.cycle:1);
+      if(!partGroups[pid].byCycle[c]) partGroups[pid].byCycle[c]=[];
+      partGroups[pid].byCycle[c].push(t);
+      partGroups[pid].cycles.add(c);
       if(t.worker) partGroups[pid].worker=t.worker;
+    });
+    Object.keys(partGroups).forEach(function(pid){
+      var g=partGroups[pid];
+      g.total=Object.keys(g.byCycle).reduce(function(s,c){return s+unionDur(g.byCycle[c]);},0);
     });
     var partsMap={};
     parts.forEach(function(p){partsMap[p.id]=p.name;});
@@ -12458,34 +12506,37 @@ function App() {
           ),
         ),
 
-        // HBR card
+        // HBR card — 양손 균형: 시간이 적은 손 = 그만큼 놀고 있는(유휴) 손. 손별 낭비 시간도 함께 표시
         (function(){
-          var lhTime=tasks.filter(function(t){return t.hand==='LH';}).reduce(function(s,t){return s+(t.duration||0);},0);
-          var rhTime=tasks.filter(function(t){return t.hand==='RH';}).reduce(function(s,t){return s+(t.duration||0);},0);
+          function handSum(h,onlyWaste){return tasks.filter(function(t){return t.hand===h&&(!onlyWaste||t.type==='waste');}).reduce(function(s,t){return s+(t.duration||0);},0);}
+          var lhTime=handSum('LH'),rhTime=handSum('RH');
           if(!lhTime&&!rhTime) return null;
+          var lhWaste=handSum('LH',true),rhWaste=handSum('RH',true);
           var maxT=Math.max(lhTime,rhTime);
           var hbr=maxT>0?1-Math.abs(lhTime-rhTime)/maxT:1;
           var hbrPct=Math.round(hbr*100);
           var hbrColor=hbrPct>=80?'#22c55e':hbrPct>=60?'#f59e0b':'#ef4444';
           var diff=Math.abs(lhTime-rhTime);
-          var weakSide=lhTime<rhTime?'LH 왼손':'RH 오른손';
+          var weakSide=lhTime<rhTime?_m('LH 왼손'):_m('RH 오른손');
           return React.createElement('div',{style:{display:'flex',alignItems:'center',gap:16,padding:'8px 16px',background:'#0a1020',borderBottom:'1px solid #1e293b',flexShrink:0,flexWrap:'wrap'}},
             React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8}},
-              React.createElement('span',{style:{fontSize:12,fontWeight:700,color:'#94a3b8'}},'⚖ 양손 균형도 (HBR)'),
+              React.createElement('span',{style:{fontSize:12,fontWeight:700,color:'#94a3b8'}},_m('⚖ 양손 균형도 (HBR)')),
               React.createElement('span',{style:{fontSize:22,fontWeight:900,color:hbrColor,fontFamily:'monospace'}},hbrPct+'%'),
               hbrPct<80&&React.createElement('span',{style:{fontSize:11,color:'#fca5a5',background:'rgba(127,29,29,0.4)',border:'1px solid rgba(239,68,68,0.4)',borderRadius:4,padding:'2px 8px'}},
-                '⚠ '+weakSide+' '+fmt(diff)+' 부족 → 공정 재설계 권장'
+                '⚠ '+weakSide+_m(' 유휴(빈손) ')+fmtS(diff)+_m(' → 작업 재배분 검토')
               ),
             ),
-            React.createElement('div',{style:{flex:1,minWidth:200,maxWidth:360}},
-              [['LH',lhTime,'#3b82f6'],['RH',rhTime,'#22c55e']].map(function(row){
-                var label=row[0],t=row[1],col=row[2];
+            React.createElement('div',{style:{flex:1,minWidth:200,maxWidth:400}},
+              [['LH',lhTime,lhWaste,'#3b82f6'],['RH',rhTime,rhWaste,'#22c55e']].map(function(row){
+                var label=row[0],t=row[1],w=row[2],col=row[3];
                 return React.createElement('div',{key:label,style:{display:'flex',alignItems:'center',gap:6,marginBottom:3}},
                   React.createElement('span',{style:{fontSize:10,color:col,width:28,fontWeight:700,flexShrink:0}},label),
-                  React.createElement('div',{style:{flex:1,height:8,background:'#1e293b',borderRadius:4,overflow:'hidden'}},
-                    React.createElement('div',{style:{width:(maxT>0?t/maxT*100:0)+'%',height:'100%',background:col,borderRadius:4,minWidth:t>0?2:0}})
+                  React.createElement('div',{style:{flex:1,height:8,background:'#1e293b',borderRadius:4,overflow:'hidden',position:'relative'}},
+                    React.createElement('div',{style:{width:(maxT>0?t/maxT*100:0)+'%',height:'100%',background:col,borderRadius:4,minWidth:t>0?2:0}}),
+                    w>0&&React.createElement('div',{style:{position:'absolute',top:0,left:0,width:(maxT>0?w/maxT*100:0)+'%',height:'100%',background:'rgba(239,68,68,0.55)',borderRadius:4}})
                   ),
-                  React.createElement('span',{style:{fontSize:10,color:'#94a3b8',width:44,textAlign:'right',flexShrink:0,fontFamily:'monospace'}},fmt(t)),
+                  React.createElement('span',{style:{fontSize:10,color:'#94a3b8',minWidth:44,textAlign:'right',flexShrink:0,fontFamily:'monospace'}},fmt(t)),
+                  w>0&&React.createElement('span',{style:{fontSize:9,color:'#fca5a5',flexShrink:0}},_m('낭비 ')+fmtS(w)),
                 );
               })
             ),
