@@ -1173,6 +1173,45 @@ var MSG_ZH={
   '삭제':'删除',
   '📥 편성안 내보내기':'📥 导出编成方案',
   '🎬 배치 시뮬레이션':'🎬 布局模拟',
+  '🏭 신규 모델 라인 예측':'🏭 新机种产线预测',
+  '가동시간':'可动时间',
+  '분':'分',
+  '일 생산목표':'日产量目标',
+  '인원 지정':'指定人数',
+  '자동':'自动',
+  '자동 계산':'自动计算',
+  '지정':'指定',
+  '최소':'最少',
+  '💾 구성 저장':'💾 保存构成',
+  '📥 내보내기':'📥 导出',
+  '부품 구성 (BOM) 입력':'部件构成 (BOM) 输入',
+  '부품 선택...':'选择部件...',
+  'ST 없음':'无 ST',
+  '수량':'数量',
+  '+ 추가':'+ 添加',
+  '추가된 부품이 없습니다':'尚未添加部件',
+  '표준공수 없음':'无标准工时',
+  '저장된 구성':'已保存的构成',
+  '부품을 추가하면 예측 결과가 나옵니다':'添加部件后将显示预测结果',
+  '부품관리 > 영상분석이력에서 「표준시간 확정 저장」을 한 부품만 계산됩니다':'仅计算在 部件管理 > 视频分析履历 中「确定保存标准时间」过的部件',
+  '표준공수가 없어 계산에서 제외된 부품':'因无标准工时而被排除的部件',
+  '예상 사이클타임':'预计节拍周期',
+  '예상 일 생산량':'预计日产量',
+  '예상 사이클타임이 목표 T/T를 초과합니다 — 인원을 늘리거나 목표를 조정하세요':'预计节拍周期超出目标 T/T — 请增加人数或调整目标',
+  '예상 공정 편성':'预计工序编成',
+  '공정':'工序',
+  '작업 없음':'无作业',
+  '부품을 먼저 추가하세요.':'请先添加部件。',
+  '신규 모델 이름':'新机种名称',
+  '저장했습니다: ':'已保存: ',
+  ' 구성을 삭제할까요?':' 构成要删除吗?',
+  '예측할 데이터가 없습니다.':'没有可预测的数据。',
+  '적용 인원':'适用人数',
+  '부품':'部件',
+  '개당 ST(초)':'单个 ST(秒)',
+  '소계(초)':'小计(秒)',
+  '작업':'作业',
+  '공정 부하(초)':'工序负荷(秒)',
   '사이클타임':'节拍周期',
   '시간당 생산':'每小时产量',
   '개':'个',
@@ -5346,131 +5385,305 @@ function STAnalysis({parts}){
   );
 }
 
+// ─────────────────────────────────────────
+//  신규 모델 BOM 저장소 (라인예측 전용)
+// ─────────────────────────────────────────
+const PREDICT_BOM_KEY='pie_predict_bom';
+function predictBomLoad(){try{return JSON.parse(localStorage.getItem(PREDICT_BOM_KEY)||'[]');}catch{return[];}}
+function predictBomSave(arr){try{localStorage.setItem(PREDICT_BOM_KEY,JSON.stringify(arr));}catch(e){}}
+
 function LinePredict({parts}){
-  const [tt,setTt]=useState(60);
+  var useState=React.useState, useMemo=React.useMemo;
+  const [availMin,setAvailMin]=useState(480);      // 가동시간(분)
+  const [dailyTarget,setDailyTarget]=useState(''); // 일 생산목표(개)
+  const [manualTt,setManualTt]=useState(60);       // 목표 T/T 직접 입력
+  const [fixWorkers,setFixWorkers]=useState('');   // 인원 고정(비우면 최소인원 자동)
   const [lineItems,setLineItems]=useState([]);
   const [addPartId,setAddPartId]=useState('');
   const [addQty,setAddQty]=useState(1);
-  const allSessions=useMemo(()=>lsList().map(m=>lsGet(m.id)).filter(Boolean),[]);
-  const stDb=useMemo(()=>{
-    const db={};
-    allSessions.forEach(sess=>{
-      const pid=sess.partId||'__none__';
-      if(!db[pid]) db[pid]={};
-      const tasks=Array.isArray(sess.videos)?sess.videos.flatMap(v=>v.tasks||[]):(sess.tasks||[]);
-      tasks.forEach(t=>{if(!t.name)return;if(!db[pid][t.name])db[pid][t.name]=[];db[pid][t.name].push(t.duration);});
-    });
-    return db;
-  },[allSessions]);
+  const [boms,setBoms]=useState(predictBomLoad);
+
+  // 부품 표준공수 = 부품관리에서 확정 저장한 값(서버 누적 동기화 포함). 세션 재계산이 아님 (2026-07-27 변경)
+  const stDb=useMemo(function(){return partStLoad();},[]);
+
+  // 부품 1개당 작업 단위 목록. '전체작업'(일괄저장)이 있으면 그것만 사용해 이중집계를 막는다.
+  function partUnits(pid){
+    var d=stDb[pid]||{};
+    var keys=Object.keys(d);
+    if(!keys.length) return null;
+    if(d['전체작업']) return [{task:'',st:d['전체작업'].st||0,n:d['전체작업'].n||0}];
+    return keys.map(function(k){return {task:k,st:d[k].st||0,n:d[k].n||0};});
+  }
+  function partSt(pid){
+    var us=partUnits(pid);
+    return us?us.reduce(function(s,u){return s+u.st;},0):0;
+  }
+
   function addItem(){
     if(!addPartId) return;
-    setLineItems(prev=>{
-      const exist=prev.find(i=>i.partId===addPartId);
-      if(exist) return prev.map(i=>i.partId===addPartId?{...i,qty:i.qty+Number(addQty)||1}:i);
-      return [...prev,{partId:addPartId,qty:Number(addQty)||1}];
+    var q=Math.max(1,parseInt(addQty,10)||1);
+    setLineItems(function(prev){
+      var ex=prev.find(function(i){return i.partId===addPartId;});
+      if(ex) return prev.map(function(i){return i.partId===addPartId?Object.assign({},i,{qty:i.qty+q}):i;});
+      return prev.concat([{partId:addPartId,qty:q}]);
     });
   }
-  function removeItem(partId){setLineItems(prev=>prev.filter(i=>i.partId!==partId));}
-  const workContent=useMemo(()=>{
-    const t={};
-    lineItems.forEach(({partId,qty})=>{
-      const data=stDb[partId]||{};
-      Object.entries(data).forEach(([name,durs])=>{
-        const avg=durs.reduce((s,d)=>s+d,0)/durs.length;
-        t[name]=(t[name]||0)+avg*qty;
-      });
+  function removeItem(pid){setLineItems(function(p){return p.filter(function(i){return i.partId!==pid;});});}
+  function setQty(pid,q){
+    var n=Math.max(1,parseInt(q,10)||1);
+    setLineItems(function(p){return p.map(function(i){return i.partId===pid?Object.assign({},i,{qty:n}):i;});});
+  }
+
+  // 작업 단위를 수량만큼 펼침 — 개별 단위로 나눠야 스테이션 균형이 맞는다
+  const workUnits=useMemo(function(){
+    var out=[];
+    lineItems.forEach(function(it){
+      var p=parts.find(function(x){return x.id===it.partId;});
+      var us=partUnits(it.partId);
+      if(!us) return;
+      for(var q=0;q<it.qty;q++){
+        us.forEach(function(u){
+          if(u.st>0) out.push({label:(p?p.name:'?')+(u.task?' · '+u.task:''),time:u.st});
+        });
+      }
     });
-    return t;
-  },[lineItems,stDb]);
-  const ttNum=Math.max(1,parseFloat(tt)||60);
-  const totalWork=Object.values(workContent).reduce((s,v)=>s+v,0);
+    return out;
+  },[lineItems,stDb,parts]);
+
+  const missingParts=useMemo(function(){
+    return lineItems.filter(function(it){return !partUnits(it.partId);})
+      .map(function(it){var p=parts.find(function(x){return x.id===it.partId;});return p?p.name:it.partId;});
+  },[lineItems,stDb,parts]);
+
+  const totalWork=workUnits.reduce(function(s,u){return s+u.time;},0);
+
+  // 택트: 일 생산목표가 있으면 자동 역산, 없으면 직접 입력값
+  const autoTt=(parseFloat(dailyTarget)>0&&parseFloat(availMin)>0)
+    ? Math.max(1,Math.round(parseFloat(availMin)*60/parseFloat(dailyTarget))) : null;
+  const ttNum=autoTt||Math.max(1,parseFloat(manualTt)||60);
+
   const minWorkers=totalWork>0?Math.ceil(totalWork/ttNum):0;
-  const utilization=minWorkers>0?(totalWork/(minWorkers*ttNum)*100):0;
-  const stations=useMemo(()=>{
-    if(minWorkers===0||totalWork===0) return [];
-    const res=Array.from({length:minWorkers},(_,i)=>({id:i+1,tasks:[],load:0}));
-    Object.entries(workContent).sort((a,b)=>b[1]-a[1]).forEach(([name,time])=>{
-      const m=res.reduce((a,s)=>s.load<a.load?s:a,res[0]);
-      m.tasks.push({name,time});m.load+=time;
+  const workers=fixWorkers?Math.max(1,parseInt(fixWorkers,10)||1):minWorkers;
+
+  // LPT(긴 작업 우선) 편성
+  const stations=useMemo(function(){
+    if(!workers||!workUnits.length) return [];
+    var res=[];for(var i=0;i<workers;i++)res.push({id:i+1,units:[],load:0});
+    workUnits.slice().sort(function(a,b){return b.time-a.time;}).forEach(function(u){
+      var m=res[0];
+      for(var j=1;j<res.length;j++) if(res[j].load<m.load) m=res[j];
+      m.units.push(u);m.load+=u.time;
     });
     return res;
-  },[workContent,minWorkers]);
+  },[workUnits,workers]);
+
+  const realCt=stations.length?Math.max.apply(null,stations.map(function(s){return s.load;})):0; // 실제 사이클타임 = 병목
+  const balance=(realCt>0&&workers)?Math.round(totalWork/(realCt*workers)*100):0;
+  const dailyOut=realCt>0?Math.floor(parseFloat(availMin||0)*60/realCt):0;
+  const overTakt=realCt>ttNum;
+
+  // 스테이션 내 동일 작업 묶기
+  function groupUnits(us){
+    var m={};
+    us.forEach(function(u){if(!m[u.label])m[u.label]={n:0,t:0};m[u.label].n++;m[u.label].t+=u.time;});
+    return Object.keys(m).map(function(k){return {label:k,n:m[k].n,t:m[k].t};}).sort(function(a,b){return b.t-a.t;});
+  }
+
+  // ── BOM 저장/불러오기 ──
+  function saveBom(){
+    if(!lineItems.length){alert(_m('부품을 먼저 추가하세요.'));return;}
+    var nm=prompt(_m('신규 모델 이름'),'');
+    if(!nm||!nm.trim())return;
+    var next=predictBomLoad().filter(function(b){return b.name!==nm.trim();});
+    next.unshift({name:nm.trim(),items:lineItems,availMin:availMin,dailyTarget:dailyTarget,
+                  manualTt:manualTt,fixWorkers:fixWorkers,savedAt:new Date().toISOString()});
+    predictBomSave(next);setBoms(next);
+    alert(_m('저장했습니다: ')+nm.trim());
+  }
+  function loadBom(b){
+    setLineItems(b.items||[]);
+    if(b.availMin!==undefined)setAvailMin(b.availMin);
+    if(b.dailyTarget!==undefined)setDailyTarget(b.dailyTarget);
+    if(b.manualTt!==undefined)setManualTt(b.manualTt);
+    if(b.fixWorkers!==undefined)setFixWorkers(b.fixWorkers);
+  }
+  function delBom(name){
+    if(!confirm(name+_m(' 구성을 삭제할까요?')))return;
+    var next=predictBomLoad().filter(function(b){return b.name!==name;});
+    predictBomSave(next);setBoms(next);
+  }
+
+  // ── Excel 내보내기 ──
+  function exportPredict(){
+    if(!stations.length){alert(_m('예측할 데이터가 없습니다.'));return;}
+    var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+    var th=function(s,bg){return '<th style="background:'+bg+';color:#fff;padding:6px 10px;border:1px solid #ccc;font-weight:bold;white-space:nowrap">'+esc(s)+'</th>';};
+    var td=function(s,bg,al){return '<td style="background:'+(bg||'#fff')+';padding:5px 8px;border:1px solid #ccc;text-align:'+(al||'center')+'">'+esc(s)+'</td>';};
+    var html='<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"/></head><body>';
+    html+='<table><tr>'+th(_m('구분'),'#374151')+th(_m('값'),'#374151')+'</tr>';
+    [[_m('총 공수'),totalWork.toFixed(1)+'s'],
+     [_m('목표 T/T'),ttNum+'s'+(autoTt?' ('+_m('자동 계산')+')':'')],
+     [_m('가동시간'),availMin+_m('분')],
+     [_m('일 생산목표'),(dailyTarget||'-')+_m('개')],
+     [_m('필요 최소 인원'),minWorkers+_m('명')],
+     [_m('적용 인원'),workers+_m('명')+(fixWorkers?' ('+_m('지정')+')':'')],
+     [_m('예상 사이클타임'),realCt.toFixed(1)+'s'],
+     [_m('예상 일 생산량'),dailyOut+_m('개')],
+     [_m('밸런스율'),balance+'%']
+    ].forEach(function(r){html+='<tr>'+td(r[0],'#f9fafb','left')+td(r[1],'#fff','left')+'</tr>';});
+    html+='</table><br/>';
+    html+='<table><tr>'+th(_m('부품'),'#1e293b')+th(_m('수량'),'#1e293b')+th(_m('개당 ST(초)'),'#1e293b')+th(_m('소계(초)'),'#1e40af')+'</tr>';
+    lineItems.forEach(function(it){
+      var p=parts.find(function(x){return x.id===it.partId;});
+      var st=partSt(it.partId);
+      html+='<tr>'+td(p?p.name:'?','#f8fafc','left')+td(it.qty,'#fff')+td(st.toFixed(2),'#fff')+td((st*it.qty).toFixed(1),'#dbeafe')+'</tr>';
+    });
+    html+='</table><br/>';
+    html+='<table><tr>'+th(_m('공정'),'#1e293b')+th(_m('작업'),'#1e293b')+th(_m('수량'),'#1e293b')+th(_m('시간(초)'),'#1e293b')+th(_m('공정 부하(초)'),'#92400e')+'</tr>';
+    stations.forEach(function(s){
+      var g=groupUnits(s.units);
+      if(!g.length){html+='<tr>'+td(_m('공정')+' '+s.id,'#f8fafc','left')+td('-','#fff')+td('-','#fff')+td('-','#fff')+td('0.0','#fffbeb')+'</tr>';return;}
+      g.forEach(function(u,i){
+        html+='<tr>'+td(i===0?(_m('공정')+' '+s.id):'','#f8fafc','left')+td(u.label,'#fff','left')
+          +td('x'+u.n,'#fff')+td(u.t.toFixed(1),'#fff')
+          +(i===0?td(s.load.toFixed(1),'#fffbeb'):td('','#fffbeb'))+'</tr>';
+      });
+    });
+    html+='</table></body></html>';
+    var blob=new Blob(['﻿'+html],{type:'application/vnd.ms-excel;charset=utf-8'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='라인예측_'+new Date().toISOString().slice(0,10)+'.xls';
+    a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);},60000);
+  }
+
+  var INP={background:'#0f172a',border:'1px solid #334155',borderRadius:4,padding:'3px 7px',fontSize:12,color:'#e2e8f0'};
+
   return React.createElement('div',{className:'flex flex-col flex-1 overflow-hidden'},
-    React.createElement('div',{className:'flex items-center gap-4 px-4 py-3 bg-slate-800 border-b border-slate-700 shrink-0 flex-wrap'},
-      React.createElement('span',{className:'text-sm font-bold text-white'},'🏭 라인 구성 예측'),
-      React.createElement('div',{className:'flex items-center gap-2'},
-        React.createElement('label',{className:'text-xs text-slate-400 font-semibold'},'목표 T/T (초)'),
-        React.createElement('input',{type:'number',value:tt,onChange:e=>setTt(e.target.value),style:{width:80},min:1,step:1}),
+    // ── 상단 조건 입력 ──
+    React.createElement('div',{className:'flex items-center gap-3 px-4 py-3 bg-slate-800 border-b border-slate-700 shrink-0 flex-wrap'},
+      React.createElement('span',{className:'text-sm font-bold text-white'},_m('🏭 신규 모델 라인 예측')),
+      React.createElement('label',{style:{fontSize:12,color:'#94a3b8',display:'flex',alignItems:'center',gap:4}},
+        _m('가동시간'),
+        React.createElement('input',{type:'number',value:availMin,min:1,onChange:function(e){setAvailMin(e.target.value);},style:Object.assign({width:60},INP)}),
+        _m('분')),
+      React.createElement('label',{style:{fontSize:12,color:'#94a3b8',display:'flex',alignItems:'center',gap:4}},
+        _m('일 생산목표'),
+        React.createElement('input',{type:'number',value:dailyTarget,min:1,placeholder:'-',onChange:function(e){setDailyTarget(e.target.value);},style:Object.assign({width:70},INP)}),
+        _m('개')),
+      autoTt
+        ?React.createElement('span',{style:{fontSize:12,color:'#7dd3fc',background:'#0f2040',border:'1px solid #3b82f6',borderRadius:6,padding:'3px 10px'}},
+           _m('목표 T/T'),' ',React.createElement('strong',null,autoTt+'s'),
+           React.createElement('span',{style:{fontSize:10,color:'#60a5fa'}},' ('+availMin+_m('분')+' ÷ '+dailyTarget+_m('개')+')'))
+        :React.createElement('label',{style:{fontSize:12,color:'#94a3b8',display:'flex',alignItems:'center',gap:4}},
+           _m('목표 T/T'),
+           React.createElement('input',{type:'number',value:manualTt,min:1,onChange:function(e){setManualTt(e.target.value);},style:Object.assign({width:60},INP)}),'초'),
+      React.createElement('label',{style:{fontSize:12,color:'#94a3b8',display:'flex',alignItems:'center',gap:4}},
+        _m('인원 지정'),
+        React.createElement('input',{type:'number',value:fixWorkers,min:1,placeholder:_m('자동'),onChange:function(e){setFixWorkers(e.target.value);},style:Object.assign({width:60},INP)}),
+        _m('명')),
+      React.createElement('div',{style:{marginLeft:'auto',display:'flex',gap:6}},
+        React.createElement('button',{className:'btn btn-slate text-xs',onClick:saveBom},_m('💾 구성 저장')),
+        React.createElement('button',{className:'btn btn-green text-xs',onClick:exportPredict},_m('📥 내보내기')),
       ),
     ),
     React.createElement('div',{className:'flex flex-1 overflow-hidden'},
-      React.createElement('div',{className:'flex flex-col bg-slate-800 border-r border-slate-700 p-4 overflow-auto shrink-0',style:{width:260}},
-        React.createElement('div',{className:'text-xs font-bold text-slate-300 mb-3'},'부품 구성 입력'),
+      // ── 좌: BOM 입력 ──
+      React.createElement('div',{className:'flex flex-col bg-slate-800 border-r border-slate-700 p-4 overflow-auto shrink-0',style:{width:280}},
+        React.createElement('div',{className:'text-xs font-bold text-slate-300 mb-3'},_m('부품 구성 (BOM) 입력')),
         React.createElement('div',{className:'flex flex-col gap-2 mb-4 p-3 bg-slate-900 rounded-lg'},
-          React.createElement('select',{value:addPartId,onChange:e=>setAddPartId(e.target.value),style:{width:'100%'}},
-            React.createElement('option',{value:''},'부품 선택...'),
-            parts.map(p=>React.createElement('option',{key:p.id,value:p.id},`${p.code?p.code+' ':''}${p.name}`)),
+          React.createElement('select',{value:addPartId,onChange:function(e){setAddPartId(e.target.value);},style:{width:'100%'}},
+            React.createElement('option',{value:''},_m('부품 선택...')),
+            parts.map(function(p){
+              var has=!!partUnits(p.id);
+              return React.createElement('option',{key:p.id,value:p.id},(has?'':'⚠ ')+(p.code?p.code+' ':'')+p.name+(has?'':' ('+_m('ST 없음')+')'));
+            }),
           ),
           React.createElement('div',{className:'flex gap-2 items-center'},
-            React.createElement('label',{className:'text-xs text-slate-400'},'수량'),
-            React.createElement('input',{type:'number',value:addQty,onChange:e=>setAddQty(e.target.value),style:{width:65},min:1}),
-            React.createElement('button',{className:'btn btn-blue text-xs flex-1',onClick:addItem,disabled:!addPartId},'+ 추가'),
+            React.createElement('label',{className:'text-xs text-slate-400'},_m('수량')),
+            React.createElement('input',{type:'number',value:addQty,min:1,onChange:function(e){setAddQty(e.target.value);},style:Object.assign({width:60},INP)}),
+            React.createElement('button',{className:'btn btn-blue text-xs flex-1',onClick:addItem,disabled:!addPartId},_m('+ 추가')),
           ),
         ),
         lineItems.length===0
-          ?React.createElement('div',{className:'text-xs text-slate-600 text-center mt-4'},'추가된 부품이 없습니다')
-          :lineItems.map(item=>{
-            const p=parts.find(x=>x.id===item.partId);
-            const data=stDb[item.partId]||{};
-            const st=Object.values(data).reduce((s,durs)=>s+durs.reduce((a,d)=>a+d,0)/durs.length,0);
-            return React.createElement('div',{key:item.partId,className:'stat-card mb-2 flex items-center justify-between'},
-              React.createElement('div',null,
-                React.createElement('div',{className:'text-xs font-semibold text-white'},p?p.name:'?'),
-                React.createElement('div',{className:'text-xs text-slate-400'},`x${item.qty} | ST: ${fmtS(st)}/ea`),
+          ?React.createElement('div',{className:'text-xs text-slate-600 text-center mt-4'},_m('추가된 부품이 없습니다'))
+          :lineItems.map(function(item){
+            var p=parts.find(function(x){return x.id===item.partId;});
+            var st=partSt(item.partId);
+            var noSt=!partUnits(item.partId);
+            return React.createElement('div',{key:item.partId,className:'stat-card mb-2',style:noSt?{borderColor:'#7f1d1d'}:null},
+              React.createElement('div',{className:'flex items-center justify-between'},
+                React.createElement('div',{className:'text-xs font-semibold text-white'},(noSt?'⚠ ':'')+(p?p.name:'?')),
+                React.createElement('button',{style:{color:'#64748b',fontSize:12,cursor:'pointer',fontWeight:'bold',padding:'0 4px'},onClick:function(){removeItem(item.partId);}},'×'),
               ),
-              React.createElement('button',{style:{color:'#64748b',fontSize:12,cursor:'pointer',fontWeight:'bold',padding:'0 4px'},onClick:()=>removeItem(item.partId)},'x'),
+              React.createElement('div',{className:'flex items-center gap-2 mt-1'},
+                React.createElement('input',{type:'number',value:item.qty,min:1,onChange:function(e){setQty(item.partId,e.target.value);},style:Object.assign({width:52},INP)}),
+                React.createElement('span',{className:'text-xs',style:{color:noSt?'#f87171':'#94a3b8'}},
+                  noSt?_m('표준공수 없음'):('ST '+fmtS(st)+'/ea → '+fmtS(st*item.qty))),
+              ),
             );
           }),
+        boms.length>0&&React.createElement('div',{style:{marginTop:14}},
+          React.createElement('div',{className:'text-xs font-bold text-slate-300 mb-2'},_m('저장된 구성')),
+          boms.map(function(b){
+            return React.createElement('div',{key:b.name,className:'flex items-center gap-1 mb-1'},
+              React.createElement('button',{className:'btn btn-slate text-xs',style:{flex:1,textAlign:'left'},onClick:function(){loadBom(b);}},
+                b.name+' ('+(b.items||[]).length+')'),
+              React.createElement('button',{style:{color:'#64748b',fontSize:11,cursor:'pointer',padding:'0 4px'},onClick:function(){delBom(b.name);}},'×'),
+            );
+          })
+        ),
       ),
+      // ── 우: 예측 결과 ──
       React.createElement('div',{className:'flex-1 overflow-auto p-4'},
         lineItems.length===0||totalWork===0
           ?React.createElement('div',{className:'text-center text-slate-500 mt-16'},
-            React.createElement('div',{className:'text-sm'},'부품을 추가하면 예측을 볼 수 있습니다'),
-            React.createElement('div',{className:'text-sm'},'부품 ST가 있어야 계산이 됩니다.'),
-            React.createElement('div',{className:'text-xs text-slate-600 mt-2'},'ST 분석 탭에서 세션을 저장하면 됩니다.'),
+            React.createElement('div',{className:'text-sm mb-1'},_m('부품을 추가하면 예측 결과가 나옵니다')),
+            React.createElement('div',{className:'text-xs text-slate-600'},_m('부품관리 > 영상분석이력에서 「표준시간 확정 저장」을 한 부품만 계산됩니다')),
           )
           :React.createElement('div',{className:'flex flex-col gap-4'},
+            missingParts.length>0&&React.createElement('div',{style:{fontSize:11,color:'#fca5a5',background:'rgba(127,29,29,0.3)',border:'1px solid rgba(239,68,68,0.4)',borderRadius:6,padding:'7px 10px'}},
+              '⚠ '+_m('표준공수가 없어 계산에서 제외된 부품')+': '+missingParts.join(', ')),
             React.createElement('div',{className:'flex gap-3 flex-wrap'},
-              ...[
-                {label:'총 작업 시간',val:fmtS(totalWork),color:'#60a5fa'},
-                {label:'목표 T/T',val:fmtS(ttNum),color:'#4ade80'},
-                {label:'최소 작업자',val:minWorkers+'명',color:'#f59e0b'},
-                {label:'가동 효율',val:utilization.toFixed(1)+'%',color:utilization>=85?'#4ade80':utilization>=65?'#f59e0b':'#f87171'},
-              ].map(({label,val,color})=>
-                React.createElement('div',{key:label,className:'stat-card flex-1 min-w-28'},
-                  React.createElement('div',{className:'text-xs text-slate-400 mb-1'},label),
-                  React.createElement('div',{className:'text-2xl font-black',style:{color}},val),
-                )
-              ),
+              [{label:_m('총 공수'),val:fmtS(totalWork),color:'#60a5fa'},
+               {label:_m('목표 T/T'),val:fmtS(ttNum)+(autoTt?' ↩':''),color:'#4ade80'},
+               {label:_m('필요 최소 인원'),val:minWorkers+_m('명'),color:'#f59e0b'},
+               {label:_m('예상 사이클타임'),val:fmtS(realCt),color:overTakt?'#f87171':'#7dd3fc'},
+               {label:_m('예상 일 생산량'),val:dailyOut+_m('개'),color:'#a78bfa'},
+               {label:_m('밸런스율'),val:balance+'%',color:balance>=85?'#4ade80':balance>=70?'#f59e0b':'#f87171'},
+              ].map(function(c){
+                return React.createElement('div',{key:c.label,className:'stat-card flex-1 min-w-28'},
+                  React.createElement('div',{className:'text-xs text-slate-400 mb-1'},c.label),
+                  React.createElement('div',{className:'text-2xl font-black',style:{color:c.color}},c.val),
+                );
+              }),
             ),
-            minWorkers>0&&React.createElement('div',null,
-              React.createElement('div',{className:'text-xs font-bold text-slate-300 mb-2'},`편성 결과 (${minWorkers}명)`),
+            overTakt&&React.createElement('div',{style:{fontSize:12,color:'#fca5a5',fontWeight:700}},
+              '⚠ '+_m('예상 사이클타임이 목표 T/T를 초과합니다 — 인원을 늘리거나 목표를 조정하세요')),
+            workers>0&&React.createElement('div',null,
+              React.createElement('div',{className:'text-xs font-bold text-slate-300 mb-2'},
+                _m('예상 공정 편성')+' ('+workers+_m('명')+(fixWorkers?' · '+_m('지정'):' · '+_m('최소'))+')'),
               React.createElement('div',{className:'flex gap-3 flex-wrap'},
-                stations.map(s=>{
-                  const pct=Math.min(100,s.load/ttNum*100);
-                  const col=pct>100?'#ef4444':pct>85?'#f59e0b':'#22c55e';
-                  return React.createElement('div',{key:s.id,className:'stat-card',style:{minWidth:160,maxWidth:220}},
+                stations.map(function(s){
+                  var pct=ttNum>0?Math.min(100,s.load/ttNum*100):0;
+                  var isBn=s.load>=realCt;
+                  var col=s.load>ttNum?'#ef4444':isBn?'#f59e0b':'#22c55e';
+                  return React.createElement('div',{key:s.id,className:'stat-card',style:{minWidth:180,maxWidth:240}},
                     React.createElement('div',{className:'flex justify-between items-center mb-2'},
-                      React.createElement('span',{className:'text-xs font-bold text-white'},`공정 ${s.id}`),
-                      React.createElement('span',{className:'text-xs font-bold',style:{color:col}},`${fmtS(s.load)} (${pct.toFixed(0)}%)`),
+                      React.createElement('span',{className:'text-xs font-bold text-white'},(isBn?'🔴 ':'')+_m('공정')+' '+s.id),
+                      React.createElement('span',{className:'text-xs font-bold',style:{color:col}},fmtS(s.load)+' ('+pct.toFixed(0)+'%)'),
                     ),
                     React.createElement('div',{className:'timeline-bar mb-2'},
-                      React.createElement('div',{style:{position:'absolute',top:0,left:0,height:'100%',width:`${pct}%`,background:col,borderRadius:6,opacity:.7}}),
+                      React.createElement('div',{style:{position:'absolute',top:0,left:0,height:'100%',width:pct+'%',background:col,borderRadius:6,opacity:.7}}),
                     ),
-                    s.tasks.map(t=>React.createElement('div',{key:t.name,className:'flex justify-between text-xs mt-1'},
-                      React.createElement('span',{className:'text-slate-300 truncate',style:{maxWidth:130}},t.name),
-                      React.createElement('span',{className:'text-slate-400 font-mono'},fmtS(t.time)),
-                    )),
+                    groupUnits(s.units).map(function(u){
+                      return React.createElement('div',{key:u.label,className:'flex justify-between text-xs mt-1'},
+                        React.createElement('span',{className:'text-slate-300 truncate',style:{maxWidth:140}},u.label+(u.n>1?' ×'+u.n:'')),
+                        React.createElement('span',{className:'text-slate-400 font-mono'},fmtS(u.t)),
+                      );
+                    }),
+                    s.units.length===0&&React.createElement('div',{className:'text-xs text-slate-600'},_m('작업 없음')),
                   );
                 })
               ),
@@ -5480,7 +5693,6 @@ function LinePredict({parts}){
     ),
   );
 }
-
 function BottleneckChart(props){
   var model=props.model;
   if(!model||!model.processes||model.processes.length===0) return null;
