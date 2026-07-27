@@ -2641,7 +2641,7 @@ function StartupModal({onNew,onLoad}){
           React.createElement('span',{style:{color:'#22c55e'}},'E')
         )
       ),
-      React.createElement('div',{style:{color:'#64748b',fontSize:12,marginBottom:40,letterSpacing:1}},'Process Intelligence Engine'),
+      React.createElement('div',{style:{color:'#64748b',fontSize:12,marginBottom:40,letterSpacing:1}},'Powernet Industrial Engineering'),
       React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:14}},
         React.createElement('button',{onClick:onLoad,style:{width:'100%',padding:'18px 0',background:'rgba(59,130,246,0.12)',border:'2px solid #3b82f6',borderRadius:12,color:'#93c5fd',fontSize:15,fontWeight:700,cursor:'pointer'}},T.load),
         React.createElement('button',{onClick:onNew,style:{width:'100%',padding:'18px 0',background:'rgba(34,197,94,0.1)',border:'2px solid #16a34a',borderRadius:12,color:'#4ade80',fontSize:15,fontWeight:700,cursor:'pointer'}},T.new)
@@ -3363,10 +3363,10 @@ function CycleStats(props){
         var totalWaste=tasks.filter(function(t){return t.type==='waste';}).reduce(function(s,t){return s+t.duration;},0);
         var wasteRatio=totalDur>0?totalWaste/totalDur*100:0;
         var insights=[];
-        if(cv<10) insights.push({icon:'✅',c:'#22c55e',bg:'#052e16',title:'작업 안정도 우수',msg:'CoV(변동계수) '+cv.toFixed(1)+'% — 매 사이클마다 거의 같은 시간에 완료됩니다. 숫련된 상태입니다.'});
+        if(cv<10) insights.push({icon:'✅',c:'#22c55e',bg:'#052e16',title:'작업 안정도 우수',msg:'CoV(변동계수) '+cv.toFixed(1)+'% — 매 사이클마다 거의 같은 시간에 완료됩니다. 숙련된 상태입니다.'});
         else if(cv<25) insights.push({icon:'⚠️',c:'#f59e0b',bg:'#1c1500',title:'작업 변동 보통',msg:'CoV '+cv.toFixed(1)+'% — 간혹 시간 차이가 있습니다. 표준 작업 순서를 다시 확인해보세요. (10% 미만이면 우수)'});
         else insights.push({icon:'🔴',c:'#ef4444',bg:'#1c0000',title:'작업 불안정 — 개선 필요',msg:'CoV '+cv.toFixed(1)+'% — 매 사이클마다 시간이 크게 달라집니다. 가장 빠른 사이클(#'+((cycleData.find(function(d){return d.isBest;})||{c:'-'}).c)+')의 방법을 표준으로 삼으세요.'});
-        if(outlierCount>0) insights.push({icon:'🔍',c:'#a78bfa',bg:'#12043a',title:'이상 사이클 '+outlierCount+'개 발견',msg:'해당 사이클에서 특별한 상황(부품 불량, 작업 누락, 간서 등)이 있었는지 확인하세요.'});
+        if(outlierCount>0) insights.push({icon:'🔍',c:'#a78bfa',bg:'#12043a',title:'이상 사이클 '+outlierCount+'개 발견',msg:'해당 사이클에서 특별한 상황(부품 불량, 작업 누락, 간섭 등)이 있었는지 확인하세요.'});
         if(wasteRatio>20) insights.push({icon:'🗑',c:'#ef4444',bg:'#1c0000',title:'낭비 비율 높음',msg:'전체 시간의 '+wasteRatio.toFixed(0)+'%가 낭비입니다. 이 낭비를 절반만 줄여도 사이클타임이 크게 단축됩니다.'});
         else if(wasteRatio>10) insights.push({icon:'🔶',c:'#f59e0b',bg:'#1c1500',title:'낭비 개선 여지',msg:'낭비 비율 '+wasteRatio.toFixed(0)+'% — 작업 레이아웃이나 동작 경로 개선으로 줄일 수 있습니다.'});
         if(n<reqN) insights.push({icon:'📏',c:'#60a5fa',bg:'#041426',title:'관측 데이터 부족',msg:'현재 '+n+'회 관측, 신뢰도 있는 분석을 위해 '+reqN+'회가 필요합니다. '+(reqN-n)+'회 더 측정해주세요.'});
@@ -11932,7 +11932,7 @@ function App() {
         pdf.addImage(imgData,'JPEG',0,-i*ph,iw,ih);
       }
       var dt=new Date().toLocaleDateString('ko').replace(/\./g,'-');
-      pdf.save('WVAS-report-'+dt+'.pdf');
+      pdf.save('PIE-report-'+dt+'.pdf');
     }catch(err){alert(_m('PDF 생성 실패: ')+err.message);}
     finally{if(btn){btn.textContent='📥 PDF';btn.disabled=false;}}
   }

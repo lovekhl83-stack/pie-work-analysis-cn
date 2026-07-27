@@ -20,6 +20,14 @@
 - GitHub: `lovekhl83-stack/pie-work-analysis-cn` (**public** — Pages가 download.html·전체 zip을 서빙). `st_store.json`은 커밋 제외(.gitignore)
 - ⚠ **공개 저장소 주의**: 이 문서와 PROJECT_OVERVIEW.md도 공개된다. 라이선스 키 알고리즘 상세·고객 정보는 문서에 기재 금지
 
+## 2026-07-27 (추가) — 표준 작업 방식 재동기화 + P3 오타·브랜딩 정리
+
+- **[완료] 대시보드 프로젝트 규칙을 그대로 재적용** (사용자 지시) — 세 프로젝트(scan-dashboard / pie-work-analysis / pie-work-analysis-cn) 규칙 통일. 자동 커밋+푸시 / 채팅 응답성 유지 / 허가 질문 ✗·요구사항 질문 ✓ / 세션 한도 시 자동 재개. 7/24의 "푸시는 '올려' 지시 시에만" 정책 폐기
+- **[완료] 백로그 #49(P3 오타·브랜딩) 잔여 4건 수정** — `숫련된`→`숙련된`, `간서`→`간섭`, PDF 파일명 `WVAS-report`→`PIE-report`, 기동 화면 부제 `Process Intelligence Engine`→`Powernet Industrial Engineering`. 인터넷 빌드와 동일 적용
+- **[참고] 인터넷 빌드(`pie-work-analysis`) 복구** — 7/15 이후 이 저장소에만 쌓인 개선 45커밋을 인터넷 빌드로 이식했다. 이제 두 빌드의 PIE.html 차이는 **MediaPipe 경로(CDN/로컬)와 구글시트(GAS) 연동 유무 둘뿐**이므로, 앞으로 한쪽을 고치면 반대쪽에도 옮겨야 한다
+
+---
+
 ## 프로젝트 현재 상태 스냅샷
 
 - 전체 구조 문서: `PROJECT_OVERVIEW.md` (2026-07-24 전면 감사 반영) — 구조 질문은 이 문서 먼저 볼 것
