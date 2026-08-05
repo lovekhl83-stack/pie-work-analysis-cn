@@ -1174,6 +1174,23 @@ var MSG_ZH={
   '📥 편성안 내보내기':'📥 导出编成方案',
   '🎬 배치 시뮬레이션':'🎬 布局模拟',
   '🏭 신규 모델 라인 예측':'🏭 新机种产线预测',
+  '📋 BOM 가져오기':'📋 导入 BOM',
+  '모델 BOM 엑셀에서 MI 부품(단계 ....4)만 자동으로 목록에 추가합니다':'从机种 BOM 表中自动提取 MI 部件(层级 ....4)并加入列表',
+  '🗑 전체 초기화':'🗑 全部重置',
+  '부품 목록과 표준시간을 모두 지웁니다':'清除全部部件列表与标准时间',
+  '부품 목록과 표준시간을 모두 지웁니다.\n복구할 수 없습니다. 계속할까요?\n(이 PC에서만 삭제되며, 공유 저장소의 데이터는 그대로입니다)':'将清除全部部件列表与标准时间。\n无法恢复，要继续吗?\n(仅删除本机数据，共享存储中的数据保持不变)',
+  '초기화했습니다.':'已重置。',
+  '📋 BOM 가져오기 확인':'📋 确认导入 BOM',
+  '모델':'机种',
+  '추가할 MI 부품':'将添加的 MI 部件',
+  '건':'项',
+  '제외됨(소모품·반제품)':'已排除(耗材·半成品)',
+  '※ 이미 있는 품번은 건너뜁니다. 기존 목록에 더해집니다.':'※ 已存在的品号将跳过，新部件追加到现有列表。',
+  '가져오기':'导入',
+  'MI 부품(단계 ....4)을 찾지 못했습니다: ':'未找到 MI 部件(层级 ....4): ',
+  'BOM 읽기 실패: ':'BOM 读取失败: ',
+  'BOM 가져오기 완료 — 추가 ':'BOM 导入完成 — 新增 ',
+  '건, 이미 있음 ':'项, 已存在 ',
   '가동시간':'可动时间',
   '분':'分',
   '일 생산목표':'日产量目标',
@@ -5386,6 +5403,109 @@ function STAnalysis({parts}){
 }
 
 // ─────────────────────────────────────────
+//  BOM(xlsx) 판독기 — 외부 라이브러리 없이 브라우저 내장 기능만 사용 (오프라인 유지, 2026-08-05)
+//  xlsx = ZIP 컨테이너. 중앙 디렉터리를 훑어 필요한 XML 2개만 꺼내 DOMParser로 읽는다.
+// ─────────────────────────────────────────
+const BOM_MI_LEVEL=4;   // A열 단계 '....4' = MI 부품
+const BOM_SMT_LEVEL=5;  // A열 단계 '.....5' = SMT 부품 (참고용)
+// 삽입 작업 대상이 아닌 소모품·반제품은 목록에서 제외
+const BOM_EXCLUDE_KEYWORDS=['SOLDER','FLUX','솔더','플럭스','SMD'];
+
+async function _zipInflate(buf,method){
+  if(method===0) return buf;                       // 무압축
+  if(method!==8) throw new Error('지원하지 않는 압축 방식: '+method);
+  if(typeof DecompressionStream!=='function') throw new Error('이 브라우저는 압축 해제를 지원하지 않습니다. Chrome/Edge를 사용하세요.');
+  var ds=new DecompressionStream('deflate-raw');
+  var stream=new Blob([buf]).stream().pipeThrough(ds);
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+// ZIP 안의 파일들을 {이름:Uint8Array}로 반환 (필요한 항목만 선별 가능)
+async function _zipRead(arrayBuffer,wanted){
+  var u8=new Uint8Array(arrayBuffer), dv=new DataView(arrayBuffer);
+  // EOCD(끝 중앙디렉터리) 탐색
+  var eocd=-1;
+  for(var i=u8.length-22;i>=0&&i>u8.length-70000;i--){ if(dv.getUint32(i,true)===0x06054b50){eocd=i;break;} }
+  if(eocd<0) throw new Error('엑셀 파일 형식이 아닙니다(ZIP 헤더 없음).');
+  var count=dv.getUint16(eocd+10,true), cdOff=dv.getUint32(eocd+16,true);
+  var out={},p=cdOff;
+  for(var n=0;n<count;n++){
+    if(dv.getUint32(p,true)!==0x02014b50) break;
+    var method=dv.getUint16(p+10,true);
+    var cSize=dv.getUint32(p+20,true);
+    var nameLen=dv.getUint16(p+28,true), extraLen=dv.getUint16(p+30,true), cmtLen=dv.getUint16(p+32,true);
+    var lhOff=dv.getUint32(p+42,true);
+    var name=new TextDecoder('utf-8').decode(u8.subarray(p+46,p+46+nameLen));
+    p+=46+nameLen+extraLen+cmtLen;
+    if(wanted&&wanted.indexOf(name)<0) continue;
+    // 로컬 헤더에서 실제 데이터 시작 위치 계산
+    if(dv.getUint32(lhOff,true)!==0x04034b50) continue;
+    var lNameLen=dv.getUint16(lhOff+26,true), lExtraLen=dv.getUint16(lhOff+28,true);
+    var dataStart=lhOff+30+lNameLen+lExtraLen;
+    out[name]=await _zipInflate(u8.subarray(dataStart,dataStart+cSize),method);
+  }
+  return out;
+}
+// 셀 주소 'C12' → 열 문자 'C'
+function _colOf(ref){ var m=/^([A-Z]+)/.exec(ref||''); return m?m[1]:''; }
+
+// xlsx ArrayBuffer → [{A,B,C,D,...}] 행 배열
+async function readXlsxRows(arrayBuffer){
+  var files=await _zipRead(arrayBuffer,['xl/sharedStrings.xml','xl/worksheets/sheet1.xml']);
+  var sheetBytes=files['xl/worksheets/sheet1.xml'];
+  if(!sheetBytes) throw new Error('시트를 찾을 수 없습니다.');
+  var dec=new TextDecoder('utf-8');
+  var parser=new DOMParser();
+  // 공유 문자열
+  var shared=[];
+  if(files['xl/sharedStrings.xml']){
+    var sdoc=parser.parseFromString(dec.decode(files['xl/sharedStrings.xml']),'application/xml');
+    var sis=sdoc.getElementsByTagName('si');
+    for(var i=0;i<sis.length;i++){
+      var ts=sis[i].getElementsByTagName('t'),s='';
+      for(var j=0;j<ts.length;j++) s+=ts[j].textContent;
+      shared.push(s);
+    }
+  }
+  var doc=parser.parseFromString(dec.decode(sheetBytes),'application/xml');
+  var rowEls=doc.getElementsByTagName('row'),rows=[];
+  for(var r=0;r<rowEls.length;r++){
+    var cells=rowEls[r].getElementsByTagName('c'),obj={_row:rowEls[r].getAttribute('r')};
+    for(var c=0;c<cells.length;c++){
+      var cel=cells[c],t=cel.getAttribute('t');
+      var vEl=cel.getElementsByTagName('v')[0];
+      var val='';
+      if(t==='inlineStr'){ var isEl=cel.getElementsByTagName('t'); for(var k=0;k<isEl.length;k++) val+=isEl[k].textContent; }
+      else if(vEl){ val=vEl.textContent; if(t==='s') val=shared[parseInt(val,10)]||''; }
+      if(val!=='') obj[_colOf(cel.getAttribute('r'))]=val;
+    }
+    rows.push(obj);
+  }
+  return rows;
+}
+
+// A열 단계 문자열 → 숫자 레벨 ('....4'→4, '..2'→2, '대체품'/'0.1'→null)
+function bomLevelOf(a){
+  var m=/^\.*(\d+)$/.exec(String(a==null?'':a).trim());
+  return m?parseInt(m[1],10):null;
+}
+// BOM 행들에서 MI 부품만 추출. {picked:[{code,name,qty}], excluded:[{code,name,why}]}
+function extractMiParts(rows){
+  var picked=[],excluded=[],seen={};
+  rows.forEach(function(row){
+    if(bomLevelOf(row.A)!==BOM_MI_LEVEL) return;
+    var code=String(row.C||'').trim(), name=String(row.D||'').trim();
+    if(!code) return;
+    var up=(code+' '+name).toUpperCase();
+    var hit=BOM_EXCLUDE_KEYWORDS.find(function(k){return up.indexOf(k.toUpperCase())>=0;});
+    if(hit){ excluded.push({code:code,name:name,why:hit}); return; }
+    if(seen[code]) return;
+    seen[code]=1;
+    picked.push({code:code,name:name,qty:parseFloat(row.G||'0')||0});
+  });
+  return {picked:picked,excluded:excluded};
+}
+
+// ─────────────────────────────────────────
 //  신규 모델 BOM 저장소 (라인예측 전용)
 // ─────────────────────────────────────────
 const PREDICT_BOM_KEY='pie_predict_bom';
@@ -5836,6 +5956,7 @@ function PartsManager({parts,onPartsChange}){
   var _ei=useState(null);  var editId=_ei[0],setEditId=_ei[1];
   var _fo=useState({name:'',leadCount:'',insertType:'Axial'}); var form=_fo[0],setForm=_fo[1];
   var _pt=useState('history'); var ptab=_pt[0],setPtab=_pt[1];
+  var _bom=useState(null); var bomPreview=_bom[0],setBomPreview=_bom[1]; // BOM 가져오기 미리보기
   var _sr=useState('');    var search=_sr[0],setSearch=_sr[1];
   var _ps=useState(partStLoad); var partSt=_ps[0],setPartSt=_ps[1];
   var _pr=useState(partResetLoad);
@@ -5950,6 +6071,52 @@ function PartsManager({parts,onPartsChange}){
     a.download='ST_'+((selPart&&selPart.name)||'part')+'_'+new Date().toISOString().slice(0,10)+'.csv';
     a.click();
   }
+  // ── BOM(엑셀)에서 MI 부품 가져오기 (2026-08-05) ──
+  function pickBomFile(){
+    var input=document.createElement('input');
+    input.type='file';input.accept='.xls,.xlsx';
+    input.onchange=async function(e){
+      var file=e.target.files[0];if(!file)return;
+      try{
+        var buf=await file.arrayBuffer();
+        var rows=await readXlsxRows(buf);
+        var res=extractMiParts(rows);
+        var model=file.name.replace(/\.(xlsx?|XLSX?)$/,'').replace(/[_-]?BOM$/i,'');
+        if(!res.picked.length){
+          alert(_m('MI 부품(단계 ....4)을 찾지 못했습니다: ')+file.name);
+          return;
+        }
+        setBomPreview({model:model,file:file.name,picked:res.picked,excluded:res.excluded});
+      }catch(err){ alert(_m('BOM 읽기 실패: ')+err.message); }
+    };
+    input.click();
+  }
+  function applyBomImport(){
+    if(!bomPreview) return;
+    var byCode={};
+    parts.forEach(function(p){ if(p.code) byCode[p.code]=1; });
+    var added=[],skipped=0;
+    bomPreview.picked.forEach(function(it){
+      if(byCode[it.code]){ skipped++; return; }
+      byCode[it.code]=1;
+      added.push({id:'bom_'+it.code.replace(/[^\w-]/g,'_')+'_'+Math.random().toString(36).slice(2,5),
+        name:it.code+'('+it.name+')', code:it.code, insertType:'', leadCount:'',
+        bomModel:bomPreview.model, createdAt:new Date().toISOString()});
+    });
+    var next=parts.concat(added);
+    partsSave(next);onPartsChange(next);
+    setBomPreview(null);
+    alert(_m('BOM 가져오기 완료 — 추가 ')+added.length+_m('건, 이미 있음 ')+skipped+_m('건'));
+  }
+  function resetAllParts(){
+    if(!confirm(_m('부품 목록과 표준시간을 모두 지웁니다.\n복구할 수 없습니다. 계속할까요?\n(이 PC에서만 삭제되며, 공유 저장소의 데이터는 그대로입니다)'))) return;
+    partsSave([]);onPartsChange([]);
+    partStSave({});setPartSt({});
+    partResetSave({});setPartReset({});
+    setSelId(null);
+    alert(_m('초기화했습니다.'));
+  }
+
   function exportPartsDb(){
     var data={version:1,exportedAt:new Date().toISOString(),parts:parts,partSt:partSt,partReset:partReset};
     var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
@@ -6037,7 +6204,46 @@ React.createElement('button',{className:'btn btn-green',style:{fontSize:12},
           onClick:function(){partsSave(parts);onPartsChange(parts);alert(_m('부품 목록 저장 완료 (')+parts.length+'개)');},
           title:'현재 부품 목록을 저장합니다'},'💾 저장'),
         React.createElement('button',{className:'btn btn-blue',style:{fontSize:12},onClick:startAdd},'+ 부품 추가'),
+        React.createElement('button',{className:'btn btn-blue',style:{fontSize:12},onClick:pickBomFile,
+          title:_m('모델 BOM 엑셀에서 MI 부품(단계 ....4)만 자동으로 목록에 추가합니다')},_m('📋 BOM 가져오기')),
+        React.createElement('button',{style:{fontSize:11,padding:'4px 10px',background:'#450a0a',color:'#fca5a5',border:'1px solid #7f1d1d',borderRadius:6,cursor:'pointer'},
+          onClick:resetAllParts,title:_m('부품 목록과 표준시간을 모두 지웁니다')},_m('🗑 전체 초기화')),
       ),
+    ),
+    // ── BOM 가져오기 미리보기 ──
+    bomPreview&&React.createElement('div',{
+      style:{position:'fixed',inset:0,zIndex:9500,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center'},
+      onClick:function(e){if(e.target===e.currentTarget)setBomPreview(null);}
+    },
+      React.createElement('div',{style:{background:'#0f172a',border:'1px solid #334155',borderRadius:12,padding:20,width:520,maxHeight:'80vh',overflow:'auto',boxShadow:'0 16px 60px rgba(0,0,0,0.6)'}},
+        React.createElement('div',{style:{fontSize:15,fontWeight:700,color:'#e2e8f0',marginBottom:4}},_m('📋 BOM 가져오기 확인')),
+        React.createElement('div',{style:{fontSize:11,color:'#64748b',marginBottom:12}},
+          bomPreview.file+' · '+_m('모델')+' '+bomPreview.model),
+        React.createElement('div',{style:{fontSize:12,color:'#4ade80',fontWeight:700,marginBottom:6}},
+          '✅ '+_m('추가할 MI 부품')+' '+bomPreview.picked.length+_m('건')),
+        React.createElement('div',{style:{maxHeight:220,overflow:'auto',background:'#0b1120',border:'1px solid #1e293b',borderRadius:6,padding:8,marginBottom:12}},
+          bomPreview.picked.map(function(it){
+            return React.createElement('div',{key:it.code,style:{fontSize:11,color:'#cbd5e1',padding:'2px 0'}},
+              it.code+'('+it.name+')');
+          })
+        ),
+        bomPreview.excluded.length>0&&React.createElement('div',null,
+          React.createElement('div',{style:{fontSize:12,color:'#fbbf24',fontWeight:700,marginBottom:6}},
+            '⚠ '+_m('제외됨(소모품·반제품)')+' '+bomPreview.excluded.length+_m('건')),
+          React.createElement('div',{style:{maxHeight:120,overflow:'auto',background:'#0b1120',border:'1px solid #1e293b',borderRadius:6,padding:8,marginBottom:12}},
+            bomPreview.excluded.map(function(it,i){
+              return React.createElement('div',{key:it.code+i,style:{fontSize:11,color:'#94a3b8',padding:'2px 0'}},
+                it.code+'('+it.name+')');
+            })
+          )
+        ),
+        React.createElement('div',{style:{fontSize:11,color:'#64748b',marginBottom:12}},
+          _m('※ 이미 있는 품번은 건너뜁니다. 기존 목록에 더해집니다.')),
+        React.createElement('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
+          React.createElement('button',{className:'btn btn-slate',style:{fontSize:12},onClick:function(){setBomPreview(null);}},_m('취소')),
+          React.createElement('button',{className:'btn btn-green',style:{fontSize:12},onClick:applyBomImport},_m('가져오기')),
+        ),
+      )
     ),
     // add/edit form
     showForm&&React.createElement('div',{style:{padding:'10px 16px',background:'#1e293b',borderBottom:'1px solid #334155',flexShrink:0}},
