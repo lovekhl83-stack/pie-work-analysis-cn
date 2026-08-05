@@ -1175,6 +1175,13 @@ var MSG_ZH={
   '🎬 배치 시뮬레이션':'🎬 布局模拟',
   '🏭 신규 모델 라인 예측':'🏭 新机种产线预测',
   '📋 BOM 가져오기':'📋 导入 BOM',
+  '품번':'品号',
+  '품명':'品名',
+  '규격':'规格',
+  '단위수량':'单位数量',
+  'Maker':'厂商',
+  'Maker P/N':'厂商料号',
+  'BOM 모델':'BOM 机种',
   '모델 BOM 엑셀에서 MI 부품(단계 ....4)만 자동으로 목록에 추가합니다':'从机种 BOM 表中自动提取 MI 部件(层级 ....4)并加入列表',
   '🗑 전체 초기화':'🗑 全部重置',
   '부품 목록과 표준시간을 모두 지웁니다':'清除全部部件列表与标准时间',
@@ -5496,7 +5503,10 @@ function extractMiParts(rows){
     if(hit){ excluded.push({code:code,name:name,why:hit}); return; }
     if(seen[code]) return;
     seen[code]=1;
-    picked.push({code:code,name:name,qty:parseFloat(row.G||'0')||0});
+    // E=규격, F=단위, G=단위수량, H=Maker, I=MakerP/N — 부품 상세에서 보여주기 위해 함께 보관
+    picked.push({code:code,name:name,qty:parseFloat(row.G||'0')||0,
+      spec:String(row.E||'').trim(), unit:String(row.F||'').trim(),
+      maker:String(row.H||'').trim(), makerPn:String(row.I||'').trim()});
   });
   return {picked:picked,excluded:excluded};
 }
@@ -6096,7 +6106,8 @@ function PartsManager({parts,onPartsChange}){
       if(byCode[it.code]){ skipped++; return; }
       byCode[it.code]=1;
       added.push({id:'bom_'+it.code.replace(/[^\w-]/g,'_')+'_'+Math.random().toString(36).slice(2,5),
-        name:it.code+'('+it.name+')', code:it.code, insertType:'', leadCount:'',
+        name:it.code+'('+it.name+')', code:it.code, partName:it.name, insertType:'', leadCount:'',
+        spec:it.spec||'', unit:it.unit||'', qty:it.qty||0, maker:it.maker||'', makerPn:it.makerPn||'',
         bomModel:bomPreview.model, createdAt:new Date().toISOString()});
     });
     var next=parts.concat(added);
@@ -6287,8 +6298,10 @@ React.createElement('button',{className:'btn btn-green',style:{fontSize:12},
                   React.createElement('span',{style:{fontSize:12,fontWeight:700,color:isSelected?'#fff':'#e2e8f0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:130}},p.name),
                   hasSt&&React.createElement('span',{style:{fontSize:10,fontWeight:700,color:isSelected?'#86efac':'#22c55e',flexShrink:0}},fmtS(savedSt)),
                 ),
+                // 규격이 있으면 삽입형태 대신 규격을 보여준다 (BOM 부품은 삽입형태가 비어 있음)
+                p.spec&&React.createElement('div',{style:{fontSize:10,color:isSelected?'#bfdbfe':'#64748b',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginBottom:2}},p.spec),
                 React.createElement('div',{style:{display:'flex',gap:6,flexWrap:'wrap'}},
-                  React.createElement('span',{style:{fontSize:10,color:isSelected?'#7dd3fc':'#60a5fa'}},p.insertType||'Axial'),
+                  !p.spec&&p.insertType&&React.createElement('span',{style:{fontSize:10,color:isSelected?'#7dd3fc':'#60a5fa'}},p.insertType),
                   p.leadCount&&React.createElement('span',{style:{fontSize:10,color:isSelected?'#93c5fd':'#64748b'}},'L'+p.leadCount),
                   React.createElement('span',{style:{fontSize:10,color:isSelected?'#93c5fd':'#475569'}},'분석 '+sessCnt+'건'),
                   !hasSt&&React.createElement('span',{style:{fontSize:10,color:'#475569'}},'ST 미저장'),
@@ -6310,7 +6323,7 @@ React.createElement('button',{className:'btn btn-green',style:{fontSize:12},
             React.createElement('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
               React.createElement('div',null,
                 React.createElement('span',{style:{fontSize:15,fontWeight:700,color:'#fff'}},selPart.name),
-                React.createElement('span',{style:{fontSize:11,color:'#60a5fa',marginLeft:8}},selPart.insertType||'Axial'),
+                !selPart.spec&&selPart.insertType&&React.createElement('span',{style:{fontSize:11,color:'#60a5fa',marginLeft:8}},selPart.insertType),
                 selPart.leadCount&&React.createElement('span',{style:{fontSize:11,color:'#7dd3fc',marginLeft:8}},'Lead '+selPart.leadCount+'수'),
               ),
               React.createElement('div',{style:{display:'flex',gap:6}},
@@ -6318,7 +6331,22 @@ React.createElement('button',{className:'btn btn-green',style:{fontSize:12},
                 React.createElement('button',{className:'btn btn-amber',style:{fontSize:11,padding:'3px 8px'},onClick:function(){del(selPart.id);}},'삭제'),
               ),
             ),
-            
+            // ── BOM 정보 (BOM으로 가져온 부품만) ──
+            (selPart.spec||selPart.code||selPart.maker||selPart.bomModel)&&React.createElement('div',{
+              style:{marginTop:8,display:'flex',gap:14,flexWrap:'wrap',fontSize:11,background:'#0f172a',border:'1px solid #334155',borderRadius:6,padding:'7px 10px'}},
+              [[_m('품번'),selPart.code],
+               [_m('품명'),selPart.partName],
+               [_m('규격'),selPart.spec],
+               [_m('단위수량'),selPart.qty?String(selPart.qty)+(selPart.unit?' '+selPart.unit:''):''],
+               [_m('Maker'),selPart.maker],
+               [_m('Maker P/N'),selPart.makerPn],
+               [_m('BOM 모델'),selPart.bomModel]
+              ].filter(function(r){return r[1];}).map(function(r){
+                return React.createElement('span',{key:r[0]},
+                  React.createElement('span',{style:{color:'#64748b'}},r[0]+' '),
+                  React.createElement('span',{style:{color:'#e2e8f0',fontWeight:600}},r[1]));
+              })
+            ),
           ),
           // Tabs bar
           React.createElement('div',{style:{display:'flex',background:'#0f172a',borderBottom:'1px solid #334155',flexShrink:0}},
