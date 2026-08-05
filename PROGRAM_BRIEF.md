@@ -41,7 +41,6 @@ PIE(중국).bat 더블클릭
 | `mediapipe/pose/` | Pose 모델 자산 8파일 (오프라인 동봉) |
 | `PIE_설치.bat` → `PIE_setup.ps1` / `PIE_제거.bat` → `PIE_uninstall.ps1` | 설치기·제거기 (2026-07-26부터 **폴더 전체** 설치형) |
 | `PIE_가이드.html` | 사용 가이드 (ko/zh/vi 3언어, 8섹션) |
-| `LineCounter.html` | **수삽 라인 카운터** (독립 앱) — 웨이브솔더 투입 영상 자동 카운트 → 라인별 UPH·인당 UPH·부품당 인·초 비교. `http://127.0.0.1:8791/LineCounter.html` 로 열기 |
 | `download.html` + `.github/workflows/pages.yml` | GitHub Pages 배포용 다운로드 랜딩 |
 | `PROJECT_OVERVIEW.md` / `WORKLOG.md` / `CLAUDE.md` | 구조 문서 / 작업 일지·백로그 / 작업 규칙 |
 
