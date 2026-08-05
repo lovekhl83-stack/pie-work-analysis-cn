@@ -25,19 +25,54 @@ $MimeMap = @{
   '.pie'    = 'application/json'
 }
 
+function Test-PortFree([int]$p) {
+  try {
+    $listener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Loopback, $p)
+    $listener.Start(); $listener.Stop()
+    return $true
+  } catch { return $false }
+}
+
 function Get-FreePort([int]$Preferred) {
   for ($p = $Preferred; $p -lt ($Preferred + 20); $p++) {
-    $inUse = $false
-    try {
-      $listener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Loopback, $p)
-      $listener.Start(); $listener.Stop()
-    } catch { $inUse = $true }
-    if (-not $inUse) { return $p }
+    if (Test-PortFree $p) { return $p }
   }
   return $Preferred
 }
 
-$Port = Get-FreePort -Preferred $Port
+# 8791을 이미 쓰고 있는 것이 우리 PIE 서버인지 확인한다.
+# (구버전 서버에도 통하도록 /__pie 표식이 없으면 PIE.html 내용으로 판별)
+function Test-PieServer([int]$p) {
+  try {
+    $r = Invoke-WebRequest -Uri "http://127.0.0.1:$p/__pie" -UseBasicParsing -TimeoutSec 3
+    if ($r.StatusCode -eq 200 -and "$($r.Content)".StartsWith('PIE')) { return $true }
+  } catch {}
+  try {
+    $r = Invoke-WebRequest -Uri "http://127.0.0.1:$p/PIE.html" -UseBasicParsing -TimeoutSec 8
+    if ($r.StatusCode -eq 200 -and "$($r.Content)" -like '*Powernet Industrial Engineering*') { return $true }
+  } catch {}
+  return $false
+}
+
+# ⚠ 브라우저는 데이터(부품 목록·표준시간·설정)를 "주소별"로 따로 저장한다.
+#   포트가 바뀌면 저장해 둔 내용이 통째로 안 보인다. 그래서 8791을 최대한 고정한다.
+if (-not (Test-PortFree $Port)) {
+  if (Test-PieServer $Port) {
+    Write-Host ""
+    Write-Host " 이미 실행 중인 PIE 서버가 있어 그대로 사용합니다: http://127.0.0.1:$Port/"
+    Write-Host " (저장된 부품·표준시간 데이터를 유지하려면 항상 같은 주소로 열어야 합니다)"
+    Write-Host ""
+    Start-Process ("http://127.0.0.1:$Port/PIE.html")
+    exit 0
+  }
+  Write-Host ""
+  Write-Host " [경고] $Port 포트를 다른 프로그램이 쓰고 있습니다."
+  Write-Host "        다른 포트로 열면 저장해 둔 부품 목록과 표준시간이 보이지 않습니다."
+  Write-Host "        그 프로그램을 종료한 뒤 PIE를 다시 실행하는 것을 권장합니다."
+  Write-Host ""
+  $Port = Get-FreePort -Preferred 8801   # ST 공유 서버(8792)와 겹치지 않는 대역
+}
+
 $Prefix = "http://127.0.0.1:$Port/"
 
 $Listener = New-Object System.Net.HttpListener
@@ -62,6 +97,16 @@ try {
     try {
       $relPath = [Uri]::UnescapeDataString($request.Url.AbsolutePath.TrimStart('/'))
       if ([string]::IsNullOrWhiteSpace($relPath)) { $relPath = 'PIE.html' }
+
+      # 실행기가 "이 포트에 이미 PIE 서버가 떠 있는지" 싸게 확인하는 표식
+      if ($relPath -eq '__pie') {
+        $response.ContentType = 'text/plain; charset=utf-8'
+        $bytes = [Text.Encoding]::UTF8.GetBytes("PIE local server")
+        $response.ContentLength64 = $bytes.Length
+        $response.OutputStream.Write($bytes, 0, $bytes.Length)
+        continue   # 스트림 닫기는 아래 finally 가 처리한다
+      }
+
       $filePath = Join-Path $RootDir $relPath
 
       $fullRoot = (Resolve-Path $RootDir).Path
