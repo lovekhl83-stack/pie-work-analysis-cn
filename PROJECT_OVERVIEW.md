@@ -42,6 +42,7 @@
 ├─ PIE_설치.ps1             # ⚠ 고아 파일 — 어떤 진입점도 실행하지 않음 (PIE_setup.ps1의 한국어 전용 구버전, 로직 동일)
 ├─ PIE_제거.bat → PIE_제거.ps1   # 설치 폴더+레지스트리 제거 (⚠ bat 3행 파일명이 CP949 바이트로 저장돼 chcp 65001에서 깨짐 → 제거 전면 불능, 백로그 P0)
 ├─ PIE_가이드.html           # 설치·사용 가이드 (ko/zh/vi 3언어 섹션)
+├─ LineCounter.html         # 수삽 라인 카운터(독립 앱, 2026-08-05) — 웨이브솔더 투입 영상 자동 카운트 → 라인/모델/인원/부품수/연배 기록 → UPH·인당 UPH·부품당 인·초 라인 비교. 바닐라 JS 의존성 0, localStorage lc_* 키, ?test=1/?test=e2e 자체 테스트, PIE 통합 여부는 결정 대기
 ├─ download.html            # GitHub Pages 랜딩: main.zip 다운로드 버튼 + 최근 커밋일 표시
 ├─ README.md                # 실행/설치/주의사항
 ├─ .github\workflows\pages.yml  # push→Pages 배포 (전체 폴더를 artifact로 업로드)

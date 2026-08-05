@@ -2,7 +2,7 @@
 
 > **다른 대화창에서 이 프로그램을 파악할 때는 이 파일 하나만 먼저 읽으면 된다.**
 > 더 깊게: 구조·내부 지도 → `PROJECT_OVERVIEW.md`, 진행 상황·버그 백로그 → `WORKLOG.md`, 작업 규칙 → `CLAUDE.md`
-> 최종 갱신 2026-07-28
+> 최종 갱신 2026-08-05
 
 ---
 
@@ -41,6 +41,7 @@ PIE(중국).bat 더블클릭
 | `mediapipe/pose/` | Pose 모델 자산 8파일 (오프라인 동봉) |
 | `PIE_설치.bat` → `PIE_setup.ps1` / `PIE_제거.bat` → `PIE_uninstall.ps1` | 설치기·제거기 (2026-07-26부터 **폴더 전체** 설치형) |
 | `PIE_가이드.html` | 사용 가이드 (ko/zh/vi 3언어, 8섹션) |
+| `LineCounter.html` | **수삽 라인 카운터** (독립 앱) — 웨이브솔더 투입 영상 자동 카운트 → 라인별 UPH·인당 UPH·부품당 인·초 비교. `http://127.0.0.1:8791/LineCounter.html` 로 열기 |
 | `download.html` + `.github/workflows/pages.yml` | GitHub Pages 배포용 다운로드 랜딩 |
 | `PROJECT_OVERVIEW.md` / `WORKLOG.md` / `CLAUDE.md` | 구조 문서 / 작업 일지·백로그 / 작업 규칙 |
 
