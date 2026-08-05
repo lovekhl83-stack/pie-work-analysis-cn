@@ -1512,20 +1512,16 @@ function processUid(){return 'P'+Date.now().toString(36)+Math.random().toString(
 //  Parts master storage
 // ─────────────────────────────────────────
 const PARTS_KEY='wvas_parts';
-const DEFAULT_PARTS=[
-  {id:'dp_diode',    name:'DIODE',        insertType:'Radial',leadCount:'2',  createdAt:'2024-01-01T00:00:00.000Z'},
-  {id:'dp_trans',    name:'TRANS',        insertType:'Radial',leadCount:'3',  createdAt:'2024-01-01T00:00:00.000Z'},
-  {id:'dp_boxcap',   name:'BOX CAP',      insertType:'Radial',leadCount:'2',  createdAt:'2024-01-01T00:00:00.000Z'},
-  {id:'dp_conn',     name:'CONNECTOR',    insertType:'Axial', leadCount:'',   createdAt:'2024-01-01T00:00:00.000Z'},
-  {id:'dp_lnr',      name:'LINR FILTER',  insertType:'Axial', leadCount:'',   createdAt:'2024-01-01T00:00:00.000Z'},
-  {id:'dp_elcap',    name:'EL CAP',       insertType:'Radial',leadCount:'2',  createdAt:'2024-01-01T00:00:00.000Z'},
-  {id:'dp_ycap',     name:'Y-CAP',        insertType:'Radial',leadCount:'2',  createdAt:'2024-01-01T00:00:00.000Z'},
-  {id:'dp_bridge',   name:'BRIDGE DIODE', insertType:'Radial',leadCount:'4',  createdAt:'2024-01-01T00:00:00.000Z'},
-  {id:'dp_resistor', name:'저항',          insertType:'Axial', leadCount:'2',  createdAt:'2024-01-01T00:00:00.000Z'},
-  {id:'dp_bead',     name:'BEAD',         insertType:'Axial', leadCount:'2',  createdAt:'2024-01-01T00:00:00.000Z'},
-  {id:'dp_etc',      name:'기타',          insertType:'Axial', leadCount:'',   createdAt:'2024-01-01T00:00:00.000Z'},
-];
-function partsList(){try{var s=JSON.parse(localStorage.getItem(PARTS_KEY)||'null');return(s&&s.length)?s:DEFAULT_PARTS.map(function(p){return Object.assign({},p);});}catch{return DEFAULT_PARTS.map(function(p){return Object.assign({},p);});}}
+// 기본 샘플 부품 제거(2026-08-05) — 부품은 모델 BOM 가져오기로 등록한다.
+// 하드코딩 목록이 남아 있으면 '전체 초기화' 후에도 되살아나고, 손입력 부품명과 BOM 품번이 섞여 데이터가 갈라진다.
+const DEFAULT_PARTS=[];
+// 저장된 값이 빈 배열이면 '비어 있음'을 그대로 유지해야 한다 (예전에는 length 0을 미설정으로 보고 샘플을 되살렸음)
+function partsList(){
+  try{
+    var s=JSON.parse(localStorage.getItem(PARTS_KEY)||'null');
+    return Array.isArray(s)?s:DEFAULT_PARTS.map(function(p){return Object.assign({},p);});
+  }catch{ return DEFAULT_PARTS.map(function(p){return Object.assign({},p);}); }
+}
 function partsSave(parts){localStorage.setItem(PARTS_KEY,JSON.stringify(parts));}
 
 // ─────────────────────────────────────────
