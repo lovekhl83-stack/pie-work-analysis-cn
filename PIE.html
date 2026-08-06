@@ -1163,6 +1163,21 @@ var MSG_ZH={
   ' 기록이 아직 없습니다 — 영상 위 좌클릭(시작) → 클릭(종료)으로 이 손의 작업을 새로 기록하세요':' 尚无记录 — 在视频上左键点击(开始) → 再点击(结束)，为该手重新记录作业',
   '반대쪽 손의 기록입니다 (참고용)':'这是另一只手的记录(仅供参考)',
   '반대쪽 손 기록 ':'另一只手的记录 ',
+  '다른 손 기록 ':'其他手的记录 ',
+  '⚖ 양손 작업 평가':'⚖ 双手作业评价',
+  '균형도(HBR)':'平衡度(HBR)',
+  '이 ':'的 ',
+  's 놀고 있습니다 → 작업 재배분 검토':'s 处于空闲 → 建议重新分配作业',
+  '※ 균형도는 왼손·오른손끼리만 계산합니다 (한손작업 제외)':'※ 平衡度仅按左手·右手计算(不含单手作业)',
+  '손':'手',
+  '총 시간':'总时间',
+  '비중':'占比',
+  '정미':'净作业',
+  '부수':'辅助',
+  '🖐 한손작업':'🖐 单手作业',
+  '🖐 한손':'🖐 单手',
+  '🤚 LH':'🤚 LH',
+  '✋ RH':'✋ RH',
   '건 (참고용 — 사이클 ':'项 (仅供参考 — 循环 ',
   '건 (참고용)':'项 (仅供参考)',
   // 사이클 누적 차트 (2026-08-06)
@@ -1573,6 +1588,16 @@ function processUid(){return 'P'+Date.now().toString(36)+Math.random().toString(
 // ─────────────────────────────────────────
 // 이 프로그램의 표준 주소. 브라우저 저장소는 주소(포트)별로 분리되므로 여기서 벗어나면 데이터가 달라 보인다.
 const PIE_CANON_PORT='8791';
+
+// 손 구분 — 왼손·오른손 외에 "한손작업"(한 손으로만 하는 작업)을 따로 잡는다 (2026-08-06)
+const HANDS=['LH','RH','ONE'];
+const HAND_META={
+  LH: {label:'🤚 LH 왼손',   short:'🤚 LH', color:'#3b82f6'},
+  RH: {label:'✋ RH 오른손', short:'✋ RH', color:'#22c55e'},
+  ONE:{label:'🖐 한손작업',  short:'🖐 한손', color:'#f59e0b'},
+};
+function handLabel(h){ return _m((HAND_META[h]||HAND_META.LH).label); }
+function handColor(h){ return (HAND_META[h]||HAND_META.LH).color; }
 const PARTS_KEY='wvas_parts';
 // 기본 샘플 부품 제거(2026-08-05) — 부품은 모델 BOM 가져오기로 등록한다.
 // 하드코딩 목록이 남아 있으면 '전체 초기화' 후에도 되살아나고, 손입력 부품명과 BOM 품번이 섞여 데이터가 갈라진다.
@@ -3586,6 +3611,70 @@ function CycleStats(props){
       })
     ),
 
+    // ── 양손 작업 평가 (요약) — 손별 시간 구성 + 균형도 (2026-08-06) ──
+    (function(){
+      function hSum(h,type){return tasks.filter(function(t){
+        return (t.hand||'LH')===h&&(!type||t.type===type);
+      }).reduce(function(s,t){return s+(t.duration||0);},0);}
+      var rows=HANDS.map(function(h){
+        return {h:h,total:hSum(h),va:hSum(h,'value-added'),aux:hSum(h,'auxiliary'),waste:hSum(h,'waste')};
+      }).filter(function(r){return r.total>0;});
+      if(!rows.length) return null;
+      var grand=rows.reduce(function(s,r){return s+r.total;},0);
+      var maxT=Math.max.apply(null,rows.map(function(r){return r.total;}));
+      var lh=rows.find(function(r){return r.h==='LH';}),rh=rows.find(function(r){return r.h==='RH';});
+      var lhT=lh?lh.total:0,rhT=rh?rh.total:0;
+      var maxLR=Math.max(lhT,rhT);
+      var hbrPct=maxLR>0?Math.round((1-Math.abs(lhT-rhT)/maxLR)*100):100;
+      var hbrColor=hbrPct>=80?'#22c55e':hbrPct>=60?'#f59e0b':'#ef4444';
+      var weak=lhT<rhT?handLabel('LH'):handLabel('RH');
+      var diff=Math.abs(lhT-rhT);
+      return React.createElement('div',{style:{background:'#0f172a',border:'1px solid #1e3a5f',borderRadius:'8px',
+        padding:'12px',marginBottom:'14px',fontSize:'13px'}},
+        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap',marginBottom:10}},
+          React.createElement('span',{style:{fontWeight:'700',color:'#60a5fa'}},_m('⚖ 양손 작업 평가')),
+          (lhT>0&&rhT>0)&&React.createElement(React.Fragment,null,
+            React.createElement('span',{style:{fontSize:11,color:'#64748b'}},_m('균형도(HBR)')),
+            React.createElement('span',{style:{fontSize:20,fontWeight:900,color:hbrColor,fontFamily:'monospace'}},hbrPct+'%'),
+            hbrPct<80&&React.createElement('span',{style:{fontSize:11,color:'#fca5a5',background:'rgba(127,29,29,0.4)',
+              border:'1px solid rgba(239,68,68,0.4)',borderRadius:4,padding:'2px 8px'}},
+              '⚠ '+weak+_m('이 ')+fmts(diff)+_m('s 놀고 있습니다 → 작업 재배분 검토')),
+          ),
+          React.createElement('span',{style:{fontSize:10,color:'#475569',marginLeft:'auto'}},
+            _m('※ 균형도는 왼손·오른손끼리만 계산합니다 (한손작업 제외)')),
+        ),
+        React.createElement('table',{style:{width:'100%',borderCollapse:'collapse',fontSize:11}},
+          React.createElement('thead',null,
+            React.createElement('tr',null,
+              [_m('손'),_m('총 시간'),_m('비중'),_m('정미'),_m('부수'),_m('낭비'),''].map(function(h,i){
+                return React.createElement('th',{key:i,style:{color:'#64748b',padding:'3px 6px',fontWeight:600,
+                  textAlign:i===0?'left':i===6?'left':'right',borderBottom:'1px solid #1e293b'}},h);})
+            )
+          ),
+          React.createElement('tbody',null,
+            rows.map(function(r){
+              var col=handColor(r.h);
+              return React.createElement('tr',{key:r.h},
+                React.createElement('td',{style:{color:col,fontWeight:700,padding:'4px 6px',whiteSpace:'nowrap'}},handLabel(r.h)),
+                React.createElement('td',{style:{color:'#e2e8f0',textAlign:'right',padding:'4px 6px',fontFamily:'monospace'}},fmts(r.total)+'s'),
+                React.createElement('td',{style:{color:'#94a3b8',textAlign:'right',padding:'4px 6px'}},grand>0?Math.round(r.total/grand*100)+'%':'-'),
+                React.createElement('td',{style:{color:'#4ade80',textAlign:'right',padding:'4px 6px',fontFamily:'monospace'}},fmts(r.va)+'s'),
+                React.createElement('td',{style:{color:'#fbbf24',textAlign:'right',padding:'4px 6px',fontFamily:'monospace'}},fmts(r.aux)+'s'),
+                React.createElement('td',{style:{color:r.waste>0?'#f87171':'#475569',textAlign:'right',padding:'4px 6px',fontFamily:'monospace'}},fmts(r.waste)+'s'),
+                React.createElement('td',{style:{padding:'4px 6px',width:'34%'}},
+                  React.createElement('div',{style:{height:8,background:'#1e293b',borderRadius:4,overflow:'hidden',position:'relative'}},
+                    React.createElement('div',{style:{width:(maxT>0?r.total/maxT*100:0)+'%',height:'100%',background:col,borderRadius:4}}),
+                    r.waste>0&&React.createElement('div',{style:{position:'absolute',left:0,top:0,height:'100%',
+                      width:(maxT>0?r.waste/maxT*100:0)+'%',background:'rgba(239,68,68,0.6)',borderRadius:4}})
+                  )
+                )
+              );
+            })
+          )
+        ),
+      );
+    })(),
+
     // ── Before/After comparison (if snapshot exists) ──
     beforeData&&React.createElement('div',{
       style:{background:'#0f172a',border:'1px solid #1e3a5f',borderRadius:'8px',
@@ -4649,19 +4738,41 @@ function Yamazumi(props){
 
         // Pitch diagram
         React.createElement('div',{style:{marginTop:10}},
-          React.createElement('div',{style:{fontSize:11,color:'#64748b',fontWeight:600,marginBottom:5}},'📏 피치 다이어그램'),
-          displayData.map(function(d){
-            var stdT=d.total*(ratingFactor/100)*(1+allowanceRate/100);
-            var pct=taktTime>0?stdT/taktTime*100:0;
-            var bc=pct>100?'#ef4444':pct>90?'#f59e0b':'#22c55e';
-            return React.createElement('div',{key:'p'+d.worker.id,style:{display:'flex',alignItems:'center',gap:6,marginBottom:4,fontSize:11}},
-              React.createElement('span',{style:{width:60,color:'#94a3b8',flexShrink:0}},d.worker.label||d.worker.name),
-              React.createElement('div',{style:{flex:1,background:'#1e293b',borderRadius:999,height:12,overflow:'hidden'}},
-                React.createElement('div',{style:{height:'100%',width:Math.min(pct,100)+'%',background:bc,borderRadius:999}})),
-              React.createElement('span',{style:{width:42,textAlign:'right',color:bc,fontWeight:600,flexShrink:0}},Math.round(pct)+'%'),
-              React.createElement('span',{style:{width:38,textAlign:'right',color:'#475569',flexShrink:0}},stdT.toFixed(0)+'s')
+          React.createElement('div',{style:{fontSize:11,color:'#64748b',fontWeight:600,marginBottom:2}},'📏 피치 다이어그램'),
+          React.createElement('div',{style:{fontSize:10,color:'#475569',marginBottom:6}},
+            '작업자별 표준시간 ÷ 택트타임('+taktTime+'s) — 점선이 100%(택트). 넘으면 그 사람이 택트 안에 못 끝냅니다'),
+          // 초과분이 보이도록 축을 "최대값 또는 100% 중 큰 쪽"으로 잡고, 100% 자리에 기준선을 그린다 (2026-08-06)
+          (function(){
+            var pcts=displayData.map(function(d){
+              var stdT=d.total*(ratingFactor/100)*(1+allowanceRate/100);
+              return {d:d,stdT:stdT,pct:taktTime>0?stdT/taktTime*100:0};
+            });
+            var axisMax=Math.max(100,Math.ceil(Math.max.apply(null,pcts.map(function(p){return p.pct;}).concat([0]))/10)*10);
+            var taktPos=100/axisMax*100;
+            return React.createElement('div',null,
+              pcts.map(function(p){
+                var pct=p.pct,stdT=p.stdT,d=p.d;
+                var bc=pct>100?'#ef4444':pct>90?'#f59e0b':'#22c55e';
+                return React.createElement('div',{key:'p'+d.worker.id,style:{display:'flex',alignItems:'center',gap:6,marginBottom:4,fontSize:11}},
+                  React.createElement('span',{style:{width:60,color:'#94a3b8',flexShrink:0}},d.worker.label||d.worker.name),
+                  React.createElement('div',{style:{flex:1,background:'#1e293b',borderRadius:999,height:12,overflow:'hidden',position:'relative'}},
+                    // 택트 이내 구간
+                    React.createElement('div',{style:{position:'absolute',left:0,top:0,height:'100%',
+                      width:(Math.min(pct,100)/axisMax*100)+'%',background:bc,borderRadius:999}}),
+                    // 택트 초과분 — 빗금 느낌의 진한 빨강으로 따로 보여 준다
+                    pct>100&&React.createElement('div',{style:{position:'absolute',top:0,height:'100%',
+                      left:taktPos+'%',width:((pct-100)/axisMax*100)+'%',
+                      background:'repeating-linear-gradient(45deg,#991b1b 0 4px,#7f1d1d 4px 8px)',borderRadius:999}}),
+                    // 100% 기준선
+                    React.createElement('div',{style:{position:'absolute',top:0,bottom:0,left:taktPos+'%',width:1,
+                      background:'#e2e8f0',opacity:0.85}}),
+                  ),
+                  React.createElement('span',{style:{width:42,textAlign:'right',color:bc,fontWeight:600,flexShrink:0}},Math.round(pct)+'%'),
+                  React.createElement('span',{style:{width:38,textAlign:'right',color:'#475569',flexShrink:0}},stdT.toFixed(0)+'s')
+                );
+              })
             );
-          })
+          })()
         ),
 
         // ── 라인택트 ──
@@ -11308,13 +11419,16 @@ function LineAnalysisPanel({parts,taktTime,onDataChange,snapshotRef,projectToLoa
   var activeTasks=workerTasks[activeWorkerId]||[];
   // ── 손(LH/RH) 분리 — 작업분석과 같은 방식 (2026-08-06) ──
   // 지금 기록 중인 손의 마크를 위에, 반대쪽 손은 지우지 않고 아래에 참고용으로 구분해 보여 준다.
-  var lineOtherHand=activeHand==='LH'?'RH':'LH';
   var handMarks=activeTasks.filter(function(t){return(t.hand||'LH')===activeHand;});
-  var otherHandMarks=activeTasks.filter(function(t){return(t.hand||'LH')===lineOtherHand;});
-  var markRows=handMarks.map(function(t,i){return{t:t,muted:false,idx:i+1,divider:false};})
-    .concat(otherHandMarks.map(function(t,i){return{t:t,muted:true,idx:i+1,divider:i===0};}));
-  var LINE_HAND_LABEL={LH:_m('🤚 LH 왼손'),RH:_m('✋ RH 오른손')};
-  var LINE_HAND_COLOR={LH:'#3b82f6',RH:'#22c55e'};
+  var otherMarkGroups=HANDS.filter(function(h){return h!==activeHand;})
+    .map(function(h){return {hand:h,list:activeTasks.filter(function(t){return(t.hand||'LH')===h;})};})
+    .filter(function(g){return g.list.length>0;});
+  var otherHandMarks=otherMarkGroups.reduce(function(a,g){return a.concat(g.list);},[]);
+  var markRows=handMarks.map(function(t,i){return{t:t,muted:false,idx:i+1,divider:null};})
+    .concat(otherMarkGroups.reduce(function(acc,g){return acc.concat(
+      g.list.map(function(t,i){return{t:t,muted:true,idx:i+1,divider:i===0?g:null};}));},[]));
+  var LINE_HAND_LABEL={LH:handLabel('LH'),RH:handLabel('RH'),ONE:handLabel('ONE')};
+  var LINE_HAND_COLOR={LH:handColor('LH'),RH:handColor('RH'),ONE:handColor('ONE')};
   // 손을 바꾸면 그 손 기록만 이어서 하도록 영상을 처음으로 되돌리고 사이클도 그 손 기준으로 맞춘다
   function switchLineHand(h){
     if(h===activeHand) return;
@@ -11479,28 +11593,29 @@ function LineAnalysisPanel({parts,taktTime,onDataChange,snapshotRef,projectToLoa
           ),
           React.createElement('div',{style:{display:'flex',gap:5,marginBottom:5}},
             React.createElement('span',{style:{fontSize:10,color:C2.sub,flexShrink:0,lineHeight:'22px'}},'손:'),
-            ['LH','RH'].map(function(h){
+            HANDS.map(function(h){
               var cnt=activeTasks.filter(function(t){return(t.hand||'LH')===h;}).length;
+              var on=activeHand===h;
               return React.createElement('button',{key:h,
                 onClick:function(){switchLineHand(h);},
                 title:_m('손을 바꾸면 그 손의 기록만 이어서 하며, 영상은 처음으로 돌아갑니다'),
-                style:{flex:1,padding:'3px 0',fontSize:11,borderRadius:4,border:'1px solid',cursor:'pointer',
-                       background:activeHand===h?(h==='LH'?'#1d4ed8':'#15803d'):'transparent',
-                       color:activeHand===h?'#fff':C2.sub,
-                       borderColor:activeHand===h?(h==='LH'?'#3b82f6':'#22c55e'):C2.bd}},
-                (h==='LH'?_m('🤚 LH 왼손'):_m('✋ RH 오른손'))+(cnt?' ('+cnt+')':''));
+                style:{flex:1,padding:'3px 0',fontSize:10,borderRadius:4,border:'1px solid',cursor:'pointer',whiteSpace:'nowrap',
+                       background:on?handColor(h):'transparent',
+                       color:on?'#fff':C2.sub,
+                       borderColor:on?handColor(h):C2.bd}},
+                _m(HAND_META[h].short)+(cnt?' ('+cnt+')':''));
             }),
           ),
           React.createElement('div',{style:{fontSize:10,color:LINE_HAND_COLOR[activeHand],marginBottom:4}},
             '← '+_m('지금 기록 중')+': '+LINE_HAND_LABEL[activeHand]+' · '+currentCycle+_m('사이클')),
           React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:2,marginBottom:5}},
-            [['LH','#3b82f6'],['RH','#22c55e']].map(function(pair){
-              var h=pair[0],col=pair[1];
-              var ht=(workerTasks[activeWorkerId]||[]).filter(function(t){return t.hand===h;});
+            HANDS.map(function(h){
+              var col=handColor(h);
+              var ht=(workerTasks[activeWorkerId]||[]).filter(function(t){return(t.hand||'LH')===h;});
               var dur=lineVideoDuration||1;
               var total=ht.reduce(function(s,t){return s+(t.duration||0);},0);
               return React.createElement('div',{key:h,style:{display:'flex',alignItems:'center',gap:4}},
-                React.createElement('span',{style:{fontSize:9,color:col,width:18,fontWeight:700,flexShrink:0}},h),
+                React.createElement('span',{style:{fontSize:9,color:col,width:26,fontWeight:700,flexShrink:0}},h==='ONE'?'한손':h),
                 React.createElement('div',{style:{flex:1,height:8,background:'#0a1020',borderRadius:2,position:'relative',overflow:'hidden',border:'1px solid '+C2.bd}},
                   ht.map(function(t){
                     return React.createElement('div',{key:t.id,style:{
@@ -11585,19 +11700,20 @@ function LineAnalysisPanel({parts,taktTime,onDataChange,snapshotRef,projectToLoa
                     parts.slice().sort(function(a,b){return(a.name||'').localeCompare(b.name||'','ko');}).map(function(p){return React.createElement('option',{key:p.id,value:p.id},p.name);})
                   ),
                   React.createElement('span',{style:{color:'#60a5fa',fontSize:9,textAlign:'center',fontWeight:700,flexShrink:0}},'C'+(t.cycle||1)),
-                  React.createElement('span',{style:{color:t.hand==='RH'?'#fb923c':'#34d399',fontSize:9,textAlign:'center',fontWeight:700,flexShrink:0}},t.hand||'LH'),
+                  React.createElement('span',{style:{color:handColor(t.hand||'LH'),fontSize:9,textAlign:'center',fontWeight:700,flexShrink:0}},t.hand==='ONE'?'한손':(t.hand||'LH')),
                   React.createElement('span',{style:{color:'#94a3b8',fontSize:9,textAlign:'center',fontFamily:'monospace',flexShrink:0}},fmtT(t.startTime)),
                   React.createElement('span',{style:{color:'#94a3b8',fontSize:9,textAlign:'center',fontFamily:'monospace',flexShrink:0}},fmtT(t.endTime)),
                   React.createElement('button',{onClick:function(){deleteMark(t.id);},style:{background:'none',border:'none',color:'#475569',cursor:'pointer',fontSize:11,padding:0,textAlign:'center',lineHeight:1,flexShrink:0}},'x')
                 );
                 if(!row.divider) return rowEl;
-                // 반대쪽 손 구간이 시작되는 자리에 구분 머리줄
+                // 다른 손 구간이 시작되는 자리에 구분 머리줄
+                var g=row.divider;
                 return React.createElement(React.Fragment,{key:'g_'+t.id},
                   React.createElement('div',{style:{padding:'4px 8px',background:'rgba(0,0,0,0.3)',
-                    borderTop:'2px solid '+LINE_HAND_COLOR[lineOtherHand],borderBottom:'1px solid #1e293b'}},
-                    React.createElement('span',{style:{fontSize:10,fontWeight:700,color:LINE_HAND_COLOR[lineOtherHand]}},LINE_HAND_LABEL[lineOtherHand]),
+                    borderTop:'2px solid '+LINE_HAND_COLOR[g.hand],borderBottom:'1px solid #1e293b'}},
+                    React.createElement('span',{style:{fontSize:10,fontWeight:700,color:LINE_HAND_COLOR[g.hand]}},LINE_HAND_LABEL[g.hand]),
                     React.createElement('span',{style:{fontSize:9,color:'#64748b',marginLeft:6}},
-                      _m('반대쪽 손 기록 ')+otherHandMarks.length+_m('건 (참고용)')),
+                      _m('다른 손 기록 ')+g.list.length+_m('건 (참고용)')),
                   ),
                   rowEl,
                 );
@@ -11876,7 +11992,7 @@ function App() {
     // 대기 구간은 같은 손·같은 사이클 안의 빈틈만 본다 (손이 섞이면 엉뚱한 대기가 잡힌다, 2026-08-06)
     var cycleNums=[...new Set(tasks.map(function(t){return t.cycle||1;}))];
     cycleNums.forEach(function(c){
-      ['LH','RH'].forEach(function(h){
+      HANDS.forEach(function(h){
       var ct=tasks.filter(function(t){return(t.cycle||1)===c&&(t.hand||'LH')===h;}).sort(function(a,b){return a.startTime-b.startTime;});
       for(var i=1;i<ct.length;i++){
         var gap=ct[i].startTime-ct[i-1].endTime;
@@ -12411,15 +12527,18 @@ function App() {
   // ── 손(LH/RH)별 분리 (2026-08-06) ─────────────────────────────────────────
   // 왼손 측정과 오른손 측정은 서로 다른 기록이다. 표에서는 "지금 기록 중인 손"을 위에,
   // 반대쪽 손은 지우지 않고 아래에 참고용으로 구분해 보여 준다.
-  const otherHand=activeHand==='LH'?'RH':'LH';
   const handTasks=filteredTasks.filter(t=>(t.hand||'LH')===activeHand);
-  const otherHandTasks=filteredTasks.filter(t=>(t.hand||'LH')===otherHand);
+  const otherHandGroups=HANDS.filter(h=>h!==activeHand)
+    .map(h=>({hand:h,list:filteredTasks.filter(t=>(t.hand||'LH')===h)}))
+    .filter(g=>g.list.length>0);
+  const otherHandTasks=otherHandGroups.reduce((a,g)=>a.concat(g.list),[]);
   const handCycleCount=c=>tasks.filter(t=>(t.cycle||1)===c&&(t.hand||'LH')===activeHand).length;
-  // 표 본문에 넘길 행 목록 — muted=반대쪽 손(참고용), idx=구역별 번호
-  const tableRows=handTasks.map((t,i)=>({t:t,muted:false,idx:i+1,divider:false}))
-    .concat(otherHandTasks.map((t,i)=>({t:t,muted:true,idx:i+1,divider:i===0})));
-  const HAND_LABEL={LH:_m('🤚 LH 왼손'),RH:_m('✋ RH 오른손')};
-  const HAND_COLOR={LH:'#3b82f6',RH:'#22c55e'};
+  // 표 본문에 넘길 행 목록 — muted=다른 손(참고용), idx=구역별 번호, divider=그 구역의 첫 줄
+  const tableRows=handTasks.map((t,i)=>({t:t,muted:false,idx:i+1,divider:null}))
+    .concat(otherHandGroups.reduce((acc,g)=>acc.concat(
+      g.list.map((t,i)=>({t:t,muted:true,idx:i+1,divider:i===0?g:null}))),[]));
+  const HAND_LABEL={LH:handLabel('LH'),RH:handLabel('RH'),ONE:handLabel('ONE')};
+  const HAND_COLOR={LH:handColor('LH'),RH:handColor('RH'),ONE:handColor('ONE')};
   // 손을 바꾸면 그 손의 기록만 이어서 하도록 영상을 처음으로 되돌리고 사이클도 그 손 기준으로 맞춘다
   function switchHand(h){
     if(h===activeHand) return;
@@ -13039,28 +13158,29 @@ function App() {
             React.createElement('div',{style:{paddingTop:6,borderTop:'1px solid #1e293b'}},
               React.createElement('div',{style:{display:'flex',alignItems:'center',gap:6,marginBottom:4}},
                 React.createElement('span',{style:{fontSize:10,color:'#64748b'}},'손:'),
-                ['LH','RH'].map(function(h){
+                HANDS.map(function(h){
                   var cnt=tasks.filter(function(t){return(t.hand||'LH')===h;}).length;
+                  var on=activeHand===h;
                   return React.createElement('button',{key:h,
                     onClick:function(){switchHand(h);},
                     title:_m('손을 바꾸면 그 손의 기록만 이어서 하며, 영상은 처음으로 돌아갑니다'),
-                    style:{padding:'2px 10px',fontSize:11,borderRadius:4,border:'1px solid',cursor:'pointer',
-                           background:activeHand===h?(h==='LH'?'#1d4ed8':'#15803d'):'#1e293b',
-                           color:activeHand===h?'#fff':'#64748b',
-                           borderColor:activeHand===h?(h==='LH'?'#3b82f6':'#22c55e'):'#334155'}},
-                    (h==='LH'?'🤚 LH':'✋ RH')+(cnt?' ('+cnt+')':''));
+                    style:{padding:'2px 9px',fontSize:11,borderRadius:4,border:'1px solid',cursor:'pointer',whiteSpace:'nowrap',
+                           background:on?handColor(h):'#1e293b',
+                           color:on?'#fff':'#64748b',
+                           borderColor:on?handColor(h):'#334155'}},
+                    _m(HAND_META[h].short)+(cnt?' ('+cnt+')':''));
                 }),
                 React.createElement('span',{style:{fontSize:10,color:HAND_COLOR[activeHand]}},
                   '← '+_m('지금 기록 중')+': '+HAND_LABEL[activeHand]),
               ),
               React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:2}},
-                [['LH','#3b82f6'],['RH','#22c55e']].map(function(pair){
-                  var h=pair[0],col=pair[1];
-                  var ht=tasks.filter(function(t){return t.hand===h;});
+                HANDS.map(function(h){
+                  var col=handColor(h);
+                  var ht=tasks.filter(function(t){return(t.hand||'LH')===h;});
                   var dur=duration||1;
                   var total=ht.reduce(function(s,t){return s+(t.duration||0);},0);
                   return React.createElement('div',{key:h,style:{display:'flex',alignItems:'center',gap:4}},
-                    React.createElement('span',{style:{fontSize:9,color:col,width:18,fontWeight:700,flexShrink:0}},h),
+                    React.createElement('span',{style:{fontSize:9,color:col,width:26,fontWeight:700,flexShrink:0}},h==='ONE'?'한손':h),
                     React.createElement('div',{style:{flex:1,height:10,background:'#0f172a',borderRadius:2,position:'relative',overflow:'hidden',border:'1px solid #1e293b'}},
                       ht.map(function(t){
                         return React.createElement('div',{key:t.id,style:{
@@ -13352,14 +13472,15 @@ function App() {
                       ),
                     );
                     if(!row.divider) return rowEl;
-                    // 반대쪽 손 구간이 시작되는 자리에 구분 머리줄을 넣는다
+                    // 다른 손 구간이 시작되는 자리에 구분 머리줄을 넣는다
+                    var g=row.divider;
                     return React.createElement(React.Fragment,{key:'g_'+t.id},
                       React.createElement('tr',null,
                         React.createElement('td',{colSpan:20,className:'px-3 py-1.5',
-                          style:{background:'#0b1220',borderTop:'2px solid '+HAND_COLOR[otherHand],borderBottom:'1px solid #1e293b'}},
-                          React.createElement('span',{style:{fontSize:11,fontWeight:700,color:HAND_COLOR[otherHand]}},HAND_LABEL[otherHand]),
+                          style:{background:'#0b1220',borderTop:'2px solid '+HAND_COLOR[g.hand],borderBottom:'1px solid #1e293b'}},
+                          React.createElement('span',{style:{fontSize:11,fontWeight:700,color:HAND_COLOR[g.hand]}},HAND_LABEL[g.hand]),
                           React.createElement('span',{style:{fontSize:10,color:'#64748b',marginLeft:8}},
-                            _m('반대쪽 손 기록 ')+otherHandTasks.length+_m('건 (참고용 — 사이클 ')+cycleFilter+')'),
+                            _m('다른 손 기록 ')+g.list.length+_m('건 (참고용 — 사이클 ')+cycleFilter+')'),
                         ),
                       ),
                       rowEl,
@@ -13581,12 +13702,14 @@ function App() {
 
         // HBR card — 양손 균형: 시간이 적은 손 = 그만큼 놀고 있는(유휴) 손. 손별 낭비 시간도 함께 표시
         (function(){
-          function handSum(h,onlyWaste){return tasks.filter(function(t){return t.hand===h&&(!onlyWaste||t.type==='waste');}).reduce(function(s,t){return s+(t.duration||0);},0);}
-          var lhTime=handSum('LH'),rhTime=handSum('RH');
-          if(!lhTime&&!rhTime) return null;
-          var lhWaste=handSum('LH',true),rhWaste=handSum('RH',true);
-          var maxT=Math.max(lhTime,rhTime);
-          var hbr=maxT>0?1-Math.abs(lhTime-rhTime)/maxT:1;
+          function handSum(h,onlyWaste){return tasks.filter(function(t){return(t.hand||'LH')===h&&(!onlyWaste||t.type==='waste');}).reduce(function(s,t){return s+(t.duration||0);},0);}
+          var lhTime=handSum('LH'),rhTime=handSum('RH'),oneTime=handSum('ONE');
+          if(!lhTime&&!rhTime&&!oneTime) return null;
+          var lhWaste=handSum('LH',true),rhWaste=handSum('RH',true),oneWaste=handSum('ONE',true);
+          // 균형도는 양손(LH/RH)끼리만 따진다 — 한손작업은 애초에 한 손으로 하는 작업이라 비교 대상이 아니다
+          var maxT=Math.max(lhTime,rhTime,oneTime);
+          var maxLR=Math.max(lhTime,rhTime);
+          var hbr=maxLR>0?1-Math.abs(lhTime-rhTime)/maxLR:1;
           var hbrPct=Math.round(hbr*100);
           var hbrColor=hbrPct>=80?'#22c55e':hbrPct>=60?'#f59e0b':'#ef4444';
           var diff=Math.abs(lhTime-rhTime);
@@ -13600,7 +13723,9 @@ function App() {
               ),
             ),
             React.createElement('div',{style:{flex:1,minWidth:200,maxWidth:400}},
-              [['LH',lhTime,lhWaste,'#3b82f6'],['RH',rhTime,rhWaste,'#22c55e']].map(function(row){
+              [['LH',lhTime,lhWaste,handColor('LH')],['RH',rhTime,rhWaste,handColor('RH')]]
+                .concat(oneTime>0?[['한손',oneTime,oneWaste,handColor('ONE')]]:[])
+                .map(function(row){
                 var label=row[0],t=row[1],w=row[2],col=row[3];
                 return React.createElement('div',{key:label,style:{display:'flex',alignItems:'center',gap:6,marginBottom:3}},
                   React.createElement('span',{style:{fontSize:10,color:col,width:28,fontWeight:700,flexShrink:0}},label),
