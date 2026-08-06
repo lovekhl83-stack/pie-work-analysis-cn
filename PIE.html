@@ -1155,6 +1155,15 @@ const STRINGS = {
 //  알림·확인창 중국어 대응 (결정 C) — 한국어 원문을 키로 조회, 없으면 원문 그대로
 // ─────────────────────────────────────────
 var MSG_ZH={
+  // BOM 서식 대응 + 잘못 등록된 부품 정리 (2026-08-06)
+  '거래처품번':'客户料号',
+  'BOM 열 위치를 잘못 읽어 품명 없이 등록된 부품을 지웁니다 (측정 데이터가 있는 부품은 남깁니다)':'删除因 BOM 列位置读取错误而无品名的部品(保留有测量数据的部品)',
+  '🧹 품명 없는 부품 정리 (':'🧹 清理无品名部品 (',
+  '건)':'项)',
+  '품명 없이 잘못 등록된 부품 ':'无品名的错误登记部品 ',
+  '건을 지웁니다.\n(측정 데이터가 있는 부품은 지우지 않습니다)\n\n지운 뒤 BOM을 다시 가져오면 올바르게 등록됩니다.':'项将被删除。\n(有测量数据的部品不会被删除)\n\n删除后重新导入 BOM 即可正确登记。',
+  '정리했습니다 — ':'已清理 — ',
+  '건 삭제':'项已删除',
   // 주소(포트) 경고 배너 + BOM 보완 알림 (2026-08-05)
   '파일을 직접 열었습니다 — 저장된 부품·표준시간이 보이지 않습니다':'直接打开了文件 — 已保存的部品·标准时间不会显示',
   '평소와 다른 주소(포트 ':'以与平时不同的地址(端口 ',
@@ -5540,24 +5549,57 @@ function bomLevelOf(a){
   var m=/^\.*(\d+)$/.exec(String(a==null?'':a).trim());
   return m?parseInt(m[1],10):null;
 }
-// BOM 행들에서 MI 부품만 추출. {picked:[{code,name,qty}], excluded:[{code,name,why}]}
+
+// ── BOM 서식이 두 가지 이상이라 열 위치가 파일마다 다르다 (2026-08-06) ──
+//   간략형: A단계 B위치 C품번 D품명 E규격 F단위 G단위수량 H Maker I MakerP/N
+//   전체형: A단계 B위치 C최초등록일 D신규 E NEW F KEY G품번 H품명 I거래처품번 J규격 K단위 L단위수량 M Maker N MakerP/N …
+//   그래서 열 문자를 고정하지 않고 "머리글 이름"으로 찾는다.
+function _bomNorm(s){ return String(s==null?'':s).replace(/[\s ]/g,'').toLowerCase(); }
+var BOM_HEADER_ALIASES={
+  level:['단계'], code:['품번','부품품번'], name:['품명','부품품명'],
+  custPn:['거래처품번'], spec:['규격'], unit:['단위'], qty:['단위수량'],
+  maker:['maker','메이커','제조사'], makerPn:['makerp/n','makerpn','maker품번'],
+};
+// 머리글 행을 찾아 {필드:열문자} 지도를 만든다. 못 찾으면 null(→ 간략형으로 간주)
+function bomColumnMap(rows){
+  for(var r=0;r<Math.min(rows.length,30);r++){
+    var row=rows[r],map={},hits=0;
+    Object.keys(row).forEach(function(col){
+      if(col.charAt(0)==='_') return;
+      var v=_bomNorm(row[col]);
+      Object.keys(BOM_HEADER_ALIASES).forEach(function(field){
+        if(map[field]) return;
+        if(BOM_HEADER_ALIASES[field].indexOf(v)>=0){ map[field]=col; hits++; }
+      });
+    });
+    // 단계·품번·품명이 모두 잡힌 행만 머리글로 인정 (데이터 행 오인 방지)
+    if(map.level&&map.code&&map.name) return {map:map,headerRow:r,hits:hits};
+  }
+  return null;
+}
+var BOM_FALLBACK_MAP={level:'A',code:'C',name:'D',spec:'E',unit:'F',qty:'G',maker:'H',makerPn:'I'};
+
+// BOM 행들에서 MI 부품만 추출. {picked:[…], excluded:[…], layout:'header'|'fallback'}
 function extractMiParts(rows){
+  var found=bomColumnMap(rows);
+  var M=found?found.map:BOM_FALLBACK_MAP;
+  var startRow=found?found.headerRow+1:0;
+  function cell(row,field){ var c=M[field]; return c?String(row[c]==null?'':row[c]).trim():''; }
   var picked=[],excluded=[],seen={};
-  rows.forEach(function(row){
-    if(bomLevelOf(row.A)!==BOM_MI_LEVEL) return;
-    var code=String(row.C||'').trim(), name=String(row.D||'').trim();
+  rows.slice(startRow).forEach(function(row){
+    if(bomLevelOf(cell(row,'level'))!==BOM_MI_LEVEL) return;
+    var code=cell(row,'code'), name=cell(row,'name');
     if(!code) return;
     var up=(code+' '+name).toUpperCase();
     var hit=BOM_EXCLUDE_KEYWORDS.find(function(k){return up.indexOf(k.toUpperCase())>=0;});
     if(hit){ excluded.push({code:code,name:name,why:hit}); return; }
     if(seen[code]) return;
     seen[code]=1;
-    // E=규격, F=단위, G=단위수량, H=Maker, I=MakerP/N — 부품 상세에서 보여주기 위해 함께 보관
-    picked.push({code:code,name:name,qty:parseFloat(row.G||'0')||0,
-      spec:String(row.E||'').trim(), unit:String(row.F||'').trim(),
-      maker:String(row.H||'').trim(), makerPn:String(row.I||'').trim()});
+    picked.push({code:code,name:name,qty:parseFloat(cell(row,'qty')||'0')||0,
+      spec:cell(row,'spec'), unit:cell(row,'unit'),
+      maker:cell(row,'maker'), makerPn:cell(row,'makerPn'), custPn:cell(row,'custPn')});
   });
-  return {picked:picked,excluded:excluded};
+  return {picked:picked,excluded:excluded,layout:found?'header':'fallback'};
 }
 
 // ─────────────────────────────────────────
@@ -6152,7 +6194,7 @@ function PartsManager({parts,onPartsChange}){
     bomPreview.picked.forEach(function(it){ if(it.code) byCode[it.code]=it; });
     var seen={},added=[],skipped=0,updated=0;
     // 이미 있는 부품은 중복 추가하지 않되, 비어 있는 BOM 정보(규격·Maker 등)는 채워 넣는다 (2026-08-05)
-    var FILL=['spec','unit','maker','makerPn','partName'];
+    var FILL=['spec','unit','maker','makerPn','custPn','partName'];
     var merged=parts.map(function(p){
       if(!p.code) return p;
       seen[p.code]=1;
@@ -6176,13 +6218,33 @@ function PartsManager({parts,onPartsChange}){
       added.push({id:'bom_'+it.code.replace(/[^\w-]/g,'_')+'_'+Math.random().toString(36).slice(2,5),
         name:it.code+'('+it.name+')', code:it.code, partName:it.name, insertType:'', leadCount:'',
         spec:it.spec||'', unit:it.unit||'', qty:it.qty||0, maker:it.maker||'', makerPn:it.makerPn||'',
-        bomModel:bomPreview.model, createdAt:new Date().toISOString()});
+        custPn:it.custPn||'', bomModel:bomPreview.model, createdAt:new Date().toISOString()});
     });
     var next=merged.concat(added);
     partsSave(next);onPartsChange(next);
     setBomPreview(null);
     alert(_m('BOM 가져오기 완료 — 추가 ')+added.length+_m('건, 이미 있음 ')+skipped+_m('건')
       +(updated?('\n'+_m('기존 부품 정보 보완: ')+updated+_m('건')):''));
+  }
+  // 예전 BOM 판독기가 열 위치를 고정해 두어, 전체형 BOM에서 날짜 칸을 품번으로 읽고
+  // 품명을 비운 채 등록된 부품들이 남아 있다. 측정 데이터가 없는 것만 골라 지운다 (2026-08-06)
+  var junkParts=useMemo(function(){
+    return parts.filter(function(p){
+      if(!/\(\s*\)\s*$/.test(String(p.name||''))) return false;      // 이름이 "품번()" 꼴
+      if(String(p.partName||'').trim()) return false;
+      if(partSt[p.id]&&Object.keys(partSt[p.id]).length) return false; // 확정 표준시간 있음 → 보존
+      if((sessionsDb[p.id]||[]).length) return false;                  // 분석 이력 있음 → 보존
+      return true;
+    });
+  },[parts,partSt,sessionsDb]);
+  function cleanJunkParts(){
+    if(!junkParts.length) return;
+    var ids={};junkParts.forEach(function(p){ids[p.id]=1;});
+    if(!confirm(_m('품명 없이 잘못 등록된 부품 ')+junkParts.length+_m('건을 지웁니다.\n(측정 데이터가 있는 부품은 지우지 않습니다)\n\n지운 뒤 BOM을 다시 가져오면 올바르게 등록됩니다.'))) return;
+    var next=parts.filter(function(p){return !ids[p.id];});
+    partsSave(next);onPartsChange(next);
+    if(selId&&ids[selId]) setSelId(null);
+    alert(_m('정리했습니다 — ')+junkParts.length+_m('건 삭제'));
   }
   function resetAllParts(){
     if(!confirm(_m('부품 목록과 표준시간을 모두 지웁니다.\n복구할 수 없습니다. 계속할까요?\n(이 PC에서만 삭제되며, 공유 저장소의 데이터는 그대로입니다)'))) return;
@@ -6282,6 +6344,10 @@ React.createElement('button',{className:'btn btn-green',style:{fontSize:12},
         React.createElement('button',{className:'btn btn-blue',style:{fontSize:12},onClick:startAdd},'+ 부품 추가'),
         React.createElement('button',{className:'btn btn-blue',style:{fontSize:12},onClick:pickBomFile,
           title:_m('모델 BOM 엑셀에서 MI 부품(단계 ....4)만 자동으로 목록에 추가합니다')},_m('📋 BOM 가져오기')),
+        junkParts.length>0&&React.createElement('button',{className:'btn btn-amber',style:{fontSize:12},
+          onClick:cleanJunkParts,
+          title:_m('BOM 열 위치를 잘못 읽어 품명 없이 등록된 부품을 지웁니다 (측정 데이터가 있는 부품은 남깁니다)')},
+          _m('🧹 품명 없는 부품 정리 (')+junkParts.length+_m('건)')),
         React.createElement('button',{style:{fontSize:11,padding:'4px 10px',background:'#450a0a',color:'#fca5a5',border:'1px solid #7f1d1d',borderRadius:6,cursor:'pointer'},
           onClick:resetAllParts,title:_m('부품 목록과 표준시간을 모두 지웁니다')},_m('🗑 전체 초기화')),
       ),
@@ -6409,6 +6475,7 @@ React.createElement('button',{className:'btn btn-green',style:{fontSize:12},
                [_m('단위수량'),selPart.qty?String(selPart.qty)+(selPart.unit?' '+selPart.unit:''):''],
                [_m('Maker'),selPart.maker],
                [_m('Maker P/N'),selPart.makerPn],
+               [_m('거래처품번'),selPart.custPn],
                [_m('BOM 모델'),selPart.bomModel]
               ].filter(function(r){return r[1];}).map(function(r){
                 return React.createElement('span',{key:r[0]},
