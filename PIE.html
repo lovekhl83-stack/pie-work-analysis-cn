@@ -1165,6 +1165,10 @@ var MSG_ZH={
   '반대쪽 손 기록 ':'另一只手的记录 ',
   '건 (참고용 — 사이클 ':'项 (仅供参考 — 循环 ',
   '건 (참고용)':'项 (仅供参考)',
+  // 사이클 누적 차트 (2026-08-06)
+  '같은 작업 연장선':'相同作业连接带',
+  '세로 확대':'纵向放大',
+  '막대에 마우스를 올리면 같은 작업이 사이클 전체에서 강조됩니다':'将鼠标移到色块上，可在所有循环中高亮相同作业',
   '사이클':'循环',
   ' 기록이 아직 없습니다 — 시작/종료 마크로 이 손의 작업을 새로 기록하세요':' 尚无记录 — 用开始/结束标记为该手重新记录作业',
   // BOM 서식 대응 + 잘못 등록된 부품 정리 (2026-08-06)
@@ -2895,55 +2899,126 @@ function CycleComparison({ tasks, onSeek }) {
   // ── Chart: 사이클별 누적 막대 ─────────────────────────────
   function ChartStackedCycle(){
     var _tt=React.useState(null); var tooltip=_tt[0],setTooltip=_tt[1];
-    const PL=48,PB=36,PT=16,PR=16,H=240;
-    const nC=cycles.length;
-    const W=Math.max(300,nC*100+PL+PR);
-    const cW=W-PL-PR, cH=H-PB-PT;
-    const xStep=cW/nC, barW=Math.min(72,(xStep*.72));
+    // 같은 작업을 사이클끼리 눈으로 잇기 위한 상태 (2026-08-06)
+    var _hl=React.useState(null);  var hlKey=_hl[0],setHlKey=_hl[1];    // 마우스 올린 작업명
+    var _lk=React.useState(true);  var showLink=_lk[0],setShowLink=_lk[1]; // 연장선(띠) 표시
+    var _zm=React.useState(1);     var zoom=_zm[0],setZoom=_zm[1];         // 세로 확대
     if(!maxTotal) return null;
+    const nC=cycles.length;
+    // 한 사이클에 마크가 많을수록 세로로 키워서 얇은 구간도 읽히게 한다
+    var maxSeg=1;
+    cycles.forEach(function(c){
+      var n=tasks.filter(function(t){return(t.cycle||1)===c;}).length;
+      if(n>maxSeg) maxSeg=n;
+    });
+    const PL=54,PB=40,PT=24,PR=20;
+    const H=Math.round(Math.min(900,Math.max(360,maxSeg*34+PT+PB))*zoom);
+    const xStep=Math.max(140,Math.min(220,760/Math.max(nC,1)));
+    const W=Math.max(340,nC*xStep+PL+PR);
+    const cW=W-PL-PR, cH=H-PB-PT;
+    const barW=Math.min(110,xStep*0.5);
     const nameColor={};
     names.forEach(function(n){
       var t=tasks.find(function(x){return x.name===n;});
       nameColor[n]=t?(t.color||TT[t.type]?.typeColor||'#64748b'):'#64748b';
     });
-    return React.createElement('div',{style:{overflowX:'auto',position:'relative'}},
+    // 사이클별 구간을 먼저 다 계산해 둔다 (연장선을 그리려면 양쪽 좌표가 필요)
+    var cols=cycles.map(function(c,i){
+      var bX=PL+i*xStep+(xStep-barW)/2;
+      var cycleTasks=tasks.filter(function(t){return(t.cycle||1)===c;}).sort(function(a,b){return a.startTime-b.startTime;});
+      var yBottom=PT+cH, seen={};
+      var segments=cycleTasks.map(function(t){
+        var bH=Math.max(0,(t.duration/maxTotal)*cH);
+        var segY=yBottom-bH;
+        yBottom-=bH;
+        var k=(seen[t.name]=(seen[t.name]||0)+1);
+        return {t:t,bH:bH,segY:segY,key:t.name+'#'+k,name:t.name};
+      });
+      return {c:c,bX:bX,segments:segments};
+    });
+    // 같은 작업명·같은 순번끼리 이어 주는 띠
+    var links=[];
+    if(showLink){
+      for(var i=0;i<cols.length-1;i++){
+        var a=cols[i],b=cols[i+1];
+        var bMap={}; b.segments.forEach(function(s){bMap[s.key]=s;});
+        a.segments.forEach(function(s){
+          var m=bMap[s.key]; if(!m) return;
+          links.push({from:s,to:m,x1:a.bX+barW,x2:b.bX,name:s.name,key:s.key,
+                      col:nameColor[s.name]||s.t.color||'#64748b'});
+        });
+      }
+    }
+    function dim(name){ return hlKey&&hlKey!==name; }
+    return React.createElement('div',{style:{position:'relative'}},
+      // 보기 조절
+      React.createElement('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:6,flexWrap:'wrap'}},
+        React.createElement('button',{
+          onClick:function(){setShowLink(!showLink);},
+          style:{fontSize:10,padding:'2px 9px',borderRadius:5,cursor:'pointer',
+                 background:showLink?'#0f2040':'#1e293b',color:showLink?'#7dd3fc':'#64748b',
+                 border:'1px solid '+(showLink?'#3b82f6':'#334155')}},
+          (showLink?'✓ ':'')+_m('같은 작업 연장선')),
+        React.createElement('span',{style:{fontSize:10,color:'#475569'}},'|'),
+        React.createElement('span',{style:{fontSize:10,color:'#64748b'}},_m('세로 확대')),
+        [1,1.5,2].map(function(z){return React.createElement('button',{key:z,
+          onClick:function(){setZoom(z);},
+          style:{fontSize:10,padding:'2px 8px',borderRadius:5,cursor:'pointer',
+                 background:zoom===z?'#1d4ed8':'#1e293b',color:zoom===z?'#fff':'#64748b',
+                 border:'1px solid '+(zoom===z?'#3b82f6':'#334155')}},z+'x');}),
+        React.createElement('span',{style:{fontSize:10,color:'#475569',marginLeft:'auto'}},
+          _m('막대에 마우스를 올리면 같은 작업이 사이클 전체에서 강조됩니다')),
+      ),
+      React.createElement('div',{style:{overflowX:'auto',overflowY:'hidden'}},
       React.createElement('svg',{width:W,height:H,style:{display:'block',overflow:'visible',minWidth:W},
-        onMouseLeave:function(){setTooltip(null);}},
+        onMouseLeave:function(){setTooltip(null);setHlKey(null);}},
         [0,.25,.5,.75,1].map(function(r){return React.createElement('g',{key:r},
           React.createElement('line',{x1:PL,y1:PT+cH*(1-r),x2:W-PR,y2:PT+cH*(1-r),stroke:'#1e293b',strokeWidth:1}),
-          React.createElement('text',{x:PL-4,y:PT+cH*(1-r),textAnchor:'end',dominantBaseline:'middle',fontSize:8,fill:'#475569'},fmtS(maxTotal*r)),
+          React.createElement('text',{x:PL-6,y:PT+cH*(1-r),textAnchor:'end',dominantBaseline:'middle',fontSize:9,fill:'#475569'},fmtS(maxTotal*r)),
         );}),
-        cycles.map(function(c,i){
-          var bX=PL+i*xStep+(xStep-barW)/2;
-          var cycleTasks=tasks.filter(function(t){return(t.cycle||1)===c;}).sort(function(a,b){return a.startTime-b.startTime;});
-          var yBottom=PT+cH;
-          var segments=cycleTasks.map(function(t){
-            var bH=Math.max(0,(t.duration/maxTotal)*cH);
-            var segY=yBottom-bH;
-            yBottom-=bH;
-            return {t:t,bH:bH,segY:segY};
-          });
+        // 연장선(띠) — 막대보다 먼저 그려 뒤에 깔리게 한다
+        links.map(function(L,li){
+          var f=L.from,t=L.to,mx=(L.x1+L.x2)/2;
+          var d='M'+L.x1+','+f.segY
+               +'C'+mx+','+f.segY+' '+mx+','+t.segY+' '+L.x2+','+t.segY
+               +'L'+L.x2+','+(t.segY+t.bH)
+               +'C'+mx+','+(t.segY+t.bH)+' '+mx+','+(f.segY+f.bH)+' '+L.x1+','+(f.segY+f.bH)+'Z';
+          var on=hlKey===L.name;
+          return React.createElement('path',{key:'lk'+li,d:d,fill:L.col,
+            opacity:hlKey?(on?0.45:0.05):0.16,
+            stroke:on?L.col:'none',strokeWidth:on?1:0,pointerEvents:'none'});
+        }),
+        cols.map(function(col){
+          var c=col.c,bX=col.bX;
           var totalDur=cycleTotalDur(c);
           var totalTop=PT+cH-(totalDur/maxTotal)*cH;
           return React.createElement('g',{key:c},
-            segments.map(function(seg){
-              var col=nameColor[seg.t.name]||seg.t.color||'#64748b';
+            col.segments.map(function(seg){
+              var col2=nameColor[seg.t.name]||seg.t.color||'#64748b';
               var hasNote=!!(seg.t.note&&seg.t.note.trim());
+              var faded=dim(seg.name);
               return React.createElement('g',{key:seg.t.id,
-                onMouseEnter:function(e){setTooltip({x:e.clientX,y:e.clientY,t:seg.t,c:c});},
+                onMouseEnter:function(e){setTooltip({x:e.clientX,y:e.clientY,t:seg.t,c:c});setHlKey(seg.name);},
                 onMouseLeave:function(){setTooltip(null);},
                 style:{cursor:'pointer'},
               },
-                seg.bH>0.5&&React.createElement('rect',{x:bX,y:seg.segY,width:barW,height:Math.max(0.5,seg.bH-0.5),fill:col,opacity:.88}),
-                seg.bH>16&&React.createElement('text',{x:bX+barW/2,y:seg.segY+seg.bH/2,textAnchor:'middle',dominantBaseline:'middle',fontSize:8,fill:'rgba(255,255,255,.95)',fontWeight:600},
-                  seg.t.name.length>9?seg.t.name.substring(0,8)+'…':seg.t.name),
-                hasNote&&seg.bH>6&&React.createElement('circle',{cx:bX+barW-5,cy:seg.segY+5,r:3.5,fill:'#fde68a',stroke:'rgba(0,0,0,.3)',strokeWidth:.5}),
+                seg.bH>0.5&&React.createElement('rect',{x:bX,y:seg.segY,width:barW,height:Math.max(0.5,seg.bH-1.5),
+                  fill:col2,opacity:faded?0.25:0.95,rx:2,
+                  stroke:hlKey===seg.name?'#fff':'none',strokeWidth:hlKey===seg.name?1.2:0}),
+                seg.bH>13&&React.createElement('text',{x:bX+barW/2,y:seg.segY+seg.bH/2-(seg.bH>30?6:0),textAnchor:'middle',dominantBaseline:'middle',
+                  fontSize:10,fill:'rgba(255,255,255,'+(faded?0.35:0.97)+')',fontWeight:600,pointerEvents:'none'},
+                  seg.t.name.length>11?seg.t.name.substring(0,10)+'…':seg.t.name),
+                seg.bH>30&&React.createElement('text',{x:bX+barW/2,y:seg.segY+seg.bH/2+8,textAnchor:'middle',dominantBaseline:'middle',
+                  fontSize:9,fill:'rgba(255,255,255,'+(faded?0.3:0.75)+')',fontFamily:'monospace',pointerEvents:'none'},
+                  fmtS(seg.t.duration)),
+                hasNote&&seg.bH>6&&React.createElement('circle',{cx:bX+barW-6,cy:seg.segY+6,r:3.5,fill:'#fde68a',stroke:'rgba(0,0,0,.3)',strokeWidth:.5}),
               );
             }),
-            React.createElement('text',{x:bX+barW/2,y:totalTop-5,textAnchor:'middle',fontSize:9,fill:'#e2e8f0',fontWeight:700},fmtS(totalDur)),
-            React.createElement('text',{x:bX+barW/2,y:PT+cH+18,textAnchor:'middle',fontSize:10,fill:CYCLE_COLORS[c-1],fontWeight:700},'C'+c),
+            React.createElement('text',{x:bX+barW/2,y:totalTop-7,textAnchor:'middle',fontSize:11,fill:'#e2e8f0',fontWeight:700},fmtS(totalDur)),
+            React.createElement('text',{x:bX+barW/2,y:PT+cH+20,textAnchor:'middle',fontSize:12,fill:CYCLE_COLORS[c-1],fontWeight:700},'C'+c),
           );
         }),
+      ),
       ),
       tooltip&&React.createElement('div',{style:{
         position:'fixed',left:tooltip.x+14,top:tooltip.y-12,zIndex:9999,
