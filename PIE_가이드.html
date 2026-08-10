@@ -1,943 +1,1021 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>PIE 설치·사용 가이드</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PIE 사용 가이드 / 使用指南 / Hướng dẫn</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Segoe UI','Malgun Gothic','PingFang SC','Noto Sans',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;}
-:root{--blue:#3b82f6;--green:#22c55e;--yellow:#f59e0b;--red:#ef4444;--purple:#a78bfa;--cyan:#06b6d4;--slate:#334155;}
-
-/* ── LANG TABS ── */
-.lang-bar{position:sticky;top:0;z-index:100;background:#0f172a;border-bottom:1px solid #1e293b;display:flex;align-items:center;gap:0;padding:0 20px;}
-.lang-tab{padding:14px 22px;font-size:14px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;color:#64748b;transition:all .2s;display:flex;align-items:center;gap:8px;}
-.lang-tab.active{color:#e2e8f0;border-bottom-color:var(--blue);}
-.lang-tab:hover{color:#cbd5e1;}
-.pie-logo{margin-right:auto;font-size:22px;font-weight:900;letter-spacing:-1px;}
-.pie-logo span:nth-child(1){color:var(--blue);}
-.pie-logo span:nth-child(2){color:var(--yellow);}
-.pie-logo span:nth-child(3){color:var(--green);}
-.guide-tag{font-size:11px;background:#1e293b;color:#64748b;padding:3px 8px;border-radius:4px;margin-left:8px;}
-
-/* ── LANG CONTENT ── */
-.lang-section{display:none;max-width:960px;margin:0 auto;padding:40px 24px 80px;}
-.lang-section.active{display:block;}
-
-/* ── SECTION HEADERS ── */
-.sec-num{display:inline-flex;width:36px;height:36px;borderRadius:50%;background:var(--blue);color:#fff;font-weight:900;font-size:16px;align-items:center;justify-content:center;flex-shrink:0;border-radius:50%;}
-.sec-title{font-size:22px;font-weight:800;color:#f1f5f9;margin-bottom:6px;}
-.sec-sub{font-size:14px;color:#64748b;margin-bottom:28px;}
-.section{margin-bottom:64px;}
-.section-header{display:flex;align-items:center;gap:14px;margin-bottom:28px;padding-bottom:14px;border-bottom:1px solid #1e293b;}
-
-/* ── STEP CARDS ── */
-.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:32px;}
-.step-card{background:#1e293b;border:1px solid #334155;border-radius:16px;padding:24px 20px;text-align:center;position:relative;}
-.step-num{width:32px;height:32px;border-radius:50%;background:var(--blue);color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
-.step-icon{font-size:36px;margin-bottom:12px;line-height:1;}
-.step-title{font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:6px;}
-.step-desc{font-size:12px;color:#64748b;line-height:1.6;}
-.step-arrow{display:none;}
-@media(min-width:600px){
-  .steps{display:flex;flex-wrap:nowrap;align-items:flex-start;}
-  .step-arrow{display:flex;align-items:center;justify-content:center;color:#334155;font-size:20px;padding-top:40px;flex-shrink:0;}
-}
-
-/* ── UI DIAGRAM ── */
-.diagram-wrap{background:#0f172a;border:1px solid #334155;border-radius:16px;overflow:hidden;margin-bottom:20px;}
-.diagram-title{background:#1e293b;padding:10px 18px;font-size:12px;color:#64748b;display:flex;align-items:center;gap:8px;}
-.diagram-title .dot{width:10px;height:10px;border-radius:50%;}
-svg{display:block;width:100%;}
-
-/* ── CALLOUT GRID ── */
-.callouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:32px;}
-.callout{background:#1e293b;border-radius:10px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;}
-.callout-num{width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
-.callout-text{font-size:12px;color:#94a3b8;line-height:1.55;}
-.callout-text strong{color:#e2e8f0;display:block;font-size:13px;margin-bottom:2px;}
-
-/* ── KEY BADGE ── */
-.kbd{display:inline-block;background:#0f172a;border:1px solid #475569;border-radius:5px;padding:2px 8px;font-family:'Consolas',monospace;font-size:12px;color:#e2e8f0;}
-
-/* ── FEATURE GRID ── */
-.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
-.feat-card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:18px;}
-.feat-icon{font-size:28px;margin-bottom:10px;}
-.feat-title{font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:6px;}
-.feat-desc{font-size:12px;color:#64748b;line-height:1.6;}
-.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600;margin-left:6px;}
-.badge-online{background:rgba(34,197,94,.15);border:1px solid rgba(74,222,128,.3);color:#4ade80;}
-.badge-offline{background:rgba(59,130,246,.12);border:1px solid rgba(96,165,250,.3);color:#60a5fa;}
-
-/* ── ONLINE/OFFLINE VISUAL ── */
-.status-row{display:flex;gap:16px;margin-bottom:24px;}
-.status-box{flex:1;border-radius:12px;padding:20px;text-align:center;}
-.status-box.online{background:rgba(34,197,94,.07);border:1px solid rgba(74,222,128,.25);}
-.status-box.offline{background:rgba(100,116,139,.08);border:1px solid #334155;}
-.status-dot{width:14px;height:14px;border-radius:50%;margin:0 auto 10px;}
-.status-dot.on{background:#4ade80;box-shadow:0 0 8px #4ade80;}
-.status-dot.off{background:#64748b;}
-.status-label{font-size:15px;font-weight:700;margin-bottom:8px;}
-.status-label.on{color:#4ade80;}
-.status-label.off{color:#64748b;}
-.status-list{font-size:12px;color:#64748b;line-height:1.8;text-align:left;}
-.status-list li{list-style:none;padding-left:16px;position:relative;}
-.status-list li::before{content:'✓';position:absolute;left:0;color:#4ade80;}
-.status-list li.na::before{content:'✗';color:#ef4444;}
-
-/* ── NOTE BOX ── */
-.note{background:#172554;border:1px solid #1e40af;border-radius:10px;padding:14px 16px;font-size:13px;color:#93c5fd;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;}
-.note-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
-.warn{background:#422006;border-color:#854d0e;color:#fde68a;}
-
-/* ── SHORTCUT TABLE ── */
-.shortcut-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;}
-.shortcut-row{display:flex;align-items:center;gap:12px;background:#1e293b;border-radius:8px;padding:10px 14px;}
-.shortcut-key{flex-shrink:0;min-width:80px;text-align:right;}
-.shortcut-desc{font-size:13px;color:#94a3b8;}
+  :root{
+    --bg:#0f172a; --panel:#111c2e; --panel2:#0b1220; --bd:#1e293b;
+    --tx:#e2e8f0; --sub:#94a3b8; --dim:#64748b;
+    --blue:#3b82f6; --green:#22c55e; --amber:#f59e0b; --red:#ef4444;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);
+       font-family:"Malgun Gothic","Microsoft YaHei","Segoe UI",system-ui,-apple-system,sans-serif;
+       line-height:1.75;font-size:15px}
+  header{position:sticky;top:0;z-index:50;background:rgba(11,18,32,.96);
+         border-bottom:1px solid var(--bd);backdrop-filter:blur(6px)}
+  .hwrap{max-width:1080px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .logo{font-weight:900;font-size:20px;letter-spacing:.5px}
+  .logo b:nth-child(1){color:var(--blue)} .logo b:nth-child(2){color:var(--amber)} .logo b:nth-child(3){color:var(--green)}
+  .htitle{font-size:13px;color:var(--sub)}
+  .langs{margin-left:auto;display:flex;gap:6px}
+  .langs button{background:#1e293b;color:var(--dim);border:1px solid #334155;border-radius:7px;
+                padding:5px 12px;font-size:13px;cursor:pointer;font-family:inherit}
+  .langs button.on{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:700}
+  main{max-width:1080px;margin:0 auto;padding:26px 20px 90px}
+  .hero{background:linear-gradient(135deg,#12233f,#0d1a2e);border:1px solid #1e3a5f;
+        border-radius:14px;padding:22px 24px;margin-bottom:26px}
+  .hero h1{margin:0 0 8px;font-size:26px}
+  .hero p{margin:0;color:var(--sub);font-size:14px}
+  nav.toc{background:var(--panel);border:1px solid var(--bd);border-radius:12px;padding:14px 18px;margin-bottom:30px}
+  nav.toc div.tt{font-size:12px;color:var(--dim);font-weight:700;margin-bottom:8px}
+  nav.toc ol{margin:0;padding-left:20px;columns:2;column-gap:26px}
+  nav.toc li{margin:3px 0}
+  nav.toc a{color:#93c5fd;text-decoration:none;font-size:14px}
+  nav.toc a:hover{text-decoration:underline}
+  section{margin-bottom:38px;scroll-margin-top:70px}
+  h2{font-size:21px;margin:0 0 4px;padding-bottom:8px;border-bottom:2px solid #1e3a5f}
+  .lead{color:var(--sub);font-size:14px;margin:6px 0 16px}
+  p{margin:10px 0}
+  ol.steps{counter-reset:s;list-style:none;padding:0;margin:14px 0}
+  ol.steps>li{counter-increment:s;position:relative;padding:10px 0 10px 44px;border-bottom:1px dashed #1e293b}
+  ol.steps>li:last-child{border-bottom:none}
+  ol.steps>li::before{content:counter(s);position:absolute;left:0;top:9px;width:28px;height:28px;
+    background:var(--blue);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:14px}
+  .shot{margin:16px 0;background:var(--panel2);border:1px solid var(--bd);border-radius:12px;padding:10px;overflow:hidden}
+  .shot img{width:100%;display:block;border-radius:8px;border:1px solid #223049}
+  .shot .cap{font-size:12.5px;color:var(--dim);margin-top:8px;text-align:center}
+  .shot .ph{height:170px;display:flex;align-items:center;justify-content:center;border:1px dashed #334155;
+            border-radius:8px;color:#475569;font-size:13px;background:#0a1120}
+  .tip,.warn,.note{border-radius:10px;padding:12px 16px;margin:14px 0;font-size:14px}
+  .tip{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.35)}
+  .warn{background:rgba(239,68,68,.09);border:1px solid rgba(239,68,68,.38)}
+  .note{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.32)}
+  .tip b{color:#4ade80} .warn b{color:#fca5a5} .note b{color:#93c5fd}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+  th,td{border:1px solid var(--bd);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#16233a;color:#93c5fd;font-weight:700;white-space:nowrap}
+  code,kbd{background:#1e293b;border:1px solid #334155;border-radius:5px;padding:1px 6px;
+           font-family:Consolas,"Courier New",monospace;font-size:13px;color:#7dd3fc}
+  .k{color:var(--amber);font-weight:700}
+  footer{max-width:1080px;margin:0 auto;padding:20px;color:#475569;font-size:12px;border-top:1px solid var(--bd)}
+  @media print{
+    header{position:static} .langs{display:none}
+    body{background:#fff;color:#111} section{page-break-inside:avoid}
+    .shot{background:#f8fafc;border-color:#cbd5e1} h2{border-color:#94a3b8}
+  }
+  @media (max-width:720px){ nav.toc ol{columns:1} .hwrap{padding:8px 12px} main{padding:16px 12px 60px} }
 </style>
 </head>
 <body>
-
-<!-- ─── HEADER ─── -->
-<div class="lang-bar">
-  <div class="pie-logo"><span>P</span><span>I</span><span>E</span> <span style="font-size:13px;font-weight:400;color:#475569;">Guide</span></div>
-  <button class="lang-tab active" onclick="setLang('ko')">🇰🇷 한국어</button>
-  <button class="lang-tab" onclick="setLang('zh')">🇨🇳 中文</button>
-  <button class="lang-tab" onclick="setLang('vi')">🇻🇳 Tiếng Việt</button>
-</div>
-
-
-<!-- ════════════════════════════════════════════════════
-     🇰🇷  한국어
-════════════════════════════════════════════════════ -->
-<div class="lang-section active" id="ko">
-
-  <!-- S1: 설치 -->
-  <div class="section">
-    <div class="section-header">
-      <div class="sec-num">1</div>
-      <div><div class="sec-title">설치 방법</div><div class="sec-sub">USB나 폴더에서 한 번만 실행하면 설치 완료</div></div>
-    </div>
-
-    <div class="steps">
-      <div class="step-card">
-        <div class="step-num">1</div>
-        <div class="step-icon">📦</div>
-        <div class="step-title">배포 폴더 준비</div>
-        <div class="step-desc">받은 폴더를 <strong style="color:#fca5a5;">통째로</strong> 복사합니다 (파일만 골라 복사하면 AI 기능이 동작하지 않습니다)</div>
-        <div style="margin-top:12px;background:#0f172a;border-radius:8px;padding:10px;text-align:left;">
-          <div style="font-size:11px;color:#64748b;line-height:2;">
-            📄 <span style="color:#60a5fa;">PIE.html</span><br>
-            ▶️ <span style="color:#4ade80;">PIE(중국).bat</span><br>
-            📁 <span style="color:#c4b5fd;">mediapipe\</span> (AI 자산)<br>
-            ⚙️ <span style="color:#fde68a;">PIE_설치.bat</span> / 🗑️ <span style="color:#fca5a5;">PIE_제거.bat</span>
-          </div>
-        </div>
-      </div>
-      <div class="step-arrow">▶</div>
-      <div class="step-card">
-        <div class="step-num">2</div>
-        <div class="step-icon">🖱️</div>
-        <div class="step-title">설치 파일 실행</div>
-        <div class="step-desc"><strong style="color:#fde68a;">PIE_설치.bat</strong> 을<br>더블클릭합니다</div>
-        <div style="margin-top:14px;">
-          <svg viewBox="0 0 140 60" style="width:100%;max-width:140px;margin:0 auto;display:block;">
-            <rect x="10" y="8" width="120" height="44" rx="6" fill="#1e293b" stroke="#334155"/>
-            <rect x="10" y="8" width="120" height="18" rx="6" fill="#334155"/>
-            <rect x="10" y="20" width="120" height="6" fill="#334155"/>
-            <text x="20" y="22" fill="#94a3b8" font-size="9">PIE_설치.bat</text>
-            <circle cx="118" cy="17" r="4" fill="#ef4444"/>
-            <circle cx="106" cy="17" r="4" fill="#f59e0b"/>
-            <circle cx="94" cy="17" r="4" fill="#22c55e"/>
-            <text x="20" y="43" fill="#64748b" font-size="8">더블클릭 →</text>
-            <text x="70" y="43" fill="#60a5fa" font-size="8">설치 화면 오픈</text>
-          </svg>
-        </div>
-      </div>
-      <div class="step-arrow">▶</div>
-      <div class="step-card">
-        <div class="step-num">3</div>
-        <div class="step-icon">🖥️</div>
-        <div class="step-title">설치 화면</div>
-        <div class="step-desc">설치 위치를 확인하고<br><strong style="color:#60a5fa;">설치 시작</strong> 버튼 클릭</div>
-        <div style="margin-top:12px;">
-          <svg viewBox="0 0 140 80" style="width:100%;max-width:140px;margin:0 auto;display:block;">
-            <rect x="5" y="5" width="130" height="70" rx="8" fill="#1e293b" stroke="#334155"/>
-            <rect x="5" y="5" width="130" height="20" rx="8" fill="#0f172a"/>
-            <rect x="5" y="18" width="130" height="7" fill="#0f172a"/>
-            <text x="14" y="19" fill="#3b82f6" font-size="11" font-weight="bold">PIE</text>
-            <text x="32" y="19" fill="#94a3b8" font-size="8">설치 프로그램</text>
-            <rect x="14" y="30" width="112" height="12" rx="3" fill="#0f172a" stroke="#334155"/>
-            <text x="18" y="40" fill="#64748b" font-size="8">C:\...\PIE_WorkAnalysis</text>
-            <rect x="14" y="48" width="22" height="9" rx="3" fill="#0f172a" stroke="#334155"/>
-            <text x="17" y="55.5" fill="#94a3b8" font-size="7">취소</text>
-            <rect x="100" y="48" width="28" height="9" rx="3" fill="#1d4ed8"/>
-            <text x="103" y="55.5" fill="#fff" font-size="7">설치 시작</text>
-          </svg>
-        </div>
-      </div>
-      <div class="step-arrow">▶</div>
-      <div class="step-card">
-        <div class="step-num">4</div>
-        <div class="step-icon">✅</div>
-        <div class="step-title">설치 완료</div>
-        <div class="step-desc">바탕화면에<br><strong style="color:#4ade80;">PIE 작업분석</strong> 아이콘이<br>생성됩니다</div>
-        <div style="margin-top:14px;text-align:center;">
-          <div style="display:inline-block;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:10px 14px;">
-            <div style="font-size:28px;">🔵</div>
-            <div style="font-size:11px;color:#e2e8f0;margin-top:4px;">PIE 작업분석</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="note">
-      <div class="note-icon">💡</div>
-      <div>Windows 보안 경고(파란 화면)가 뜨면 <strong>추가 정보 → 실행</strong> 을 클릭하세요. 바이러스가 아닌 로컬 스크립트입니다.</div>
-    </div>
+<header>
+  <div class="hwrap">
+    <span class="logo"><b>P</b><b>I</b><b>E</b></span>
+    <span class="htitle" id="htitle"></span>
+    <span class="langs">
+      <button data-l="ko" class="on">🇰🇷 한국어</button>
+      <button data-l="zh">🇨🇳 中文</button>
+      <button data-l="vi">🇻🇳 Tiếng Việt</button>
+    </span>
   </div>
-
-  <!-- S2: 첫 실행 -->
-  <div class="section">
-    <div class="section-header">
-      <div class="sec-num">2</div>
-      <div><div class="sec-title">첫 실행 & 라이선스</div><div class="sec-sub">처음 한 번만 라이선스 키를 입력합니다</div></div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;" class="two-col">
-      <div>
-        <div class="diagram-wrap">
-          <div class="diagram-title"><div class="dot" style="background:#ef4444;"></div><div class="dot" style="background:#f59e0b;"></div><div class="dot" style="background:#22c55e;"></div>&nbsp;바탕화면 → 클릭</div>
-          <svg viewBox="0 0 400 180">
-            <!-- desktop bg -->
-            <rect width="400" height="180" fill="#0f172a"/>
-            <!-- desktop icon -->
-            <rect x="160" y="30" width="80" height="80" rx="12" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2"/>
-            <text x="200" y="82" text-anchor="middle" font-size="32" fill="#60a5fa">🔵</text>
-            <text x="200" y="126" text-anchor="middle" font-size="11" fill="#e2e8f0">PIE 작업분석</text>
-            <!-- cursor -->
-            <polygon points="195,105 195,125 200,120 204,130 207,129 203,119 210,119" fill="#fff" opacity=".9"/>
-            <!-- arrow -->
-            <text x="200" y="155" text-anchor="middle" font-size="11" fill="#4ade80">← 더블클릭</text>
-          </svg>
-        </div>
-      </div>
-      <div>
-        <div class="diagram-wrap">
-          <div class="diagram-title"><div class="dot" style="background:#ef4444;"></div><div class="dot" style="background:#f59e0b;"></div><div class="dot" style="background:#22c55e;"></div>&nbsp;라이선스 키 입력 화면</div>
-          <svg viewBox="0 0 400 180">
-            <rect width="400" height="180" fill="#090f1a"/>
-            <rect x="80" y="20" width="240" height="140" rx="14" fill="#1e293b" stroke="#334155"/>
-            <!-- PIE logo -->
-            <text x="158" y="55" font-size="22" font-weight="bold" fill="#3b82f6">P</text>
-            <text x="176" y="55" font-size="22" font-weight="bold" fill="#f59e0b">I</text>
-            <text x="190" y="55" font-size="22" font-weight="bold" fill="#22c55e">E</text>
-            <text x="200" y="72" text-anchor="middle" font-size="10" fill="#64748b">라이선스 키를 입력하세요</text>
-            <!-- input box -->
-            <rect x="100" y="82" width="200" height="22" rx="5" fill="#0f172a" stroke="#475569"/>
-            <text x="115" y="97" font-size="10" fill="#475569">PIE-XXXX-XXXX-XXXX</text>
-            <!-- confirm button -->
-            <rect x="130" y="115" width="140" height="24" rx="6" fill="#1d4ed8"/>
-            <text x="200" y="131" text-anchor="middle" font-size="11" fill="#fff">확인</text>
-            <!-- callout -->
-            <rect x="92" y="138" width="216" height="16" rx="4" fill="#172554" stroke="#1e40af"/>
-            <text x="200" y="150" text-anchor="middle" font-size="9" fill="#93c5fd">📧 키 발급: lovekhl83@gmail.com</text>
-          </svg>
-        </div>
-      </div>
-    </div>
-    <div class="note warn">
-      <div class="note-icon">⚠️</div>
-      <div>라이선스 키는 <strong>처음 1회만</strong> 입력합니다. 이후 자동으로 저장되어 다시 묻지 않습니다. 키가 없으면 <strong>lovekhl83@gmail.com</strong> 으로 문의하세요.</div>
-    </div>
-  </div>
-
-  <!-- S3: 메인 화면 -->
-  <div class="section">
-    <div class="section-header">
-      <div class="sec-num">3</div>
-      <div><div class="sec-title">메인 화면 구성</div><div class="sec-sub">각 영역의 역할을 확인하세요</div></div>
-    </div>
-
-    <div class="diagram-wrap" style="margin-bottom:20px;">
-      <div class="diagram-title"><div class="dot" style="background:#ef4444;"></div><div class="dot" style="background:#f59e0b;"></div><div class="dot" style="background:#22c55e;"></div>&nbsp;PIE 메인 화면</div>
-      <svg viewBox="0 0 900 500" style="width:100%;">
-        <!-- bg -->
-        <rect width="900" height="500" fill="#090f1a"/>
-        <!-- header -->
-        <rect x="0" y="0" width="900" height="48" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
-        <!-- header items -->
-        <rect x="10" y="12" width="60" height="24" rx="6" fill="#1e3a8a" stroke="#3b82f6"/>
-        <text x="40" y="28" text-anchor="middle" font-size="12" fill="#93c5fd" font-weight="bold">☰ 메뉴</text>
-        <text x="86" y="30" font-size="16" font-weight="900" fill="#3b82f6">P</text>
-        <text x="98" y="30" font-size="16" font-weight="900" fill="#f59e0b">I</text>
-        <text x="108" y="30" font-size="16" font-weight="900" fill="#22c55e">E</text>
-        <line x1="128" y1="12" x2="128" y2="36" stroke="#334155"/>
-        <rect x="136" y="14" width="160" height="20" rx="4" fill="none" stroke="#334155"/>
-        <text x="144" y="28" font-size="10" fill="#64748b">1라인 조립공정</text>
-        <line x1="306" y1="12" x2="306" y2="36" stroke="#334155"/>
-        <rect x="314" y="14" width="100" height="20" rx="4" fill="none" stroke="#334155"/>
-        <text x="322" y="28" font-size="10" fill="#64748b">부품 선택</text>
-        <!-- right header -->
-        <rect x="760" y="13" width="60" height="22" rx="5" fill="#1e293b" stroke="#334155"/>
-        <text x="790" y="28" text-anchor="middle" font-size="10" fill="#94a3b8">⚙️ 전문가</text>
-        <rect x="828" y="13" width="62" height="22" rx="11" fill="rgba(59,130,246,0.10)" stroke="rgba(147,197,253,0.4)"/>
-        <text x="859" y="28" text-anchor="middle" font-size="10" fill="#93c5fd">🇰🇷 / 🇨🇳</text>
-        <!-- left sidebar -->
-        <rect x="0" y="48" width="56" height="452" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
-        <text x="28" y="90" text-anchor="middle" font-size="18">📹</text>
-        <text x="28" y="104" text-anchor="middle" font-size="8" fill="#3b82f6">분석</text>
-        <text x="28" y="134" text-anchor="middle" font-size="18">📊</text>
-        <text x="28" y="148" text-anchor="middle" font-size="8" fill="#64748b">간트</text>
-        <text x="28" y="178" text-anchor="middle" font-size="18">⚖</text>
-        <text x="28" y="192" text-anchor="middle" font-size="8" fill="#64748b">야마</text>
-        <text x="28" y="222" text-anchor="middle" font-size="18">🔀</text>
-        <text x="28" y="236" text-anchor="middle" font-size="8" fill="#64748b">시뮬</text>
-        <text x="28" y="266" text-anchor="middle" font-size="18">📊</text>
-        <text x="28" y="280" text-anchor="middle" font-size="8" fill="#64748b">통계</text>
-        <line x1="10" y1="310" x2="46" y2="310" stroke="#334155"/>
-        <text x="28" y="340" text-anchor="middle" font-size="16">🔧</text>
-        <text x="28" y="354" text-anchor="middle" font-size="8" fill="#64748b">부품</text>
-        <text x="28" y="380" text-anchor="middle" font-size="16">⏱</text>
-        <text x="28" y="394" text-anchor="middle" font-size="8" fill="#64748b">ST</text>
-        <text x="28" y="420" text-anchor="middle" font-size="16">📋</text>
-        <text x="28" y="434" text-anchor="middle" font-size="8" fill="#64748b">편성</text>
-        <text x="28" y="460" text-anchor="middle" font-size="16">📈</text>
-        <text x="28" y="474" text-anchor="middle" font-size="8" fill="#64748b">예측</text>
-        <!-- main area -->
-        <rect x="56" y="48" width="844" height="452" fill="#090f1a"/>
-        <!-- video area -->
-        <rect x="66" y="58" width="560" height="310" rx="8" fill="#0f172a" stroke="#1e293b"/>
-        <rect x="66" y="58" width="560" height="20" rx="8" fill="#1e293b"/>
-        <rect x="66" y="68" width="560" height="10" fill="#1e293b"/>
-        <text x="90" y="73" font-size="9" fill="#64748b">▶ 재생   ■ 정지   ⏪ ⏩   속도: 1x</text>
-        <!-- video placeholder -->
-        <rect x="76" y="88" width="540" height="190" rx="4" fill="#0a0f1e" stroke="#1e293b"/>
-        <text x="346" y="170" text-anchor="middle" font-size="28">🎬</text>
-        <text x="346" y="196" text-anchor="middle" font-size="12" fill="#334155">영상을 드래그하여 불러오세요</text>
-        <!-- timeline -->
-        <rect x="76" y="288" width="540" height="70" rx="4" fill="#0f172a" stroke="#1e293b"/>
-        <text x="90" y="305" font-size="9" fill="#64748b">타임라인</text>
-        <rect x="90" y="310" width="60" height="16" rx="3" fill="#3b82f6" opacity=".8"/>
-        <rect x="155" y="310" width="40" height="16" rx="3" fill="#22c55e" opacity=".8"/>
-        <rect x="200" y="310" width="80" height="16" rx="3" fill="#f59e0b" opacity=".8"/>
-        <rect x="285" y="310" width="30" height="16" rx="3" fill="#3b82f6" opacity=".8"/>
-        <rect x="320" y="310" width="70" height="16" rx="3" fill="#22c55e" opacity=".8"/>
-        <text x="90" y="342" font-size="8" fill="#475569">0:00</text>
-        <text x="540" y="342" font-size="8" fill="#475569" text-anchor="end">5:00</text>
-        <!-- right panel -->
-        <rect x="636" y="58" width="264" height="310" rx="8" fill="#0f172a" stroke="#1e293b"/>
-        <text x="650" y="76" font-size="10" fill="#94a3b8" font-weight="bold">작업 목록</text>
-        <rect x="644" y="84" width="248" height="22" rx="4" fill="#1e293b"/>
-        <circle cx="656" cy="95" r="5" fill="#3b82f6"/>
-        <text x="666" y="99" font-size="9" fill="#e2e8f0">조립 A</text>
-        <text x="860" y="99" text-anchor="end" font-size="9" fill="#64748b">2.3s</text>
-        <rect x="644" y="110" width="248" height="22" rx="4" fill="#1e293b"/>
-        <circle cx="656" cy="121" r="5" fill="#22c55e"/>
-        <text x="666" y="125" font-size="9" fill="#e2e8f0">이동</text>
-        <text x="860" y="125" text-anchor="end" font-size="9" fill="#64748b">1.1s</text>
-        <rect x="644" y="136" width="248" height="22" rx="4" fill="#1e293b"/>
-        <circle cx="656" cy="147" r="5" fill="#f59e0b"/>
-        <text x="666" y="151" font-size="9" fill="#e2e8f0">검사</text>
-        <text x="860" y="151" text-anchor="end" font-size="9" fill="#64748b">0.8s</text>
-        <!-- bottom panel -->
-        <rect x="66" y="374" width="834" height="116" rx="8" fill="#0f172a" stroke="#1e293b"/>
-        <text x="80" y="392" font-size="10" fill="#94a3b8" font-weight="bold">통계 요약</text>
-        <rect x="80" y="400" width="120" height="50" rx="6" fill="#1e293b"/>
-        <text x="140" y="420" text-anchor="middle" font-size="18" fill="#60a5fa" font-weight="bold">3.4s</text>
-        <text x="140" y="436" text-anchor="middle" font-size="9" fill="#64748b">평균 사이클</text>
-        <rect x="210" y="400" width="120" height="50" rx="6" fill="#1e293b"/>
-        <text x="270" y="420" text-anchor="middle" font-size="18" fill="#4ade80" font-weight="bold">12회</text>
-        <text x="270" y="436" text-anchor="middle" font-size="9" fill="#64748b">사이클 수</text>
-        <rect x="340" y="400" width="120" height="50" rx="6" fill="#1e293b"/>
-        <text x="400" y="420" text-anchor="middle" font-size="18" fill="#f59e0b" font-weight="bold">94%</text>
-        <text x="400" y="436" text-anchor="middle" font-size="9" fill="#64748b">작업 비율</text>
-        <rect x="470" y="400" width="120" height="50" rx="6" fill="#1e293b"/>
-        <text x="530" y="420" text-anchor="middle" font-size="18" fill="#a78bfa" font-weight="bold">4.1s</text>
-        <text x="530" y="436" text-anchor="middle" font-size="9" fill="#64748b">표준 시간(ST)</text>
-
-        <!-- Callout labels -->
-        <!-- ① header -->
-        <rect x="20" y="2" width="12" height="12" rx="6" fill="#3b82f6"/>
-        <text x="26" y="12" text-anchor="middle" font-size="8" fill="#fff" font-weight="bold">①</text>
-        <rect x="66" y="370" width="12" height="12" rx="6" fill="#f59e0b"/>
-        <text x="72" y="380" text-anchor="middle" font-size="8" fill="#fff" font-weight="bold">⑤</text>
-      </svg>
-    </div>
-
-    <div class="callouts">
-      <div class="callout"><div class="callout-num" style="background:#3b82f6;">①</div><div class="callout-text"><strong>상단 메뉴바</strong>메뉴 버튼 · 분석명 입력 · 부품 선택 · 언어 전환(한국어/中文)</div></div>
-      <div class="callout"><div class="callout-num" style="background:#a78bfa;">②</div><div class="callout-text"><strong>좌측 탭 메뉴</strong>분석 · 간트차트 · 야마즈미 · 시뮬레이션 · 통계 · 부품관리 · ST분석</div></div>
-      <div class="callout"><div class="callout-num" style="background:#22c55e;">③</div><div class="callout-text"><strong>영상 재생 영역</strong>드래그하여 영상 불러오기. 클릭으로 작업 구간을 마킹합니다</div></div>
-      <div class="callout"><div class="callout-num" style="background:#f59e0b;">④</div><div class="callout-text"><strong>작업 목록 패널</strong>마킹된 작업 요소 목록 · 시간 · 편집 · 삭제</div></div>
-      <div class="callout"><div class="callout-num" style="background:#ef4444;">⑤</div><div class="callout-text"><strong>결과 요약 패널</strong>평균 사이클 · 사이클 수 · 작업 비율 · 표준 시간(ST)</div></div>
-    </div>
-  </div>
-
-  <!-- S4: 영상 분석 -->
-  <div class="section">
-    <div class="section-header">
-      <div class="sec-num">4</div>
-      <div><div class="sec-title">영상 불러오기 & 작업 마킹</div><div class="sec-sub">영상을 불러온 후 클릭으로 작업 구간을 표시합니다</div></div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
-      <div>
-        <p style="font-size:13px;color:#94a3b8;margin-bottom:10px;font-weight:600;">① 영상 불러오기</p>
-        <div class="diagram-wrap">
-          <svg viewBox="0 0 400 200">
-            <rect width="400" height="200" fill="#0f172a"/>
-            <rect x="30" y="20" width="340" height="160" rx="10" fill="#0a0f1e" stroke="#334155" stroke-dasharray="6,3"/>
-            <text x="200" y="90" text-anchor="middle" font-size="32">🎬</text>
-            <text x="200" y="118" text-anchor="middle" font-size="13" fill="#334155">영상 파일을 여기로</text>
-            <text x="200" y="136" text-anchor="middle" font-size="13" fill="#3b82f6">드래그 &amp; 드롭</text>
-            <text x="200" y="158" text-anchor="middle" font-size="11" fill="#475569">또는 클릭하여 파일 선택</text>
-            <!-- drag arrow -->
-            <path d="M60,80 Q60,50 100,50" stroke="#3b82f6" stroke-width="2" fill="none" marker-end="url(#arr)"/>
-            <defs><marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#3b82f6"/></marker></defs>
-            <rect x="20" y="60" width="52" height="36" rx="4" fill="#1e293b" stroke="#475569"/>
-            <text x="46" y="83" text-anchor="middle" font-size="20">🎥</text>
-          </svg>
-        </div>
-      </div>
-      <div>
-        <p style="font-size:13px;color:#94a3b8;margin-bottom:10px;font-weight:600;">② 작업 마킹 방법</p>
-        <div class="diagram-wrap">
-          <svg viewBox="0 0 400 200">
-            <rect width="400" height="200" fill="#0f172a"/>
-            <!-- video frame -->
-            <rect x="10" y="10" width="380" height="120" rx="6" fill="#050a14"/>
-            <text x="200" y="70" text-anchor="middle" font-size="24">👷</text>
-            <!-- playhead -->
-            <line x1="200" y1="10" x2="200" y2="130" stroke="#60a5fa" stroke-width="2" stroke-dasharray="4,2"/>
-            <!-- timeline -->
-            <rect x="10" y="140" width="380" height="50" rx="4" fill="#0f172a"/>
-            <rect x="30" y="150" width="80" height="16" rx="3" fill="#3b82f6" opacity=".85"/>
-            <rect x="115" y="150" width="50" height="16" rx="3" fill="#22c55e" opacity=".85"/>
-            <rect x="170" y="150" width="100" height="16" rx="3" fill="#f59e0b" opacity=".85"/>
-            <text x="70" y="162" text-anchor="middle" font-size="8" fill="#fff">조립</text>
-            <text x="140" y="162" text-anchor="middle" font-size="8" fill="#fff">이동</text>
-            <text x="220" y="162" text-anchor="middle" font-size="8" fill="#fff">검사</text>
-            <!-- key hints -->
-            <rect x="30" y="174" width="30" height="12" rx="3" fill="#1e293b" stroke="#475569"/>
-            <text x="45" y="184" text-anchor="middle" font-size="8" fill="#e2e8f0">I</text>
-            <text x="64" y="184" font-size="8" fill="#64748b">시작</text>
-            <rect x="110" y="174" width="30" height="12" rx="3" fill="#1e293b" stroke="#475569"/>
-            <text x="125" y="184" text-anchor="middle" font-size="8" fill="#e2e8f0">O</text>
-            <text x="144" y="184" font-size="8" fill="#64748b">종료</text>
-            <text x="230" y="184" font-size="8" fill="#64748b">또는 영상 클릭</text>
-          </svg>
-        </div>
-      </div>
-    </div>
-
-    <!-- keyboard shortcuts -->
-    <p style="font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:12px;">⌨️ 키보드 단축키</p>
-    <div class="shortcut-grid">
-      <div class="shortcut-row"><div class="shortcut-key"><span class="kbd">Space</span></div><div class="shortcut-desc">재생 / 일시정지</div></div>
-      <div class="shortcut-row"><div class="shortcut-key"><span class="kbd">I</span></div><div class="shortcut-desc">작업 시작 마커 (= 영상 좌클릭)</div></div>
-      <div class="shortcut-row"><div class="shortcut-key"><span class="kbd">←</span> <span class="kbd">→</span></div><div class="shortcut-desc">이전 / 다음 프레임</div></div>
-      <div class="shortcut-row"><div class="shortcut-key"><span class="kbd">O</span></div><div class="shortcut-desc">작업 종료 마커</div></div>
-      <div class="shortcut-row"><div class="shortcut-key"><span class="kbd">Shift</span>+<span class="kbd">←→</span></div><div class="shortcut-desc">5초 이동</div></div>
-      <div class="shortcut-row"><div class="shortcut-key"><span class="kbd">Esc</span></div><div class="shortcut-desc">반복 구간 해제</div></div>
-    </div>
-  </div>
-
-  <!-- S5: 결과 탭 -->
-  <div class="section">
-    <div class="section-header">
-      <div class="sec-num">5</div>
-      <div><div class="sec-title">결과 확인 탭</div><div class="sec-sub">좌측 탭을 클릭해 다양한 분석 결과를 확인합니다</div></div>
-    </div>
-    <div class="feat-grid">
-      <div class="feat-card">
-        <div class="feat-icon">📊</div>
-        <div class="feat-title">간트 차트<span class="badge badge-offline">오프라인 가능</span></div>
-        <div class="feat-desc">시간축 기준 작업 구간을 시각화. 작업별·사이클별 분석</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">⚖</div>
-        <div class="feat-title">야마즈미<span class="badge badge-offline">오프라인 가능</span></div>
-        <div class="feat-desc">작업자별 작업 부하 분석 (Mountain chart). 라인 밸런싱 확인</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">🔀</div>
-        <div class="feat-title">시뮬레이션<span class="badge badge-offline">오프라인 가능</span></div>
-        <div class="feat-desc">작업 배치 실험 및 공정 흐름 시뮬레이션</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">📊</div>
-        <div class="feat-title">통계 분석<span class="badge badge-offline">오프라인 가능</span></div>
-        <div class="feat-desc">평균·편차·CV%·웨스팅하우스 레이팅·표준 시간(ST) 자동 계산</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- S6: 내보내기 -->
-  <div class="section">
-    <div class="section-header">
-      <div class="sec-num">6</div>
-      <div><div class="sec-title">내보내기</div><div class="sec-sub">☰ 메뉴 버튼에서 내보내기 기능을 찾을 수 있습니다</div></div>
-    </div>
-    <div class="diagram-wrap" style="margin-bottom:16px;">
-      <svg viewBox="0 0 700 180">
-        <rect width="700" height="180" fill="#090f1a"/>
-        <!-- menu button -->
-        <rect x="20" y="30" width="80" height="30" rx="6" fill="#1e3a8a" stroke="#3b82f6"/>
-        <text x="60" y="50" text-anchor="middle" font-size="12" fill="#93c5fd" font-weight="bold">☰ 메뉴</text>
-        <!-- dropdown -->
-        <rect x="20" y="68" width="160" height="100" rx="8" fill="#1e293b" stroke="#334155"/>
-        <text x="36" y="88" font-size="11" fill="#e2e8f0">💾 분석 저장</text>
-        <line x1="30" y1="94" x2="170" y2="94" stroke="#334155"/>
-        <text x="36" y="110" font-size="11" fill="#e2e8f0">📥 PDF 내보내기</text>
-        <text x="36" y="128" font-size="11" fill="#e2e8f0">📄 SOP 문서</text>
-        <text x="36" y="146" font-size="11" fill="#a78bfa">📊 산출보고서</text>
-        <text x="36" y="162" font-size="11" fill="#34d399">↓ CSV 내보내기</text>
-        <!-- arrows to formats -->
-        <path d="M180,100 L240,60" stroke="#334155" fill="none" stroke-dasharray="4,2"/>
-        <path d="M180,120 L240,100" stroke="#334155" fill="none" stroke-dasharray="4,2"/>
-        <path d="M180,140 L240,140" stroke="#334155" fill="none" stroke-dasharray="4,2"/>
-        <path d="M180,158 L240,170" stroke="#334155" fill="none" stroke-dasharray="4,2"/>
-        <!-- format boxes -->
-        <rect x="240" y="36" width="100" height="40" rx="8" fill="#1e3a5f" stroke="#3b82f6"/>
-        <text x="290" y="54" text-anchor="middle" font-size="11" fill="#60a5fa">📥 PDF</text>
-        <text x="290" y="68" text-anchor="middle" font-size="9" fill="#64748b">인쇄용 보고서</text>
-        <rect x="240" y="84" width="100" height="40" rx="8" fill="#052e16" stroke="#16a34a"/>
-        <text x="290" y="102" text-anchor="middle" font-size="11" fill="#4ade80">📋 SOP</text>
-        <text x="290" y="116" text-anchor="middle" font-size="9" fill="#64748b">작업 표준서</text>
-        <rect x="240" y="128" width="100" height="40" rx="8" fill="#2e1065" stroke="#7c3aed"/>
-        <text x="290" y="146" text-anchor="middle" font-size="11" fill="#a78bfa">📊 보고서</text>
-        <text x="290" y="160" text-anchor="middle" font-size="9" fill="#64748b">표준 시간 산출</text>
-        <rect x="240" y="156" width="100" height="0" rx="8" fill="#052e16"/>
-        <rect x="360" y="84" width="100" height="40" rx="8" fill="#1c1917" stroke="#78716c"/>
-        <text x="410" y="102" text-anchor="middle" font-size="11" fill="#d6d3d1">📊 Excel</text>
-        <text x="410" y="116" text-anchor="middle" font-size="9" fill="#64748b">사이클 데이터</text>
-        <rect x="360" y="128" width="100" height="40" rx="8" fill="#052e16" stroke="#16a34a"/>
-        <text x="410" y="146" text-anchor="middle" font-size="11" fill="#4ade80">📄 CSV</text>
-        <text x="410" y="160" text-anchor="middle" font-size="9" fill="#64748b">원시 데이터</text>
-      </svg>
-    </div>
-  </div>
-
-  <!-- S7: 오프라인 동작 & 데이터 공유 -->
-  <div class="section">
-    <div class="section-header">
-      <div class="sec-num">7</div>
-      <div><div class="sec-title">오프라인 동작 & 데이터 공유</div><div class="sec-sub">이 버전은 인터넷 없이 100% 동작합니다</div></div>
-    </div>
-    <div class="status-row">
-      <div class="status-box offline">
-        <div class="status-dot off"></div>
-        <div class="status-label off">📴 인터넷 없이 사용</div>
-        <ul class="status-list">
-          <li>영상 분석 · 작업 마킹</li>
-          <li>간트 · 야마즈미 · 시뮬</li>
-          <li>통계 · ST · 레이팅</li>
-          <li>PDF · Excel · CSV 내보내기</li>
-          <li>부품관리 · 작업편성</li>
-          <li>AI 비전 분석 (Pose) — 프로그램에 포함</li>
-        </ul>
-      </div>
-      <div class="status-box online">
-        <div class="status-dot on"></div>
-        <div class="status-label on">🔗 여러 PC에서 ST 공유 (선택)</div>
-        <ul class="status-list">
-          <li>사내 LAN만 사용 — 인터넷 불필요</li>
-          <li>공유 폴더 방식 또는 서버 방식</li>
-          <li>부품 표준시간(ST)이 자동 합쳐짐</li>
-        </ul>
-        <div style="margin-top:12px;background:#0f172a;border-radius:6px;padding:8px;font-size:11px;color:#4ade80;">
-          💡 서버 방식: 한 PC에서 <strong>PIE_ST_server_시작.bat</strong> 실행 → 다른 PC는 설정 &gt; ST 누적 저장소에 그 PC 주소 입력
-        </div>
-      </div>
-    </div>
-    <div class="note">
-      <div class="note-icon">💡</div>
-      <div>이 버전은 <strong>구글 시트 연동이 없습니다.</strong> 모든 데이터는 사내 PC와 공유 폴더에만 저장됩니다.</div>
-    </div>
-  </div>
-
-  <!-- S8: 제거 -->
-  <div class="section">
-    <div class="section-header">
-      <div class="sec-num">8</div>
-      <div><div class="sec-title">프로그램 제거</div><div class="sec-sub">두 가지 방법으로 제거할 수 있습니다</div></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      <div class="feat-card">
-        <div class="feat-icon">🗑️</div>
-        <div class="feat-title">방법 1 — 제거 파일 실행</div>
-        <div class="feat-desc">배포 폴더 또는 설치 폴더의<br><strong style="color:#fca5a5;">PIE_제거.bat</strong> 더블클릭</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">⚙️</div>
-        <div class="feat-title">방법 2 — Windows 설정</div>
-        <div class="feat-desc">설정 → 앱 → <strong style="color:#fca5a5;">PIE - Powernet</strong> 검색 → 제거</div>
-      </div>
-    </div>
-  </div>
-
-</div><!-- /ko -->
-
-
-<!-- ════════════════════════════════════════════════════
-     🇨🇳  中文
-════════════════════════════════════════════════════ -->
-<div class="lang-section" id="zh">
-
-  <div class="section">
-    <div class="section-header">
-      <div class="sec-num">1</div>
-      <div><div class="sec-title">安装方法</div><div class="sec-sub">从USB或文件夹运行一次即可完成安装</div></div>
-    </div>
-    <div class="steps">
-      <div class="step-card">
-        <div class="step-num">1</div>
-        <div class="step-icon">📦</div>
-        <div class="step-title">准备安装包</div>
-        <div class="step-desc">请<strong style="color:#fca5a5;">整个文件夹一起复制</strong>（只挑选部分文件会导致 AI 功能无法使用）</div>
-        <div style="margin-top:12px;background:#0f172a;border-radius:8px;padding:10px;text-align:left;">
-          <div style="font-size:11px;color:#64748b;line-height:2;">
-            📄 <span style="color:#60a5fa;">PIE.html</span><br>
-            ▶️ <span style="color:#4ade80;">PIE(중국).bat</span> (启动)<br>
-            📁 <span style="color:#c4b5fd;">mediapipe\</span> (AI 资源)<br>
-            ⚙️ <span style="color:#fde68a;">PIE_설치.bat</span> (安装) / 🗑️ <span style="color:#fca5a5;">PIE_제거.bat</span> (卸载)
-          </div>
-        </div>
-      </div>
-      <div class="step-arrow">▶</div>
-      <div class="step-card">
-        <div class="step-num">2</div>
-        <div class="step-icon">🖱️</div>
-        <div class="step-title">运行安装文件</div>
-        <div class="step-desc">双击 <strong style="color:#fde68a;">PIE_설치.bat</strong></div>
-        <div style="margin-top:14px;">
-          <svg viewBox="0 0 140 60" style="width:100%;max-width:140px;margin:0 auto;display:block;">
-            <rect x="10" y="8" width="120" height="44" rx="6" fill="#1e293b" stroke="#334155"/>
-            <rect x="10" y="8" width="120" height="18" rx="6" fill="#334155"/>
-            <rect x="10" y="20" width="120" height="6" fill="#334155"/>
-            <text x="20" y="22" fill="#94a3b8" font-size="9">PIE_설치.bat</text>
-            <text x="20" y="43" fill="#64748b" font-size="8">双击 →</text>
-            <text x="58" y="43" fill="#60a5fa" font-size="8">安装界面打开</text>
-          </svg>
-        </div>
-      </div>
-      <div class="step-arrow">▶</div>
-      <div class="step-card">
-        <div class="step-num">3</div>
-        <div class="step-icon">🖥️</div>
-        <div class="step-title">安装界面</div>
-        <div class="step-desc">确认安装位置后点击<br><strong style="color:#60a5fa;">开始安装</strong></div>
-        <div style="margin-top:12px;">
-          <svg viewBox="0 0 140 80" style="width:100%;max-width:140px;margin:0 auto;display:block;">
-            <rect x="5" y="5" width="130" height="70" rx="8" fill="#1e293b" stroke="#334155"/>
-            <rect x="5" y="5" width="130" height="20" rx="8" fill="#0f172a"/>
-            <rect x="5" y="18" width="130" height="7" fill="#0f172a"/>
-            <text x="14" y="19" fill="#3b82f6" font-size="11" font-weight="bold">PIE</text>
-            <text x="32" y="19" fill="#94a3b8" font-size="8">安装程序</text>
-            <rect x="14" y="30" width="112" height="12" rx="3" fill="#0f172a" stroke="#334155"/>
-            <text x="18" y="40" fill="#64748b" font-size="8">C:\...\PIE_WorkAnalysis</text>
-            <rect x="14" y="48" width="22" height="9" rx="3" fill="#0f172a" stroke="#334155"/>
-            <text x="17" y="55.5" fill="#94a3b8" font-size="7">取消</text>
-            <rect x="100" y="48" width="28" height="9" rx="3" fill="#1d4ed8"/>
-            <text x="114" y="55.5" text-anchor="middle" fill="#fff" font-size="7">安装</text>
-          </svg>
-        </div>
-      </div>
-      <div class="step-arrow">▶</div>
-      <div class="step-card">
-        <div class="step-num">4</div>
-        <div class="step-icon">✅</div>
-        <div class="step-title">安装完成</div>
-        <div class="step-desc">桌面上会出现<br><strong style="color:#4ade80;">PIE 快捷方式</strong></div>
-        <div style="margin-top:14px;text-align:center;">
-          <div style="display:inline-block;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:10px 14px;">
-            <div style="font-size:28px;">🔵</div>
-            <div style="font-size:11px;color:#e2e8f0;margin-top:4px;">PIE 工作分析</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="note warn"><div class="note-icon">⚠️</div><div>如果出现Windows安全警告（蓝屏），请点击 <strong>更多信息 → 仍要运行</strong>。这是本地脚本，不是病毒。</div></div>
-  </div>
-
-  <div class="section">
-    <div class="section-header"><div class="sec-num">2</div><div><div class="sec-title">首次运行 & 许可证</div><div class="sec-sub">仅需输入一次许可证密钥</div></div></div>
-    <div class="note warn"><div class="note-icon">⚠️</div><div>许可证密钥<strong>只需输入一次</strong>，之后会自动保存。如没有密钥，请联系 <strong>lovekhl83@gmail.com</strong></div></div>
-  </div>
-
-  <div class="section">
-    <div class="section-header"><div class="sec-num">3</div><div><div class="sec-title">主界面说明</div><div class="sec-sub">了解各区域的功能</div></div></div>
-    <div class="callouts">
-      <div class="callout"><div class="callout-num" style="background:#3b82f6;">①</div><div class="callout-text"><strong>顶部菜单栏</strong>菜单按钮 · 分析名称 · 零件选择 · 语言切换(한국어/中文)</div></div>
-      <div class="callout"><div class="callout-num" style="background:#a78bfa;">②</div><div class="callout-text"><strong>左侧标签菜单</strong>分析·甘特图·山积表·模拟·统计·零件管理·ST分析</div></div>
-      <div class="callout"><div class="callout-num" style="background:#22c55e;">③</div><div class="callout-text"><strong>视频播放区域</strong>拖放视频文件加载。点击标记工序区间</div></div>
-      <div class="callout"><div class="callout-num" style="background:#f59e0b;">④</div><div class="callout-text"><strong>工序列表面板</strong>已标记工序列表 · 时间 · 编辑 · 删除</div></div>
-      <div class="callout"><div class="callout-num" style="background:#ef4444;">⑤</div><div class="callout-text"><strong>结果汇总面板</strong>平均周期 · 周期数 · 作业率 · 标准时间(ST)</div></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-header"><div class="sec-num">4</div><div><div class="sec-title">加载视频 & 标记工序</div><div class="sec-sub">拖放视频后，用点击标记工序区间</div></div></div>
-    <p style="font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:12px;">⌨️ 键盘快捷键</p>
-    <div class="shortcut-grid">
-      <div class="shortcut-row"><div class="shortcut-key"><span class="kbd">Space</span></div><div class="shortcut-desc">播放 / 暂停</div></div>
-      <div class="shortcut-row"><div class="shortcut-key"><span class="kbd">I</span></div><div class="shortcut-desc">工序开始标记</div></div>
-      <div class="shortcut-row"><div class="shortcut-key"><span class="kbd">←</span> <span class="kbd">→</span></div><div class="shortcut-desc">上一帧 / 下一帧</div></div>
-      <div class="shortcut-row"><div class="shortcut-key"><span class="kbd">O</span></div><div class="shortcut-desc">工序结束标记</div></div>
-      <div class="shortcut-row"><div class="shortcut-key"><span class="kbd">Shift</span>+<span class="kbd">←→</span></div><div class="shortcut-desc">跳转 5 秒</div></div>
-      <div class="shortcut-row"><div class="shortcut-key"><span class="kbd">Esc</span></div><div class="shortcut-desc">取消循环区间</div></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-header"><div class="sec-num">5</div><div><div class="sec-title">结果查看标签</div><div class="sec-sub">点击左侧标签查看各种分析结果</div></div></div>
-    <div class="feat-grid">
-      <div class="feat-card"><div class="feat-icon">📊</div><div class="feat-title">甘特图<span class="badge badge-offline">可离线</span></div><div class="feat-desc">以时间轴可视化工序区间，按工序/周期分析</div></div>
-      <div class="feat-card"><div class="feat-icon">⚖</div><div class="feat-title">山积表<span class="badge badge-offline">可离线</span></div><div class="feat-desc">按作业者分析工作负荷，确认生产线平衡</div></div>
-      <div class="feat-card"><div class="feat-icon">🔀</div><div class="feat-title">模拟<span class="badge badge-offline">可离线</span></div><div class="feat-desc">工序配置实验及流程模拟</div></div>
-      <div class="feat-card"><div class="feat-icon">📊</div><div class="feat-title">统计分析<span class="badge badge-offline">可离线</span></div><div class="feat-desc">平均值·标准差·CV%·西屋评定·标准时间(ST)自动计算</div></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-header"><div class="sec-num">6</div><div><div class="sec-title">导出</div><div class="sec-sub">在 ☰ 菜单按钮中可找到导出功能</div></div></div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;">
-      <div class="feat-card">
-        <div class="feat-icon">📄</div>
-        <div class="feat-title">SOP (作业标准书)</div>
-        <div class="feat-desc">自动截取最佳循环的画面，生成 PDF 与 Excel</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">📊</div>
-        <div class="feat-title">产出报告</div>
-        <div class="feat-desc">T/T · 总 ST · 最少人数 · 平衡率汇总画面</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">📥</div>
-        <div class="feat-title">PDF · CSV</div>
-        <div class="feat-desc">当前画面存为 PDF，作业清单存为 CSV(Excel 可打开)</div>
-      </div>
-    </div>
-    <div class="note"><div class="note-icon">💡</div><div>导出的文件保存在浏览器的<strong>下载文件夹</strong>中。</div></div>
-  </div>
-
-  <div class="section">
-    <div class="section-header"><div class="sec-num">7</div><div><div class="sec-title">离线运行 & 数据共享</div><div class="sec-sub">此版本无需网络即可 100% 运行</div></div></div>
-    <div class="status-row">
-      <div class="status-box offline">
-        <div class="status-dot off"></div>
-        <div class="status-label off">📴 无需网络即可使用</div>
-        <ul class="status-list">
-          <li>视频分析 · 工序标记</li>
-          <li>甘特图 · 山积表 · 模拟</li>
-          <li>统计 · ST · 评定</li>
-          <li>PDF · Excel · CSV 导出</li>
-          <li>零件管理 · 工序编制</li>
-          <li>AI 视觉分析 (Pose) — 已内置于程序中</li>
-        </ul>
-      </div>
-      <div class="status-box online">
-        <div class="status-dot on"></div>
-        <div class="status-label on">🔗 多台电脑共享 ST (可选)</div>
-        <ul class="status-list">
-          <li>仅使用公司内部局域网 — 无需互联网</li>
-          <li>共享文件夹方式 或 服务器方式</li>
-          <li>零件标准时间(ST)自动合并</li>
-        </ul>
-        <div style="margin-top:12px;background:#0f172a;border-radius:6px;padding:8px;font-size:11px;color:#4ade80;">
-          💡 服务器方式：在一台电脑上运行 <strong>PIE_ST_server_시작.bat</strong> → 其他电脑在 设置 &gt; ST 累计存储 中输入该电脑地址
-        </div>
-      </div>
-    </div>
-    <div class="note"><div class="note-icon">💡</div><div>此版本<strong>不含 Google 表格联动</strong>。所有数据仅保存在公司内部电脑与共享文件夹中。</div></div>
-  </div>
-
-  <div class="section">
-    <div class="section-header"><div class="sec-num">8</div><div><div class="sec-title">卸载程序</div><div class="sec-sub">有两种卸载方法</div></div></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      <div class="feat-card">
-        <div class="feat-icon">🗑️</div>
-        <div class="feat-title">方法 1 — 运行卸载文件</div>
-        <div class="feat-desc">双击安装文件夹中的<br><strong style="color:#fca5a5;">PIE_제거.bat</strong></div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">⚙️</div>
-        <div class="feat-title">方法 2 — Windows 设置</div>
-        <div class="feat-desc">设置 → 应用 → 搜索 <strong style="color:#fca5a5;">PIE - Powernet</strong> → 卸载</div>
-      </div>
-    </div>
-  </div>
-
-</div><!-- /zh -->
-
-
-<!-- ════════════════════════════════════════════════════
-     🇻🇳  Tiếng Việt
-════════════════════════════════════════════════════ -->
-<div class="lang-section" id="vi">
-
-  <div class="section">
-    <div class="section-header">
-      <div class="sec-num">1</div>
-      <div><div class="sec-title">Cách Cài Đặt</div><div class="sec-sub">Chạy một lần từ USB hoặc thư mục là hoàn tất cài đặt</div></div>
-    </div>
-    <div class="steps">
-      <div class="step-card">
-        <div class="step-num">1</div>
-        <div class="step-icon">📦</div>
-        <div class="step-title">Chuẩn bị gói cài đặt</div>
-        <div class="step-desc">USB hoặc thư mục cần có 3 tệp sau</div>
-        <div style="margin-top:12px;background:#0f172a;border-radius:8px;padding:10px;text-align:left;">
-          <div style="font-size:11px;color:#64748b;line-height:2;">
-            📄 <span style="color:#60a5fa;">PIE.html</span><br>
-            ▶️ <span style="color:#4ade80;">PIE(중국).bat</span> (khởi động)<br>
-            📁 <span style="color:#c4b5fd;">mediapipe\</span> (tài nguyên AI)<br>
-            ⚙️ <span style="color:#fde68a;">PIE_설치.bat</span> / 🗑️ <span style="color:#fca5a5;">PIE_제거.bat</span>
-          </div>
-        </div>
-      </div>
-      <div class="step-arrow">▶</div>
-      <div class="step-card">
-        <div class="step-num">2</div>
-        <div class="step-icon">🖱️</div>
-        <div class="step-title">Chạy tệp cài đặt</div>
-        <div class="step-desc">Nhấp đúp vào <strong style="color:#fde68a;">PIE_설치.bat</strong></div>
-      </div>
-      <div class="step-arrow">▶</div>
-      <div class="step-card">
-        <div class="step-num">3</div>
-        <div class="step-icon">🖥️</div>
-        <div class="step-title">Giao diện cài đặt</div>
-        <div class="step-desc">Xác nhận vị trí cài đặt rồi nhấn <strong style="color:#60a5fa;">Bắt đầu cài đặt</strong></div>
-      </div>
-      <div class="step-arrow">▶</div>
-      <div class="step-card">
-        <div class="step-num">4</div>
-        <div class="step-icon">✅</div>
-        <div class="step-title">Cài đặt hoàn tất</div>
-        <div class="step-desc">Biểu tượng <strong style="color:#4ade80;">PIE</strong> xuất hiện trên màn hình Desktop</div>
-        <div style="margin-top:14px;text-align:center;">
-          <div style="display:inline-block;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:10px 14px;">
-            <div style="font-size:28px;">🔵</div>
-            <div style="font-size:11px;color:#e2e8f0;margin-top:4px;">PIE Phân Tích</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="note warn"><div class="note-icon">⚠️</div><div>Nếu xuất hiện cảnh báo bảo mật Windows (màn hình xanh), hãy nhấn <strong>Thông tin thêm → Vẫn chạy</strong>. Đây là script cục bộ, không phải virus.</div></div>
-  </div>
-
-  <div class="section">
-    <div class="section-header"><div class="sec-num">2</div><div><div class="sec-title">Lần đầu khởi động & Giấy phép</div><div class="sec-sub">Chỉ cần nhập khóa giấy phép một lần duy nhất</div></div></div>
-    <div class="note warn"><div class="note-icon">⚠️</div><div>Khóa giấy phép chỉ cần nhập <strong>một lần</strong>, sau đó sẽ được lưu tự động. Nếu chưa có khóa, hãy liên hệ <strong>lovekhl83@gmail.com</strong></div></div>
-  </div>
-
-  <div class="section">
-    <div class="section-header"><div class="sec-num">3</div><div><div class="sec-title">Giao diện chính</div><div class="sec-sub">Tìm hiểu vai trò của từng khu vực</div></div></div>
-    <div class="callouts">
-      <div class="callout"><div class="callout-num" style="background:#3b82f6;">①</div><div class="callout-text"><strong>Thanh menu trên cùng</strong>Nút menu · Tên phân tích · Chọn linh phụ kiện · Trạng thái online/offline</div></div>
-      <div class="callout"><div class="callout-num" style="background:#a78bfa;">②</div><div class="callout-text"><strong>Menu tab bên trái</strong>Phân tích · Biểu đồ Gantt · Yamazumi · Mô phỏng · Thống kê · Quản lý LP · Phân tích ST</div></div>
-      <div class="callout"><div class="callout-num" style="background:#22c55e;">③</div><div class="callout-text"><strong>Khu vực phát video</strong>Kéo thả tệp video để tải. Nhấp chuột để đánh dấu công đoạn</div></div>
-      <div class="callout"><div class="callout-num" style="background:#f59e0b;">④</div><div class="callout-text"><strong>Bảng danh sách công đoạn</strong>Danh sách công đoạn đã đánh dấu · Thời gian · Chỉnh sửa · Xóa</div></div>
-      <div class="callout"><div class="callout-num" style="background:#ef4444;">⑤</div><div class="callout-text"><strong>Bảng tóm tắt kết quả</strong>Chu kỳ trung bình · Số chu kỳ · Tỷ lệ làm việc · Thời gian tiêu chuẩn (ST)</div></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-header"><div class="sec-num">4</div><div><div class="sec-title">Tải video & Đánh dấu công đoạn</div><div class="sec-sub">Tải video bằng kéo thả, sau đó nhấp chuột để đánh dấu công đoạn</div></div></div>
-    <p style="font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:12px;">⌨️ Phím tắt</p>
-    <div class="shortcut-grid">
-      <div class="shortcut-row"><div class="shortcut-key"><span class="kbd">Space</span></div><div class="shortcut-desc">Phát / Tạm dừng</div></div>
-      <div class="shortcut-row"><div class="shortcut-key"><span class="kbd">I</span></div><div class="shortcut-desc">Đánh dấu bắt đầu công đoạn</div></div>
-      <div class="shortcut-row"><div class="shortcut-key"><span class="kbd">←</span> <span class="kbd">→</span></div><div class="shortcut-desc">Khung trước / Khung sau</div></div>
-      <div class="shortcut-row"><div class="shortcut-key"><span class="kbd">O</span></div><div class="shortcut-desc">Đánh dấu kết thúc công đoạn</div></div>
-      <div class="shortcut-row"><div class="shortcut-key"><span class="kbd">Shift</span>+<span class="kbd">←→</span></div><div class="shortcut-desc">Di chuyển 5 giây</div></div>
-      <div class="shortcut-row"><div class="shortcut-key"><span class="kbd">Esc</span></div><div class="shortcut-desc">Hủy vùng lặp lại</div></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-header"><div class="sec-num">5</div><div><div class="sec-title">Tab xem kết quả</div><div class="sec-sub">Nhấp vào tab bên trái để xem các kết quả phân tích</div></div></div>
-    <div class="feat-grid">
-      <div class="feat-card"><div class="feat-icon">📊</div><div class="feat-title">Biểu đồ Gantt<span class="badge badge-offline">Offline</span></div><div class="feat-desc">Trực quan hóa khoảng thời gian công đoạn theo trục thời gian</div></div>
-      <div class="feat-card"><div class="feat-icon">⚖</div><div class="feat-title">Yamazumi<span class="badge badge-offline">Offline</span></div><div class="feat-desc">Phân tích tải làm việc theo từng công nhân, kiểm tra cân bằng chuyền</div></div>
-      <div class="feat-card"><div class="feat-icon">🔀</div><div class="feat-title">Mô phỏng<span class="badge badge-offline">Offline</span></div><div class="feat-desc">Thực nghiệm bố trí công đoạn và mô phỏng luồng công việc</div></div>
-      <div class="feat-card"><div class="feat-icon">📊</div><div class="feat-title">Thống kê<span class="badge badge-offline">Offline</span></div><div class="feat-desc">Tính tự động: Trung bình · SD · CV% · Đánh giá Westinghouse · ST</div></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-header"><div class="sec-num">6</div><div><div class="sec-title">Xuất dữ liệu</div><div class="sec-sub">Tìm chức năng xuất tệp trong nút ☰ Menu</div></div></div>
-    <div class="feat-grid">
-      <div class="feat-card"><div class="feat-icon">📥</div><div class="feat-title">PDF<span class="badge badge-offline">Offline</span></div><div class="feat-desc">Báo cáo dùng để in</div></div>
-      <div class="feat-card"><div class="feat-icon">📄</div><div class="feat-title">SOP<span class="badge badge-offline">Offline</span></div><div class="feat-desc">Tài liệu tiêu chuẩn thao tác</div></div>
-      <div class="feat-card"><div class="feat-icon">📊</div><div class="feat-title">Báo cáo<span class="badge badge-offline">Offline</span></div><div class="feat-desc">Báo cáo tính thời gian tiêu chuẩn</div></div>
-      <div class="feat-card"><div class="feat-icon">📄</div><div class="feat-title">CSV / Excel<span class="badge badge-offline">Offline</span></div><div class="feat-desc">Dữ liệu thô để phân tích thêm</div></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-header"><div class="sec-num">7</div><div><div class="sec-title">Hoạt động Offline & Chia sẻ dữ liệu</div><div class="sec-sub">Phiên bản này hoạt động 100% không cần internet</div></div></div>
-    <div class="status-row">
-      <div class="status-box offline">
-        <div class="status-dot off"></div>
-        <div class="status-label off">📴 Dùng không cần internet</div>
-        <ul class="status-list">
-          <li>Phân tích video · Đánh dấu CT</li>
-          <li>Gantt · Yamazumi · Mô phỏng</li>
-          <li>Thống kê · ST · Đánh giá</li>
-          <li>Xuất PDF · Excel · CSV</li>
-          <li>Quản lý LP · Cân bằng chuyền</li>
-          <li>Phân tích AI (Pose) — đã tích hợp sẵn</li>
-        </ul>
-      </div>
-      <div class="status-box online">
-        <div class="status-dot on"></div>
-        <div class="status-label on">🔗 Chia sẻ ST giữa nhiều máy (tùy chọn)</div>
-        <ul class="status-list">
-          <li>Chỉ dùng mạng LAN nội bộ — không cần internet</li>
-          <li>Kiểu thư mục chia sẻ hoặc kiểu máy chủ</li>
-          <li>Thời gian chuẩn (ST) của linh kiện tự động gộp</li>
-        </ul>
-        <div style="margin-top:12px;background:#0f172a;border-radius:6px;padding:8px;font-size:11px;color:#4ade80;">
-          💡 Kiểu máy chủ: chạy <strong>PIE_ST_server_시작.bat</strong> trên một máy → các máy khác nhập địa chỉ máy đó vào Cài đặt &gt; Kho ST
-        </div>
-      </div>
-    </div>
-    <div class="note"><div class="note-icon">💡</div><div>Phiên bản này <strong>không có liên kết Google Sheets</strong>. Mọi dữ liệu chỉ lưu trên máy nội bộ và thư mục chia sẻ.</div></div>
-  </div>
-
-  <div class="section">
-    <div class="section-header"><div class="sec-num">8</div><div><div class="sec-title">Gỡ cài đặt</div><div class="sec-sub">Có hai cách để gỡ cài đặt</div></div></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      <div class="feat-card">
-        <div class="feat-icon">🗑️</div>
-        <div class="feat-title">Cách 1 — Chạy tệp gỡ cài đặt</div>
-        <div class="feat-desc">Nhấp đúp vào <strong style="color:#fca5a5;">PIE_제거.bat</strong> trong thư mục cài đặt</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">⚙️</div>
-        <div class="feat-title">Cách 2 — Cài đặt Windows</div>
-        <div class="feat-desc">Settings → Apps → tìm <strong style="color:#fca5a5;">PIE - Powernet</strong> → Uninstall</div>
-      </div>
-    </div>
-  </div>
-
-</div><!-- /vi -->
-
+</header>
+<main>
+  <div class="hero"><h1 id="h1"></h1><p id="hsub"></p></div>
+  <nav class="toc"><div class="tt" id="tocT"></div><ol id="toc"></ol></nav>
+  <div id="body"></div>
+</main>
+<footer id="foot"></footer>
 
 <script>
-function setLang(lang){
-  document.querySelectorAll('.lang-tab').forEach(function(t,i){
-    t.classList.toggle('active', ['ko','zh','vi'][i]===lang);
-  });
-  document.querySelectorAll('.lang-section').forEach(function(s){
-    s.classList.toggle('active', s.id===lang);
-  });
+/* 화면 캡처는 아래 객체에 base64(JPEG)로 들어간다. 비어 있으면 자리표시 상자가 보인다. */
+var SHOTS = /*__SHOTS_START__*/{}/*__SHOTS_END__*/;
+
+var G = {
+/* ─────────────────────────── 한국어 ─────────────────────────── */
+ko:{
+ htitle:'설치부터 사용까지 · 처음 쓰는 사람을 위한 안내서',
+ h1:'PIE 작업분석 프로그램 사용 가이드',
+ hsub:'인터넷이 없어도 동작합니다. 이 문서 하나로 설치부터 분석까지 따라 할 수 있습니다.',
+ tocT:'목차',
+ foot:'PIE — Powernet Industrial Engineering · 문의: lovekhl83@gmail.com',
+ phShot:'(화면 그림)',
+ sec:[
+ {id:'what',icon:'🎯',title:'1. 이 프로그램은 무엇인가요?',
+  lead:'작업 영상을 보면서 "어떤 동작이 몇 초 걸리는지"를 재고, 그 시간으로 라인을 설계하는 도구입니다.',
+  b:[
+   {t:'p',x:'스톱워치를 들고 현장에 서 있을 필요가 없습니다. 영상을 찍어 와서 컴퓨터로 천천히, 정확하게 재면 됩니다.'},
+   {t:'tab',head:['이걸로 할 수 있는 일','설명'],rows:[
+    ['부품별 표준시간 측정','부품 하나를 꽂는 데 몇 초 걸리는지 재서 저장합니다. 여러 PC가 같이 쌓을 수 있습니다.'],
+    ['왼손·오른손 분석','두 손이 고르게 일하는지, 한쪽이 놀고 있는지 봅니다.'],
+    ['숙련자 vs 비숙련자 비교','두 영상을 나란히 돌려 어디서 차이가 나는지 찾습니다. 교육 자료가 됩니다.'],
+    ['라인 밸런싱','작업자별 시간을 재서 병목을 찾고, 부품을 옮겨 고르게 만듭니다.'],
+    ['신규 모델 예측','쌓아 둔 부품 표준시간으로 새 모델의 택트타임과 인원을 미리 계산합니다.'],
+   ]},
+   {t:'note',x:'<b>중요한 순서</b> — ① 부품을 등록하고 → ② 영상으로 시간을 재서 → ③ 표준시간을 저장하면 → ④ 라인 설계·예측에 자동으로 쓰입니다. 이 순서만 지키면 됩니다.'},
+  ]},
+
+ {id:'install',icon:'💾',title:'2. 설치하기',
+  lead:'복잡한 설치 프로그램이 없습니다. 폴더를 복사하고 바로가기를 만드는 게 전부입니다.',
+  b:[
+   {t:'h3',x:'준비물'},
+   {t:'tab',head:['항목','내용'],rows:[
+    ['컴퓨터','윈도우 10 또는 11'],
+    ['브라우저','<b>Chrome</b> 또는 <b>Edge</b> (인터넷 익스플로러는 안 됩니다)'],
+    ['인터넷','<b>필요 없습니다.</b> 중국 등 인터넷이 막힌 곳에서도 그대로 동작합니다.'],
+    ['라이선스 키','첫 실행 때 한 번 입력합니다. 담당자에게 받으세요.'],
+   ]},
+   {t:'h3',x:'방법 A — 설치 파일로 (권장)'},
+   {t:'steps',x:[
+    'PIE 폴더를 통째로 USB나 네트워크 드라이브에서 복사해 옵니다.',
+    '폴더 안의 <code>PIE_설치.bat</code>를 <b>더블클릭</b>합니다.',
+    '검은 창이 뜨고 자동으로 설치됩니다. 바탕화면과 시작 메뉴에 바로가기가 만들어집니다.',
+    '이제 바탕화면의 <b>PIE</b> 아이콘으로 실행하면 됩니다.',
+   ]},
+   {t:'h3',x:'방법 B — 그냥 폴더만 복사'},
+   {t:'steps',x:[
+    'PIE 폴더 전체를 원하는 위치(예: <code>D:\\PIE</code>)에 복사합니다.',
+    '폴더 안의 <code>PIE(중국).bat</code>를 더블클릭하면 바로 실행됩니다.',
+   ]},
+   {t:'warn',x:'<b>폴더 안의 파일을 빼놓지 마세요.</b> <code>mediapipe</code> 폴더가 빠지면 자세(Pose) 비교 기능이 동작하지 않습니다. <b>폴더 통째로</b> 복사해야 합니다.'},
+  ]},
+
+ {id:'firstrun',icon:'▶️',title:'3. 처음 실행하기',
+  lead:'검은 창이 뜨고, 곧 브라우저가 열립니다. 검은 창은 끄지 마세요.',
+  b:[
+   {t:'steps',x:[
+    '바탕화면의 <b>PIE</b> 아이콘(또는 <code>PIE(중국).bat</code>)을 더블클릭합니다.',
+    '<b>검은 명령 창</b>이 뜹니다. 이 창이 프로그램의 심장입니다. <b>끄면 프로그램이 종료됩니다.</b> 그냥 두세요.',
+    '잠시 후 브라우저가 자동으로 열리고 주소는 <code>http://127.0.0.1:8791/PIE.html</code> 입니다.',
+    '처음 한 번만 <b>라이선스 키</b>를 입력하고 [활성화]를 누릅니다. (형식: <code>PIE-XXXX-XXXX-XXXX</code>)',
+    '시작 화면이 나오면 준비 끝입니다.',
+   ]},
+   {t:'shot',k:'home',cap:'시작 화면 — 왼쪽이 메뉴, 가운데에서 새로 시작하거나 저장한 작업을 불러옵니다.'},
+   {t:'warn',x:'<b>데이터는 “주소”별로 저장됩니다.</b> 항상 <code>127.0.0.1:8791</code>로 열어야 이전에 저장한 부품·표준시간이 보입니다. 다른 주소로 열리면 화면 맨 위에 빨간 경고 띠와 <b>[표준 주소로 열기]</b> 버튼이 뜨니 그걸 누르세요. (데이터가 지워진 게 아닙니다.)'},
+   {t:'tip',x:'프로그램을 끝낼 때는 <b>브라우저 탭을 닫고, 검은 창도 함께 닫으세요.</b> 검은 창을 열어둔 채 다시 실행하면 주소가 밀릴 수 있습니다.'},
+  ]},
+
+ {id:'map',icon:'🗺️',title:'4. 화면 둘러보기',
+  lead:'왼쪽 세로 줄이 메뉴입니다. 위에서 아래로 순서대로 쓰면 됩니다.',
+  b:[
+   {t:'tab',head:['메뉴','언제 쓰나','한 줄 설명'],rows:[
+    ['🔧 부품관리','<b>제일 먼저</b>','부품 목록을 만들고, 부품별 표준시간을 모아 둡니다.'],
+    ['📹 작업분석','매번','영상을 보며 동작마다 시작·끝을 찍어 시간을 잽니다.'],
+    ['📊 차트','분석 후','사이클마다 시간이 어떻게 달라지는지 그림으로 봅니다.'],
+    ['📊 분석결과','분석 후','평균·표준시간·양손 평가 등 숫자로 정리해 줍니다.'],
+    ['🎬 영상비교','교육용','숙련자와 비숙련자 영상을 나란히 비교합니다.'],
+    ['📊 라인분석','라인 볼 때','작업자 여러 명의 부품별 시간을 잽니다.'],
+    ['⚖ 작업배분','라인 볼 때','누가 바쁘고 누가 노는지 보고 부품을 옮겨 균형을 맞춥니다.'],
+    ['🔀 배치실험','라인 볼 때','바꾼 배분대로 돌리면 병목이 없는지 확인합니다.'],
+    ['📈 라인예측','신규 모델','모아 둔 표준시간으로 새 모델의 택트·인원을 예측합니다.'],
+   ]},
+   {t:'note',x:'헤더 오른쪽 위의 <code>레이팅 100% · 여유율 15%</code> 칩을 누르면 설정이 열립니다. 이 두 값이 표준시간을 좌우합니다 (7번 항목 참고).'},
+  ]},
+
+ {id:'parts',icon:'🔧',title:'5. 먼저 할 일 — 부품 등록하기',
+  lead:'부품을 손으로 하나하나 치면 사람마다 다르게 적어서 데이터가 갈라집니다. BOM 엑셀에서 한 번에 가져오세요.',
+  b:[
+   {t:'steps',x:[
+    '왼쪽 메뉴에서 <b>🔧 부품관리</b>를 누릅니다.',
+    '위쪽의 <b>[📋 BOM 가져오기]</b>를 누릅니다.',
+    '모델의 BOM 엑셀 파일을 고릅니다. (파일 이름 예: <code>모델명_BOM.xlsx</code>)',
+    '미리보기 창이 뜹니다. <b>MI 부품(단계 ....4)만</b> 골라서 보여줍니다. 확인하고 [가져오기]를 누릅니다.',
+    '부품이 <code>품번(품명)</code> 형태로 목록에 들어갑니다.',
+   ]},
+   {t:'shot',k:'parts',cap:'부품관리 화면 — 왼쪽이 부품 목록, 오른쪽이 선택한 부품의 상세입니다.'},
+   {t:'tip',x:'<b>다른 모델 BOM도 그냥 가져오세요.</b> 이미 있는 품번은 자동으로 건너뜁니다. 비어 있던 규격·Maker 정보가 있으면 채워 넣습니다.'},
+   {t:'p',x:'부품을 클릭하면 그 부품의 <b>BOM 정보</b>(품번·품명·규격·단위수량·Maker·거래처품번)와 <b>영상분석 이력</b>, <b>표준시간 DB</b>를 볼 수 있습니다.'},
+   {t:'shot',k:'parts_detail',cap:'부품 상세 — 위쪽 띠가 BOM 정보, 아래 탭에서 분석 이력과 표준시간을 봅니다.'},
+   {t:'tab',head:['버튼','하는 일'],rows:[
+    ['📋 BOM 가져오기','BOM 엑셀에서 MI 부품만 뽑아 목록에 추가 (중복 자동 제외)'],
+    ['🧹 품명 없는 부품 정리','예전에 잘못 등록되어 품명이 빈 부품만 지웁니다. 측정 데이터가 있는 부품은 남깁니다.'],
+    ['🗑 전체 초기화','부품 목록과 표준시간을 <b>모두</b> 지웁니다. 되돌릴 수 없습니다.'],
+    ['⬆ 파일로 내보내기 / ⬇ 가져오기','다른 PC로 부품 DB를 통째로 옮길 때 씁니다.'],
+   ]},
+  ]},
+
+ {id:'analysis',icon:'📹',title:'6. 작업분석 — 영상으로 시간 재기',
+  lead:'이 프로그램의 핵심입니다. 영상을 보며 동작이 시작될 때 한 번, 끝날 때 한 번 클릭하면 됩니다.',
+  b:[
+   {t:'steps',x:[
+    '<b>📹 작업분석</b> 메뉴를 누르고 <b>[영상 불러오기]</b>로 작업 영상을 엽니다.',
+    '오른쪽 위에서 지금 재는 <b>부품</b>을 고릅니다.',
+    '<b>손</b>을 고릅니다 — <span class="k">🤚 LH</span>(왼손) / <span class="k">✋ RH</span>(오른손) / <span class="k">🖐 한손</span>(한 손으로만 하는 작업).',
+    '영상을 재생하다가 동작이 <b>시작되는 순간 영상 위를 클릭</b>합니다. (시작 마커)',
+    '동작이 <b>끝나는 순간 다시 클릭</b>합니다. 표에 한 줄이 추가됩니다. (종료 마커)',
+    '작업 이름을 적고, 분류(정미/부수/낭비)를 고릅니다.',
+    '한 사이클이 끝나면 <b>[다음 사이클]</b>로 넘어가 같은 방식으로 3~5회 반복합니다.',
+    '다 되면 <b>[💾 부품 ST 저장]</b>을 눌러 표준시간을 부품관리에 저장합니다.',
+   ]},
+   {t:'shot',k:'analysis',cap:'작업분석 화면 — 왼쪽에서 영상을 보며 찍고, 오른쪽 표에 기록이 쌓입니다.'},
+   {t:'h3',x:'왼손·오른손을 따로 재는 법'},
+   {t:'p',x:'손 버튼을 바꾸면 <b>영상이 처음으로 되돌아가고</b>, 그 손의 기록만 이어서 하게 됩니다. 표 위쪽이 지금 재는 손, 그 아래 구분선부터는 <b>다른 손의 기록</b>이 흐리게 참고용으로 남습니다. 지워지지 않으니 안심하세요.'},
+   {t:'tip',x:'<b>왜 손을 나눠 재나요?</b> 두 손이 고르게 일해야 좋은 작업입니다. 한쪽만 바쁘면 그 손이 병목이고, 반대 손은 놀고 있다는 뜻입니다. 이 차이를 <b>양손 균형도(HBR)</b>로 보여줍니다.'},
+   {t:'h3',x:'분류는 이렇게 고릅니다'},
+   {t:'tab',head:['분류','뜻','예'],rows:[
+    ['<span style="color:#22c55e">정미</span>','제품 가치를 만드는 꼭 필요한 작업','부품 삽입, 나사 체결'],
+    ['<span style="color:#f59e0b">부수</span>','당장은 필요하지만 없앨 수 있으면 좋은 작업','부품 집기, 손 이동, 자재 가지러 가기'],
+    ['<span style="color:#ef4444">낭비</span>','없애야 할 작업','대기, 찾기, 재작업, 불필요한 이동'],
+   ]},
+   {t:'warn',x:'<b>같은 동작은 이름을 똑같이 적으세요.</b> "부품집기"와 "부품 집기"는 다른 작업으로 집계됩니다. 사이클마다 이름이 같아야 비교가 됩니다.'},
+   {t:'tip',x:'<b>[⚡ 사이클 자동 분리]</b>를 누르면 가장 자주 나오는 작업 이름을 기준으로 사이클을 자동으로 나눠 줍니다. 손별로 따로 나눠지니 안심하세요.'},
+  ]},
+
+ {id:'rating',icon:'⏱',title:'7. 레이팅과 여유율 — 표준시간의 기준',
+  lead:'영상에서 잰 시간은 “그 사람이, 그날” 걸린 시간입니다. 이걸 누구에게나 통하는 기준으로 바꾸는 값입니다.',
+  b:[
+   {t:'note',x:'<b>표준시간 = 측정시간 × 레이팅 × (1 + 여유율)</b>'},
+   {t:'tab',head:['값','뜻','보통 얼마?'],rows:[
+    ['레이팅','찍힌 작업자의 속도가 보통 사람 대비 몇 %인가','보통 <b>100%</b> · 빠른 사람 110~120% · 느린 사람 80~90%'],
+    ['여유율','피로·화장실·자재보충 등에 더해 주는 비율','앉아서 하는 경작업은 보통 <b>10~15%</b>'],
+   ]},
+   {t:'p',x:'예) 측정 5.0초, 레이팅 100%, 여유율 15% → 표준시간 <b>5.75초</b>'},
+   {t:'steps',x:[
+    '화면 오른쪽 위의 <code>레이팅 100% · 여유율 15%</code> 칩을 누릅니다.',
+    '설정 창 맨 위 <b>⏱ 표준시간 산정 기준</b>에서 값을 바꿉니다.',
+    '바꾼 값은 <b>[표준시간 확정 저장]</b>을 누르는 시점에 적용됩니다.',
+   ]},
+   {t:'shot',k:'settings',cap:'설정 화면 — 맨 위가 레이팅·여유율, 그 아래가 언어와 공유 저장소 설정입니다.'},
+  ]},
+
+ {id:'chart',icon:'📊',title:'8. 차트 — 사이클마다 어떻게 달라졌나',
+  lead:'같은 작업인데 사이클마다 시간이 들쭉날쭉하면 그 작업이 불안정하다는 뜻입니다.',
+  b:[
+   {t:'p',x:'막대 하나가 한 사이클입니다. 색깔 한 칸이 작업 하나입니다. <b>같은 작업은 사이클끼리 띠로 이어져</b> 있어서, 띠가 점점 두꺼워지면 그 작업이 갈수록 느려지고 있다는 뜻입니다.'},
+   {t:'shot',k:'chart',cap:'차트 화면 — 위쪽에 양손 균형도, 아래에 사이클별 누적 막대와 연결 띠.'},
+   {t:'tab',head:['조작','효과'],rows:[
+    ['막대에 마우스 올리기','같은 작업이 <b>모든 사이클에서 강조</b>되고 나머지는 흐려집니다.'],
+    ['[같은 작업 연장선] 버튼','작업을 잇는 띠를 켜고 끕니다.'],
+    ['[세로 확대] 1x/1.5x/2x','구간이 촘촘해서 안 보일 때 세로로 늘립니다.'],
+   ]},
+  ]},
+
+ {id:'stats',icon:'📈',title:'9. 분석결과 — 숫자로 정리해서 보기',
+  lead:'평균, 편차, 표준시간, 필요 인원, 그리고 양손 평가를 한 화면에 모아 줍니다.',
+  b:[
+   {t:'shot',k:'stats',cap:'분석결과 화면 — 위쪽 카드가 핵심 숫자, 아래에 양손 평가와 사이클별 표.'},
+   {t:'tab',head:['항목','읽는 법'],rows:[
+    ['평균 관측시간','사이클들의 평균. σ(시그마)가 크면 들쭉날쭉하다는 뜻.'],
+    ['CV(변동계수)','<b>10% 이하면 안정</b>, 20% 넘으면 작업이 불안정하니 표준화가 필요합니다.'],
+    ['표준시간(대표)','레이팅·여유율을 적용한 값. 이걸 라인 설계에 씁니다.'],
+    ['필요 작업자','표준시간 ÷ 택트타임. 몇 명이 필요한지.'],
+    ['관측 충분성','몇 번 더 재야 통계적으로 믿을 만한지 알려줍니다.'],
+    ['⚖ 양손 작업 평가','왼손·오른손·한손의 시간 구성과 균형도(HBR).'],
+   ]},
+   {t:'note',x:'<b>양손 균형도(HBR)</b> — 100%에 가까울수록 두 손이 고르게 일한다는 뜻입니다. <b>80% 미만이면</b> 한쪽 손이 그만큼 놀고 있으니 작업을 나눠 주는 것을 검토하세요. (한손작업은 계산에서 빠집니다.)'},
+  ]},
+
+ {id:'compare',icon:'🎬',title:'10. 영상비교 — 숙련자와 비숙련자',
+  lead:'두 영상을 나란히 돌려 “어디서 시간이 벌어지는지”를 눈으로 보여 줍니다. 교육 자료로 쓰기 좋습니다.',
+  b:[
+   {t:'steps',x:[
+    '<b>🎬 영상비교</b> 메뉴를 엽니다.',
+    '왼쪽에 숙련자 영상, 오른쪽에 비숙련자 영상을 불러옵니다.',
+    '재생하면 두 영상이 <b>같이</b> 움직입니다. 느리게(0.5배) 돌려 보면 차이가 잘 보입니다.',
+    '이미 분석한 세션을 연결하면 작업 목록에서 원하는 동작으로 바로 점프할 수 있습니다.',
+   ]},
+   {t:'tip',x:'차이가 큰 동작 3개만 뽑아 교육하면 효과가 가장 큽니다. 전부 고치려 하지 마세요.'},
+  ]},
+
+ {id:'line',icon:'📊',title:'11. 라인분석 — 작업자별 시간 재기',
+  lead:'작업분석이 “부품 하나의 표준시간”이라면, 라인분석은 “이 라인에서 이 사람이 실제로 몇 초 쓰나”입니다.',
+  b:[
+   {t:'steps',x:[
+    '<b>📊 라인분석</b>에서 <b>[+ 작업자 추가]</b>로 작업자를 만듭니다.',
+    '그 작업자의 영상을 불러옵니다.',
+    '<b>[⏺ 시작 마크]</b> → 동작이 끝나면 <b>[⏹ 종료 마크]</b>. 표에 한 줄이 생깁니다.',
+    '표에서 그 줄의 <b>부품</b>을 고릅니다.',
+    '<b>[다음 사이클 +]</b>로 넘어가 반복합니다. <b>2사이클부터는 부품이 자동으로 따라옵니다.</b>',
+    '작업자를 바꿔 가며 라인 전체를 잽니다.',
+   ]},
+   {t:'shot',k:'line',cap:'라인분석 화면 — 왼쪽에서 마크를 찍고, 오른쪽 표에 부품별로 쌓입니다.'},
+   {t:'note',x:'여기서도 <span class="k">🤚 LH</span> / <span class="k">✋ RH</span> / <span class="k">🖐 한손</span>을 나눠 잴 수 있습니다. 손을 바꾸면 영상이 처음으로 돌아가고, 다른 손 기록은 아래에 참고용으로 남습니다.'},
+  ]},
+
+ {id:'balance',icon:'⚖',title:'12. 작업배분 — 병목 찾고 고르게 나누기',
+  lead:'누가 바쁘고 누가 노는지 한눈에 보고, 부품을 끌어다 옮겨 균형을 맞춥니다.',
+  b:[
+   {t:'shot',k:'balance',cap:'작업배분 화면 — 야마즈미 막대와 피치 다이어그램.'},
+   {t:'h3',x:'피치 다이어그램 읽는 법'},
+   {t:'p',x:'막대 하나가 작업자 한 명이고, 값은 <b>그 사람의 표준시간 ÷ 택트타임</b>입니다. 가운데 흰 세로선이 <b>100%(택트)</b>입니다.'},
+   {t:'tab',head:['상태','뜻','해야 할 일'],rows:[
+    ['<span style="color:#22c55e">100% 미만</span>','시간이 남음 (유휴)','다른 사람 일을 받아올 수 있습니다.'],
+    ['<span style="color:#f59e0b">90~100%</span>','거의 꽉 참','더 주면 위험합니다.'],
+    ['<span style="color:#ef4444">100% 초과</span>','<b>택트 안에 못 끝냄 = 병목</b>','빗금 친 부분이 초과분입니다. 일을 덜어 주세요.'],
+   ]},
+   {t:'tip',x:'<b>목표는 모든 막대를 택트선 바로 아래에서 고르게 만드는 것</b>입니다. 그래야 편성효율(밸런스율)이 올라갑니다.'},
+   {t:'h3',x:'부품 옮기기'},
+   {t:'steps',x:[
+    '바쁜 작업자의 부품 블록을 <b>마우스로 끌어</b>서 여유 있는 작업자에게 놓습니다.',
+    '<b>빈 공간에 놓으면 새 작업자가 추가</b>됩니다. 인원을 늘려 보고 싶을 때 쓰세요.',
+    '마음에 들면 <b>[📥 편성안 내보내기]</b>로 엑셀로 뽑습니다.',
+   ]},
+  ]},
+
+ {id:'sim',icon:'🔀',title:'13. 배치실험 — 바꾼 대로 돌려 보기',
+  lead:'작업배분에서 바꾼 편성으로 라인을 돌리면 정말 병목이 없는지 확인합니다.',
+  b:[
+   {t:'shot',k:'sim',cap:'배치실험 화면 — 병목 작업자와 유휴시간이 표시됩니다.'},
+   {t:'tab',head:['보이는 것','뜻'],rows:[
+    ['사이클타임(CT)','라인이 제품 하나를 내는 데 걸리는 시간. <b>가장 느린 사람</b>이 결정합니다.'],
+    ['병목 표시','CT를 결정하는 사람. 여기를 줄여야 라인이 빨라집니다.'],
+    ['유휴시간','각 사람이 기다리는 시간의 합.'],
+    ['밸런스율','전체 작업량 ÷ (CT × 인원). 높을수록 고르게 나뉘었다는 뜻.'],
+    ['시간당 생산','3600 ÷ CT.'],
+   ]},
+  ]},
+
+ {id:'predict',icon:'📈',title:'14. 라인예측 — 신규 모델 미리 계산하기',
+  lead:'AI·SMT는 부품 수로 택트가 나오지만 MI는 안 나옵니다. 그래서 쌓아 둔 표준시간으로 계산합니다.',
+  b:[
+   {t:'steps',x:[
+    '<b>📈 라인예측</b>을 엽니다.',
+    '신규 모델의 부품과 수량을 넣습니다. (부품 목록에서 고르고 수량 입력)',
+    '가동시간과 일 생산목표를 넣으면 <b>목표 택트타임</b>이 역산됩니다.',
+    '결과로 <b>예상 사이클타임 · 필요 인원 · 밸런스율 · 공정별 작업 순서</b>가 나옵니다.',
+    '구성을 저장해 두면 다음에 다시 불러올 수 있고, 엑셀로도 뽑힙니다.',
+   ]},
+   {t:'shot',k:'predict',cap:'라인예측 화면 — 부품 구성을 넣으면 택트와 인원, 공정 편성이 나옵니다.'},
+   {t:'warn',x:'표준시간이 저장된 부품만 계산됩니다. 빠진 부품은 화면에 따로 표시되니, 그 부품은 <b>작업분석으로 먼저 재서 저장</b>하세요.'},
+  ]},
+
+ {id:'save',icon:'💾',title:'15. 저장하고 이어서 하기',
+  lead:'작업 도중에 저장해 두면 나중에 그대로 이어서 할 수 있습니다.',
+  b:[
+   {t:'tab',head:['방법','저장되는 곳','언제 쓰나'],rows:[
+    ['💾 분석 내용 저장 (세션)','이 컴퓨터 브라우저 안','같은 PC에서 이어서 할 때'],
+    ['↑ 파일 내보내기 (.wvas)','원하는 폴더의 파일','다른 PC로 옮기거나 백업할 때'],
+    ['부품 ST 저장','부품관리 DB','부품별 표준시간을 쌓을 때'],
+    ['설정 > 공유 저장소','네트워크 폴더 또는 사내 서버','<b>여러 PC가 같은 표준시간을 함께 쌓을 때</b>'],
+   ]},
+   {t:'tip',x:'<b>여러 사람이 나눠서 측정할 때</b>는 설정에서 공유 폴더(또는 서버)를 등록해 두세요. 프로그램을 켤 때마다 자동으로 서로의 데이터를 합칩니다.'},
+  ]},
+
+ {id:'trouble',icon:'🩺',title:'16. 문제가 생겼을 때',
+  lead:'거의 모든 문제는 아래 네 가지 중 하나입니다.',
+  b:[
+   {t:'tab',head:['증상','원인','해결'],rows:[
+    ['부품·표준시간이 <b>싹 없어졌다</b>','주소(포트)가 밀렸습니다. 데이터는 지워지지 않았습니다.','검은 창과 PIE 창을 <b>전부 닫고</b> 다시 실행하세요. 빨간 경고 띠의 <b>[표준 주소로 열기]</b>를 눌러도 됩니다.'],
+    ['실행했는데 <b>화면이 안 뜬다</b>','브라우저 창이 뒤에 숨었습니다.','브라우저에서 <code>http://127.0.0.1:8791/PIE.html</code>을 직접 열어 보세요.'],
+    ['자세(Pose) 비교가 <b>안 된다</b>','<code>mediapipe</code> 폴더가 빠졌거나, 파일을 더블클릭해서 열었습니다.','반드시 <code>PIE(중국).bat</code>로 실행하고, 폴더를 통째로 복사했는지 확인하세요.'],
+    ['영상이 <b>안 열린다</b>','브라우저가 지원하지 않는 코덱입니다.','MP4(H.264) 형식으로 변환해 보세요.'],
+    ['저장·불러오기 버튼이 <b>안 보인다</b>','Chrome/Edge가 아닙니다.','Chrome 또는 Edge로 여세요.'],
+   ]},
+   {t:'note',x:'그래도 안 되면 담당자에게 <b>증상 + 화면 사진</b>을 보내 주세요. lovekhl83@gmail.com'},
+  ]},
+
+ {id:'words',icon:'📖',title:'17. 용어 사전',
+  lead:'현장에서 자주 나오는 말만 모았습니다.',
+  b:[
+   {t:'tab',head:['용어','쉬운 설명'],rows:[
+    ['택트타임(T/T)','제품 하나를 몇 초마다 내야 하는지. <b>가동시간 ÷ 생산목표</b>'],
+    ['사이클타임(CT)','실제로 하나를 내는 데 걸리는 시간. 가장 느린 사람이 결정합니다.'],
+    ['표준시간(ST)','누가 해도 이 정도 걸린다고 정한 시간. 측정시간 × 레이팅 × (1+여유율)'],
+    ['레이팅','찍힌 사람의 속도가 보통 대비 몇 %인가'],
+    ['여유율','피로·화장실 등으로 더해 주는 비율'],
+    ['정미작업','제품 가치를 만드는 꼭 필요한 작업'],
+    ['부수작업','당장 필요하지만 없애면 좋은 작업'],
+    ['낭비','없애야 할 작업 (대기·찾기·재작업)'],
+    ['밸런스율','작업이 얼마나 고르게 나뉘었는가. 높을수록 좋음'],
+    ['병목','가장 오래 걸려 라인 속도를 결정하는 지점'],
+    ['HBR(양손 균형도)','왼손과 오른손이 얼마나 고르게 일하는가'],
+    ['MI 공정','사람이 손으로 부품을 꽂는 공정'],
+    ['BOM','그 모델에 들어가는 부품 목록표'],
+   ]},
+  ]},
+ ]},
+
+/* ─────────────────────────── 中文 ─────────────────────────── */
+zh:{
+ htitle:'从安装到使用 · 面向初次使用者的说明书',
+ h1:'PIE 作业分析程序 使用指南',
+ hsub:'无需联网即可运行。仅凭本文档即可完成从安装到分析的全过程。',
+ tocT:'目录',
+ foot:'PIE — Powernet Industrial Engineering · 咨询: lovekhl83@gmail.com',
+ phShot:'(画面图)',
+ sec:[
+ {id:'what',icon:'🎯',title:'1. 这是什么程序?',
+  lead:'一边看作业视频，一边测量"每个动作用了几秒"，并用这些时间来设计产线的工具。',
+  b:[
+   {t:'p',x:'不必拿着秒表站在现场。把视频拍回来，在电脑上慢慢地、准确地测量即可。'},
+   {t:'tab',head:['能做什么','说明'],rows:[
+    ['测量部品标准工时','测量插入一个部品需要几秒并保存。多台电脑可以共同累积。'],
+    ['左手·右手分析','查看双手是否均衡作业，是否有一只手在空闲。'],
+    ['熟练者与非熟练者对比','并排播放两段视频，找出差异所在。可作为培训资料。'],
+    ['产线平衡','测量各作业者的时间，找出瓶颈，通过调整部品使其均衡。'],
+    ['新机种预测','用已累积的部品标准工时，预先计算新机种的节拍时间与人数。'],
+   ]},
+   {t:'note',x:'<b>重要的顺序</b> — ① 登记部品 → ② 用视频测量时间 → ③ 保存标准工时 → ④ 自动用于产线设计与预测。只要遵守这个顺序即可。'},
+  ]},
+
+ {id:'install',icon:'💾',title:'2. 安装',
+  lead:'没有复杂的安装程序。复制文件夹并创建快捷方式就是全部。',
+  b:[
+   {t:'h3',x:'准备事项'},
+   {t:'tab',head:['项目','内容'],rows:[
+    ['电脑','Windows 10 或 11'],
+    ['浏览器','<b>Chrome</b> 或 <b>Edge</b>（不支持 Internet Explorer）'],
+    ['网络','<b>不需要。</b> 在中国等无法上网的环境同样可以运行。'],
+    ['许可证密钥','首次运行时输入一次。请向负责人索取。'],
+   ]},
+   {t:'h3',x:'方法 A — 使用安装文件（推荐）'},
+   {t:'steps',x:[
+    '从 U 盘或网络驱动器整体复制 PIE 文件夹。',
+    '<b>双击</b>文件夹中的 <code>PIE_설치.bat</code>。',
+    '出现黑色窗口并自动安装。桌面和开始菜单会生成快捷方式。',
+    '之后用桌面的 <b>PIE</b> 图标启动即可。',
+   ]},
+   {t:'h3',x:'方法 B — 仅复制文件夹'},
+   {t:'steps',x:[
+    '将整个 PIE 文件夹复制到需要的位置（例如 <code>D:\\PIE</code>）。',
+    '双击文件夹中的 <code>PIE(중국).bat</code> 即可运行。',
+   ]},
+   {t:'warn',x:'<b>请勿遗漏文件夹中的文件。</b> 缺少 <code>mediapipe</code> 文件夹时，姿势(Pose)对比功能将无法运行。必须<b>整个文件夹</b>一起复制。'},
+  ]},
+
+ {id:'firstrun',icon:'▶️',title:'3. 首次运行',
+  lead:'会出现黑色窗口，随后浏览器自动打开。请不要关闭黑色窗口。',
+  b:[
+   {t:'steps',x:[
+    '双击桌面的 <b>PIE</b> 图标（或 <code>PIE(중국).bat</code>）。',
+    '出现<b>黑色命令窗口</b>。它是程序的心脏，<b>关闭它程序就会结束</b>。请保持打开。',
+    '稍后浏览器自动打开，地址为 <code>http://127.0.0.1:8791/PIE.html</code>。',
+    '仅首次需要输入<b>许可证密钥</b>并点击[激活]。（格式：<code>PIE-XXXX-XXXX-XXXX</code>）',
+    '出现起始画面即表示准备完成。',
+   ]},
+   {t:'shot',k:'home',cap:'起始画面 — 左侧是菜单，中间可新建或加载已保存的作业。'},
+   {t:'warn',x:'<b>数据按"地址"分别保存。</b> 必须始终以 <code>127.0.0.1:8791</code> 打开，之前保存的部品与标准工时才会显示。若以其他地址打开，画面顶部会出现红色警告条和 <b>[用标准地址打开]</b> 按钮，请点击它。（数据并未被删除。）'},
+   {t:'tip',x:'结束程序时，请<b>关闭浏览器标签页，并一并关闭黑色窗口</b>。若保留黑色窗口再次启动，地址可能会偏移。'},
+  ]},
+
+ {id:'map',icon:'🗺️',title:'4. 界面概览',
+  lead:'左侧竖列是菜单。按从上到下的顺序使用即可。',
+  b:[
+   {t:'tab',head:['菜单','何时使用','一句话说明'],rows:[
+    ['🔧 部品管理','<b>最先</b>','创建部品清单，并累积各部品的标准工时。'],
+    ['📹 作业分析','每次','边看视频边标记每个动作的开始与结束以测量时间。'],
+    ['📊 图表','分析后','以图形查看各循环时间的变化。'],
+    ['📊 分析结果','分析后','以数字整理平均值、标准工时、双手评价等。'],
+    ['🎬 视频对比','培训用','并排对比熟练者与非熟练者的视频。'],
+    ['📊 产线分析','查看产线时','测量多名作业者各部品的时间。'],
+    ['⚖ 作业分配','查看产线时','查看谁忙谁闲，通过移动部品实现均衡。'],
+    ['🔀 布局模拟','查看产线时','按调整后的分配运行，确认是否还有瓶颈。'],
+    ['📈 产线预测','新机种','用累积的标准工时预测新机种的节拍与人数。'],
+   ]},
+   {t:'note',x:'点击右上角的 <code>评比系数 100% · 宽放率 15%</code> 标签即可打开设置。这两个值决定标准工时（参见第 7 项）。'},
+  ]},
+
+ {id:'parts',icon:'🔧',title:'5. 首先要做的 — 登记部品',
+  lead:'逐个手动输入部品会因人而异写法不同，导致数据分裂。请从 BOM 表一次性导入。',
+  b:[
+   {t:'steps',x:[
+    '在左侧菜单点击 <b>🔧 部品管理</b>。',
+    '点击上方的 <b>[📋 导入 BOM]</b>。',
+    '选择机种的 BOM 表文件。（文件名示例：<code>机种名_BOM.xlsx</code>）',
+    '出现预览窗口，<b>仅筛选 MI 部品（层级 ....4）</b>显示。确认后点击[导入]。',
+    '部品以 <code>品号(品名)</code> 的形式加入清单。',
+   ]},
+   {t:'shot',k:'parts',cap:'部品管理画面 — 左侧为部品清单，右侧为所选部品的详情。'},
+   {t:'tip',x:'<b>其他机种的 BOM 也可以直接导入。</b> 已存在的品号会自动跳过，若原本缺少规格·厂商信息则会补全。'},
+   {t:'p',x:'点击部品可查看该部品的 <b>BOM 信息</b>（品号·品名·规格·单位数量·厂商·客户料号）、<b>视频分析履历</b>与<b>标准时间 DB</b>。'},
+   {t:'shot',k:'parts_detail',cap:'部品详情 — 上方条为 BOM 信息，下方标签页可查看分析履历与标准工时。'},
+   {t:'tab',head:['按钮','作用'],rows:[
+    ['📋 导入 BOM','从 BOM 表提取 MI 部品加入清单（自动排除重复）'],
+    ['🧹 清理无品名部品','仅删除以前错误登记而无品名的部品。有测量数据的部品会保留。'],
+    ['🗑 全部重置','<b>全部</b>清除部品清单与标准工时。无法撤销。'],
+    ['⬆ 导出到文件 / ⬇ 导入','将部品 DB 整体迁移到其他电脑时使用。'],
+   ]},
+  ]},
+
+ {id:'analysis',icon:'📹',title:'6. 作业分析 — 用视频测量时间',
+  lead:'这是本程序的核心。看视频时，动作开始点一次、结束再点一次即可。',
+  b:[
+   {t:'steps',x:[
+    '点击 <b>📹 作业分析</b> 菜单，用 <b>[加载视频]</b> 打开作业视频。',
+    '在右上方选择正在测量的<b>部品</b>。',
+    '选择<b>手</b> — <span class="k">🤚 LH</span>(左手) / <span class="k">✋ RH</span>(右手) / <span class="k">🖐 单手</span>(仅用一只手的作业)。',
+    '播放视频，在动作<b>开始的瞬间点击视频画面</b>。（开始标记）',
+    '在动作<b>结束的瞬间再次点击</b>。表格中会增加一行。（结束标记）',
+    '填写作业名称，选择分类（净作业/辅助/浪费）。',
+    '一个循环结束后点 <b>[下一循环]</b>，以同样方式重复 3~5 次。',
+    '完成后点击 <b>[💾 保存部品 ST]</b>，将标准工时保存到部品管理。',
+   ]},
+   {t:'shot',k:'analysis',cap:'作业分析画面 — 左侧看视频标记，右侧表格中累积记录。'},
+   {t:'h3',x:'如何分别测量左手与右手'},
+   {t:'p',x:'切换手的按钮后，<b>视频会回到开头</b>，并只继续记录该手。表格上方是当前测量的手，分隔线以下是<b>其他手的记录</b>，以浅色作为参考保留。不会被删除，请放心。'},
+   {t:'tip',x:'<b>为什么要分手测量?</b> 双手均衡作业才是好的作业。若只有一只手忙，那只手就是瓶颈，另一只手在空闲。这个差异用<b>双手平衡度(HBR)</b>表示。'},
+   {t:'h3',x:'分类这样选'},
+   {t:'tab',head:['分类','含义','示例'],rows:[
+    ['<span style="color:#22c55e">净作业</span>','创造产品价值的必要作业','插入部品、拧螺丝'],
+    ['<span style="color:#f59e0b">辅助</span>','目前必要但最好能消除的作业','取部品、手部移动、去取材料'],
+    ['<span style="color:#ef4444">浪费</span>','应当消除的作业','等待、寻找、返工、无谓移动'],
+   ]},
+   {t:'warn',x:'<b>相同动作请填写完全相同的名称。</b>"取部品"与"取 部品"会被统计为不同作业。各循环名称一致才能对比。'},
+   {t:'tip',x:'点击 <b>[⚡ 自动分离循环]</b>，程序会以出现最频繁的作业名称为基准自动划分循环。会按手分别划分，请放心。'},
+  ]},
+
+ {id:'rating',icon:'⏱',title:'7. 评比系数与宽放率 — 标准工时的基准',
+  lead:'视频中测得的是"那个人、那一天"所用的时间。这两个值把它换算成对所有人通用的基准。',
+  b:[
+   {t:'note',x:'<b>标准时间 = 实测时间 × 评比系数 × (1 + 宽放率)</b>'},
+   {t:'tab',head:['数值','含义','一般取值'],rows:[
+    ['评比系数','所拍作业者的速度相当于普通人的百分之多少','一般 <b>100%</b> · 快的人 110~120% · 慢的人 80~90%'],
+    ['宽放率','为疲劳·如厕·补料等追加的比例','坐姿轻作业一般为 <b>10~15%</b>'],
+   ]},
+   {t:'p',x:'例）实测 5.0 秒、评比系数 100%、宽放率 15% → 标准时间 <b>5.75 秒</b>'},
+   {t:'steps',x:[
+    '点击画面右上角的 <code>评比系数 100% · 宽放率 15%</code> 标签。',
+    '在设置窗口顶部的 <b>⏱ 标准时间计算基准</b> 中修改数值。',
+    '修改后的值以点击 <b>[确定保存标准时间]</b> 的时点为准生效。',
+   ]},
+   {t:'shot',k:'settings',cap:'设置画面 — 顶部为评比系数·宽放率，下方为语言与共享存储设置。'},
+  ]},
+
+ {id:'chart',icon:'📊',title:'8. 图表 — 各循环有何变化',
+  lead:'同样的作业若各循环时间参差不齐，说明该作业不稳定。',
+  b:[
+   {t:'p',x:'一根柱子代表一个循环，一个色块代表一项作业。<b>相同作业在各循环之间以色带相连</b>，色带越来越粗表示该作业正逐渐变慢。'},
+   {t:'shot',k:'chart',cap:'图表画面 — 上方是双手平衡度，下方是各循环累积柱与连接带。'},
+   {t:'tab',head:['操作','效果'],rows:[
+    ['将鼠标移到色块上','相同作业会在<b>所有循环中高亮</b>，其余变暗。'],
+    ['[相同作业连接带] 按钮','开关连接作业的色带。'],
+    ['[纵向放大] 1x/1.5x/2x','区块过密看不清时纵向拉伸。'],
+   ]},
+  ]},
+
+ {id:'stats',icon:'📈',title:'9. 分析结果 — 以数字整理查看',
+  lead:'把平均值、偏差、标准工时、所需人数以及双手评价汇总在一个画面。',
+  b:[
+   {t:'shot',k:'stats',cap:'分析结果画面 — 上方卡片是核心数字，下方是双手评价与各循环表格。'},
+   {t:'tab',head:['项目','解读方法'],rows:[
+    ['平均实测时间','各循环的平均值。σ(西格玛)大表示波动大。'],
+    ['CV(变异系数)','<b>10% 以下为稳定</b>，超过 20% 说明作业不稳定，需要标准化。'],
+    ['标准时间(代表值)','应用评比系数·宽放率后的值。用于产线设计。'],
+    ['所需作业者','标准时间 ÷ 节拍时间。需要几个人。'],
+    ['观测充分性','提示还需要再测几次才具备统计可信度。'],
+    ['⚖ 双手作业评价','左手·右手·单手的时间构成与平衡度(HBR)。'],
+   ]},
+   {t:'note',x:'<b>双手平衡度(HBR)</b> — 越接近 100% 表示双手作业越均衡。<b>低于 80% 时</b>说明一只手在相应地空闲，建议考虑重新分配作业。（单手作业不计入。）'},
+  ]},
+
+ {id:'compare',icon:'🎬',title:'10. 视频对比 — 熟练者与非熟练者',
+  lead:'并排播放两段视频，用眼睛看出"差距在哪里产生"。很适合作为培训资料。',
+  b:[
+   {t:'steps',x:[
+    '打开 <b>🎬 视频对比</b> 菜单。',
+    '左侧加载熟练者视频，右侧加载非熟练者视频。',
+    '播放时两段视频会<b>同步</b>移动。用 0.5 倍慢放更容易看出差异。',
+    '连接已分析的会话后，可从作业列表直接跳转到想看的动作。',
+   ]},
+   {t:'tip',x:'只挑差距最大的 3 个动作进行培训效果最好。不要试图全部纠正。'},
+  ]},
+
+ {id:'line',icon:'📊',title:'11. 产线分析 — 测量各作业者的时间',
+  lead:'如果说作业分析测的是"单个部品的标准工时"，产线分析测的就是"这条线上这个人实际用了几秒"。',
+  b:[
+   {t:'steps',x:[
+    '在 <b>📊 产线分析</b> 中用 <b>[+ 添加作业者]</b> 创建作业者。',
+    '加载该作业者的视频。',
+    '<b>[⏺ 开始标记]</b> → 动作结束时 <b>[⏹ 结束标记]</b>。表格中生成一行。',
+    '在表格中为该行选择<b>部品</b>。',
+    '点 <b>[下一循环 +]</b> 继续重复。<b>从第 2 循环起部品会自动沿用。</b>',
+    '切换作业者，测量整条产线。',
+   ]},
+   {t:'shot',k:'line',cap:'产线分析画面 — 左侧标记，右侧表格按部品累积。'},
+   {t:'note',x:'这里同样可以分别测量 <span class="k">🤚 LH</span> / <span class="k">✋ RH</span> / <span class="k">🖐 单手</span>。切换手后视频回到开头，其他手的记录在下方作为参考保留。'},
+  ]},
+
+ {id:'balance',icon:'⚖',title:'12. 作业分配 — 找出瓶颈并均衡分配',
+  lead:'一眼看出谁忙谁闲，拖动部品来调整平衡。',
+  b:[
+   {t:'shot',k:'balance',cap:'作业分配画面 — 山积图柱状与节距图。'},
+   {t:'h3',x:'节距图(Pitch Diagram)的读法'},
+   {t:'p',x:'一根柱子代表一名作业者，数值为<b>该人的标准工时 ÷ 节拍时间</b>。中间的白色竖线是 <b>100%(节拍)</b>。'},
+   {t:'tab',head:['状态','含义','应对'],rows:[
+    ['<span style="color:#22c55e">低于 100%</span>','时间有富余（空闲）','可以从他人处接受工作。'],
+    ['<span style="color:#f59e0b">90~100%</span>','几乎已满','再增加会有风险。'],
+    ['<span style="color:#ef4444">超过 100%</span>','<b>无法在节拍内完成 = 瓶颈</b>','斜纹部分为超出量。请减轻其工作。'],
+   ]},
+   {t:'tip',x:'<b>目标是让所有柱子都均匀地略低于节拍线</b>。这样编成效率（平衡率）才会提高。'},
+   {t:'h3',x:'移动部品'},
+   {t:'steps',x:[
+    '用<b>鼠标拖动</b>繁忙作业者的部品块，放到有余力的作业者上。',
+    '<b>放到空白处会新增一名作业者</b>。想尝试增加人数时使用。',
+    '满意后用 <b>[📥 导出编成方案]</b> 导出为 Excel。',
+   ]},
+  ]},
+
+ {id:'sim',icon:'🔀',title:'13. 布局模拟 — 按调整后的方案运行',
+  lead:'用作业分配中调整后的编成运行产线，确认是否真的没有瓶颈。',
+  b:[
+   {t:'shot',k:'sim',cap:'布局模拟画面 — 显示瓶颈作业者与空闲时间。'},
+   {t:'tab',head:['显示内容','含义'],rows:[
+    ['节拍周期(CT)','产线产出一个产品所需时间。由<b>最慢的人</b>决定。'],
+    ['瓶颈标示','决定 CT 的人。必须缩短此处产线才会加快。'],
+    ['空闲时间','各人等待时间的合计。'],
+    ['平衡率','总作业量 ÷ (CT × 人数)。越高表示分配越均匀。'],
+    ['每小时产量','3600 ÷ CT。'],
+   ]},
+  ]},
+
+ {id:'predict',icon:'📈',title:'14. 产线预测 — 提前计算新机种',
+  lead:'AI·SMT 可由部品数推出节拍，而 MI 不行。因此要用累积的标准工时来计算。',
+  b:[
+   {t:'steps',x:[
+    '打开 <b>📈 产线预测</b>。',
+    '输入新机种的部品与数量。（从部品清单中选择并输入数量）',
+    '输入可动时间与日产量目标后，会反算出<b>目标节拍时间</b>。',
+    '结果会给出<b>预计节拍周期 · 所需人数 · 平衡率 · 各工序作业顺序</b>。',
+    '保存构成后下次可再次加载，也可导出为 Excel。',
+   ]},
+   {t:'shot',k:'predict',cap:'产线预测画面 — 输入部品构成后得出节拍、人数与工序编成。'},
+   {t:'warn',x:'仅计算已保存标准工时的部品。缺失的部品会另行显示，请先用<b>作业分析测量并保存</b>该部品。'},
+  ]},
+
+ {id:'save',icon:'💾',title:'15. 保存与续做',
+  lead:'作业途中保存，之后可以原样继续。',
+  b:[
+   {t:'tab',head:['方式','保存位置','何时使用'],rows:[
+    ['💾 保存分析内容（会话）','本机浏览器内','在同一台电脑上继续时'],
+    ['↑ 导出文件 (.wvas)','所选文件夹中的文件','迁移到其他电脑或备份时'],
+    ['保存部品 ST','部品管理 DB','累积各部品标准工时时'],
+    ['设置 > 共享存储','网络文件夹或公司服务器','<b>多台电脑共同累积同一标准工时时</b>'],
+   ]},
+   {t:'tip',x:'<b>多人分工测量时</b>，请在设置中登记共享文件夹（或服务器）。每次启动程序都会自动合并彼此的数据。'},
+  ]},
+
+ {id:'trouble',icon:'🩺',title:'16. 出现问题时',
+  lead:'几乎所有问题都属于下面四种之一。',
+  b:[
+   {t:'tab',head:['现象','原因','解决'],rows:[
+    ['部品·标准工时<b>全部消失</b>','地址(端口)偏移了。数据并未被删除。','<b>关闭全部</b>黑色窗口与 PIE 窗口后重新启动。也可点击红色警告条的 <b>[用标准地址打开]</b>。'],
+    ['启动了但<b>画面不出现</b>','浏览器窗口被挡在后面。','在浏览器中直接打开 <code>http://127.0.0.1:8791/PIE.html</code>。'],
+    ['姿势(Pose)对比<b>无法使用</b>','缺少 <code>mediapipe</code> 文件夹，或直接双击文件打开。','务必用 <code>PIE(중국).bat</code> 启动，并确认整个文件夹已复制。'],
+    ['视频<b>打不开</b>','浏览器不支持该编码。','请转换为 MP4(H.264) 格式。'],
+    ['看不到<b>保存·加载按钮</b>','不是 Chrome/Edge。','请用 Chrome 或 Edge 打开。'],
+   ]},
+   {t:'note',x:'若仍无法解决，请将<b>现象 + 画面照片</b>发给负责人。lovekhl83@gmail.com'},
+  ]},
+
+ {id:'words',icon:'📖',title:'17. 术语表',
+  lead:'仅收录现场常用的说法。',
+  b:[
+   {t:'tab',head:['术语','通俗说明'],rows:[
+    ['节拍时间(T/T)','每隔几秒必须产出一个产品。<b>可动时间 ÷ 产量目标</b>'],
+    ['节拍周期(CT)','实际产出一个所需时间。由最慢的人决定。'],
+    ['标准时间(ST)','规定任何人做大约都需要这么久的时间。实测时间 × 评比系数 × (1+宽放率)'],
+    ['评比系数','所拍人员的速度相当于普通水平的百分之多少'],
+    ['宽放率','为疲劳·如厕等追加的比例'],
+    ['净作业','创造产品价值的必要作业'],
+    ['辅助作业','目前必要但最好能消除的作业'],
+    ['浪费','应当消除的作业（等待·寻找·返工）'],
+    ['平衡率','作业分配得有多均匀。越高越好'],
+    ['瓶颈','耗时最长、决定产线速度的环节'],
+    ['HBR(双手平衡度)','左手与右手作业的均衡程度'],
+    ['MI 工序','由人工手动插件的工序'],
+    ['BOM','该机种所用部品的清单表'],
+   ]},
+  ]},
+ ]},
+
+/* ─────────────────────────── Tiếng Việt ─────────────────────────── */
+vi:{
+ htitle:'Từ cài đặt đến sử dụng · Hướng dẫn cho người mới bắt đầu',
+ h1:'Hướng dẫn sử dụng chương trình phân tích thao tác PIE',
+ hsub:'Hoạt động không cần Internet. Chỉ với tài liệu này bạn có thể làm theo từ cài đặt đến phân tích.',
+ tocT:'Mục lục',
+ foot:'PIE — Powernet Industrial Engineering · Liên hệ: lovekhl83@gmail.com',
+ phShot:'(hình màn hình)',
+ sec:[
+ {id:'what',icon:'🎯',title:'1. Chương trình này là gì?',
+  lead:'Công cụ vừa xem video thao tác vừa đo "mỗi động tác mất bao nhiêu giây", rồi dùng thời gian đó để thiết kế chuyền.',
+  b:[
+   {t:'p',x:'Không cần cầm đồng hồ bấm giờ đứng tại hiện trường. Chỉ cần quay video rồi đo từ từ và chính xác trên máy tính.'},
+   {t:'tab',head:['Có thể làm gì','Giải thích'],rows:[
+    ['Đo thời gian chuẩn theo linh kiện','Đo và lưu số giây để lắp một linh kiện. Nhiều máy tính có thể cùng tích lũy.'],
+    ['Phân tích tay trái · tay phải','Xem hai tay có làm việc đều không, có tay nào đang rảnh không.'],
+    ['So sánh người lành nghề và người mới','Chạy song song hai video để tìm ra chỗ khác biệt. Dùng làm tài liệu đào tạo.'],
+    ['Cân bằng chuyền','Đo thời gian từng công nhân, tìm nút thắt cổ chai và chuyển linh kiện cho đều.'],
+    ['Dự đoán model mới','Dùng thời gian chuẩn đã tích lũy để tính trước takt time và số người cho model mới.'],
+   ]},
+   {t:'note',x:'<b>Thứ tự quan trọng</b> — ① Đăng ký linh kiện → ② Đo thời gian bằng video → ③ Lưu thời gian chuẩn → ④ Tự động dùng cho thiết kế chuyền và dự đoán. Chỉ cần giữ đúng thứ tự này.'},
+  ]},
+
+ {id:'install',icon:'💾',title:'2. Cài đặt',
+  lead:'Không có trình cài đặt phức tạp. Chỉ cần sao chép thư mục và tạo lối tắt.',
+  b:[
+   {t:'h3',x:'Chuẩn bị'},
+   {t:'tab',head:['Mục','Nội dung'],rows:[
+    ['Máy tính','Windows 10 hoặc 11'],
+    ['Trình duyệt','<b>Chrome</b> hoặc <b>Edge</b> (không hỗ trợ Internet Explorer)'],
+    ['Internet','<b>Không cần.</b> Vẫn chạy được ở nơi bị chặn Internet như Trung Quốc.'],
+    ['Khóa bản quyền','Nhập một lần khi chạy lần đầu. Hãy xin người phụ trách.'],
+   ]},
+   {t:'h3',x:'Cách A — Dùng tệp cài đặt (khuyến nghị)'},
+   {t:'steps',x:[
+    'Sao chép toàn bộ thư mục PIE từ USB hoặc ổ đĩa mạng.',
+    '<b>Nhấp đúp</b> vào <code>PIE_설치.bat</code> trong thư mục.',
+    'Cửa sổ đen hiện ra và tự cài đặt. Lối tắt được tạo trên màn hình nền và menu Start.',
+    'Từ nay chỉ cần chạy bằng biểu tượng <b>PIE</b> trên màn hình nền.',
+   ]},
+   {t:'h3',x:'Cách B — Chỉ sao chép thư mục'},
+   {t:'steps',x:[
+    'Sao chép toàn bộ thư mục PIE vào vị trí mong muốn (ví dụ <code>D:\\PIE</code>).',
+    'Nhấp đúp <code>PIE(중국).bat</code> trong thư mục là chạy được ngay.',
+   ]},
+   {t:'warn',x:'<b>Đừng bỏ sót tệp nào trong thư mục.</b> Thiếu thư mục <code>mediapipe</code> thì chức năng so sánh tư thế (Pose) sẽ không chạy. Phải sao chép <b>nguyên cả thư mục</b>.'},
+  ]},
+
+ {id:'firstrun',icon:'▶️',title:'3. Chạy lần đầu',
+  lead:'Cửa sổ đen hiện ra, sau đó trình duyệt tự mở. Đừng tắt cửa sổ đen.',
+  b:[
+   {t:'steps',x:[
+    'Nhấp đúp biểu tượng <b>PIE</b> (hoặc <code>PIE(중국).bat</code>).',
+    '<b>Cửa sổ lệnh màu đen</b> hiện ra. Đây là trái tim của chương trình, <b>tắt nó là chương trình dừng</b>. Hãy để nguyên.',
+    'Một lát sau trình duyệt tự mở, địa chỉ là <code>http://127.0.0.1:8791/PIE.html</code>.',
+    'Chỉ lần đầu, nhập <b>khóa bản quyền</b> rồi nhấn [Kích hoạt]. (Dạng: <code>PIE-XXXX-XXXX-XXXX</code>)',
+    'Khi màn hình bắt đầu hiện ra là đã sẵn sàng.',
+   ]},
+   {t:'shot',k:'home',cap:'Màn hình bắt đầu — bên trái là menu, ở giữa để tạo mới hoặc mở công việc đã lưu.'},
+   {t:'warn',x:'<b>Dữ liệu được lưu theo "địa chỉ".</b> Phải luôn mở bằng <code>127.0.0.1:8791</code> thì linh kiện và thời gian chuẩn đã lưu mới hiện ra. Nếu mở bằng địa chỉ khác, đầu màn hình sẽ có dải cảnh báo đỏ và nút <b>[Mở bằng địa chỉ chuẩn]</b> — hãy nhấn nút đó. (Dữ liệu không bị xóa.)'},
+   {t:'tip',x:'Khi kết thúc, hãy <b>đóng tab trình duyệt và đóng luôn cửa sổ đen</b>. Nếu để cửa sổ đen rồi chạy lại, địa chỉ có thể bị lệch.'},
+  ]},
+
+ {id:'map',icon:'🗺️',title:'4. Tổng quan màn hình',
+  lead:'Cột dọc bên trái là menu. Dùng lần lượt từ trên xuống dưới.',
+  b:[
+   {t:'tab',head:['Menu','Khi nào dùng','Giải thích một dòng'],rows:[
+    ['🔧 Quản lý linh kiện','<b>Trước tiên</b>','Tạo danh sách linh kiện và tích lũy thời gian chuẩn từng linh kiện.'],
+    ['📹 Phân tích thao tác','Mỗi lần','Xem video và đánh dấu đầu·cuối từng động tác để đo thời gian.'],
+    ['📊 Biểu đồ','Sau khi phân tích','Xem bằng hình thời gian thay đổi thế nào qua từng chu kỳ.'],
+    ['📊 Kết quả phân tích','Sau khi phân tích','Tổng hợp bằng số: trung bình, thời gian chuẩn, đánh giá hai tay...'],
+    ['🎬 So sánh video','Để đào tạo','So sánh song song video người lành nghề và người mới.'],
+    ['📊 Phân tích chuyền','Khi xem chuyền','Đo thời gian theo linh kiện của nhiều công nhân.'],
+    ['⚖ Phân bổ công việc','Khi xem chuyền','Xem ai bận ai rảnh rồi chuyển linh kiện cho cân bằng.'],
+    ['🔀 Mô phỏng bố trí','Khi xem chuyền','Chạy thử theo phân bổ đã đổi để kiểm tra còn nút thắt không.'],
+    ['📈 Dự đoán chuyền','Model mới','Dùng thời gian chuẩn đã tích lũy để dự đoán takt và số người.'],
+   ]},
+   {t:'note',x:'Nhấn thẻ <code>Rating 100% · Dung sai 15%</code> ở góc trên bên phải để mở Cài đặt. Hai giá trị này quyết định thời gian chuẩn (xem mục 7).'},
+  ]},
+
+ {id:'parts',icon:'🔧',title:'5. Việc đầu tiên — Đăng ký linh kiện',
+  lead:'Nhập tay từng linh kiện sẽ khiến mỗi người viết một kiểu và dữ liệu bị chia tách. Hãy nhập một lần từ file BOM.',
+  b:[
+   {t:'steps',x:[
+    'Ở menu bên trái nhấn <b>🔧 Quản lý linh kiện</b>.',
+    'Nhấn <b>[📋 Nhập BOM]</b> ở phía trên.',
+    'Chọn file BOM của model. (Ví dụ tên file: <code>TênModel_BOM.xlsx</code>)',
+    'Cửa sổ xem trước hiện ra, chỉ lọc <b>linh kiện MI (cấp ....4)</b>. Kiểm tra rồi nhấn [Nhập].',
+    'Linh kiện được thêm vào danh sách theo dạng <code>Mã(Tên)</code>.',
+   ]},
+   {t:'shot',k:'parts',cap:'Màn hình quản lý linh kiện — trái là danh sách, phải là chi tiết linh kiện đã chọn.'},
+   {t:'tip',x:'<b>BOM của model khác cũng cứ nhập vào.</b> Mã đã có sẽ tự động bỏ qua, và nếu thiếu thông tin quy cách·nhà sản xuất thì sẽ được bổ sung.'},
+   {t:'p',x:'Nhấn vào linh kiện để xem <b>thông tin BOM</b> (mã·tên·quy cách·số lượng·nhà sản xuất·mã khách hàng), <b>lịch sử phân tích video</b> và <b>DB thời gian chuẩn</b>.'},
+   {t:'shot',k:'parts_detail',cap:'Chi tiết linh kiện — dải trên là thông tin BOM, tab dưới xem lịch sử và thời gian chuẩn.'},
+   {t:'tab',head:['Nút','Chức năng'],rows:[
+    ['📋 Nhập BOM','Trích linh kiện MI từ file BOM và thêm vào danh sách (tự loại trùng)'],
+    ['🧹 Dọn linh kiện thiếu tên','Chỉ xóa linh kiện đăng ký sai trước đây mà thiếu tên. Linh kiện đã có dữ liệu đo sẽ được giữ lại.'],
+    ['🗑 Xóa toàn bộ','Xóa <b>tất cả</b> danh sách linh kiện và thời gian chuẩn. Không thể hoàn tác.'],
+    ['⬆ Xuất ra tệp / ⬇ Nhập','Dùng khi chuyển nguyên DB linh kiện sang máy khác.'],
+   ]},
+  ]},
+
+ {id:'analysis',icon:'📹',title:'6. Phân tích thao tác — Đo thời gian bằng video',
+  lead:'Đây là phần cốt lõi. Vừa xem video vừa nhấp một lần khi động tác bắt đầu và một lần khi kết thúc.',
+  b:[
+   {t:'steps',x:[
+    'Nhấn menu <b>📹 Phân tích thao tác</b> và mở video bằng <b>[Tải video]</b>.',
+    'Chọn <b>linh kiện</b> đang đo ở phía trên bên phải.',
+    'Chọn <b>tay</b> — <span class="k">🤚 LH</span>(tay trái) / <span class="k">✋ RH</span>(tay phải) / <span class="k">🖐 một tay</span>(thao tác chỉ dùng một tay).',
+    'Phát video và <b>nhấp lên màn hình video ngay khi động tác bắt đầu</b>. (Dấu bắt đầu)',
+    '<b>Nhấp lần nữa ngay khi động tác kết thúc</b>. Một dòng được thêm vào bảng. (Dấu kết thúc)',
+    'Ghi tên thao tác và chọn phân loại (giá trị/phụ trợ/lãng phí).',
+    'Hết một chu kỳ thì nhấn <b>[Chu kỳ tiếp theo]</b> và lặp lại 3~5 lần.',
+    'Xong thì nhấn <b>[💾 Lưu ST linh kiện]</b> để lưu thời gian chuẩn vào Quản lý linh kiện.',
+   ]},
+   {t:'shot',k:'analysis',cap:'Màn hình phân tích — bên trái xem video và đánh dấu, bên phải bảng ghi tích lũy.'},
+   {t:'h3',x:'Cách đo riêng tay trái và tay phải'},
+   {t:'p',x:'Khi đổi nút tay, <b>video quay về đầu</b> và chỉ ghi tiếp cho tay đó. Phần trên bảng là tay đang đo, từ đường phân cách trở xuống là <b>ghi chép của tay khác</b>, hiển thị mờ để tham khảo. Không bị xóa, hãy yên tâm.'},
+   {t:'tip',x:'<b>Tại sao phải đo riêng từng tay?</b> Thao tác tốt là khi hai tay làm việc đều nhau. Nếu chỉ một tay bận thì tay đó là nút thắt, còn tay kia đang rảnh. Chênh lệch này thể hiện bằng <b>độ cân bằng hai tay (HBR)</b>.'},
+   {t:'h3',x:'Chọn phân loại như sau'},
+   {t:'tab',head:['Phân loại','Ý nghĩa','Ví dụ'],rows:[
+    ['<span style="color:#22c55e">Giá trị</span>','Thao tác cần thiết tạo ra giá trị sản phẩm','Cắm linh kiện, siết vít'],
+    ['<span style="color:#f59e0b">Phụ trợ</span>','Hiện cần nhưng nên loại bỏ nếu được','Nhặt linh kiện, di chuyển tay, đi lấy vật tư'],
+    ['<span style="color:#ef4444">Lãng phí</span>','Thao tác phải loại bỏ','Chờ đợi, tìm kiếm, làm lại, di chuyển thừa'],
+   ]},
+   {t:'warn',x:'<b>Cùng một động tác phải ghi tên giống hệt nhau.</b> "Nhặt linh kiện" và "Nhặt  linh kiện" sẽ bị tính là hai thao tác khác nhau. Tên giống nhau qua các chu kỳ thì mới so sánh được.'},
+   {t:'tip',x:'Nhấn <b>[⚡ Tự tách chu kỳ]</b>, chương trình sẽ tự chia chu kỳ dựa trên tên thao tác xuất hiện nhiều nhất. Được chia riêng theo từng tay nên hãy yên tâm.'},
+  ]},
+
+ {id:'rating',icon:'⏱',title:'7. Rating và dung sai — Cơ sở của thời gian chuẩn',
+  lead:'Thời gian đo trên video là thời gian của "người đó, hôm đó". Hai giá trị này quy đổi nó thành chuẩn dùng chung cho mọi người.',
+  b:[
+   {t:'note',x:'<b>Thời gian chuẩn = Thời gian đo × Rating × (1 + Dung sai)</b>'},
+   {t:'tab',head:['Giá trị','Ý nghĩa','Thường là bao nhiêu?'],rows:[
+    ['Rating','Tốc độ của người được quay bằng bao nhiêu % so với người bình thường','Thường <b>100%</b> · người nhanh 110~120% · người chậm 80~90%'],
+    ['Dung sai','Tỷ lệ cộng thêm cho mệt mỏi·vệ sinh·tiếp liệu','Việc nhẹ ngồi làm thường <b>10~15%</b>'],
+   ]},
+   {t:'p',x:'Ví dụ) Đo 5,0 giây, Rating 100%, Dung sai 15% → Thời gian chuẩn <b>5,75 giây</b>'},
+   {t:'steps',x:[
+    'Nhấn thẻ <code>Rating 100% · Dung sai 15%</code> ở góc trên bên phải màn hình.',
+    'Sửa giá trị ở mục <b>⏱ Cơ sở tính thời gian chuẩn</b> trên cùng cửa sổ Cài đặt.',
+    'Giá trị đã sửa được áp dụng tại thời điểm nhấn <b>[Lưu xác định thời gian chuẩn]</b>.',
+   ]},
+   {t:'shot',k:'settings',cap:'Màn hình cài đặt — trên cùng là Rating·Dung sai, bên dưới là ngôn ngữ và kho lưu trữ chung.'},
+  ]},
+
+ {id:'chart',icon:'📊',title:'8. Biểu đồ — Từng chu kỳ thay đổi ra sao',
+  lead:'Cùng một thao tác mà thời gian chênh lệch nhiều giữa các chu kỳ nghĩa là thao tác đó không ổn định.',
+  b:[
+   {t:'p',x:'Mỗi cột là một chu kỳ, mỗi ô màu là một thao tác. <b>Cùng thao tác được nối với nhau bằng dải màu giữa các chu kỳ</b>; dải càng dày lên nghĩa là thao tác đó ngày càng chậm.'},
+   {t:'shot',k:'chart',cap:'Màn hình biểu đồ — phía trên là độ cân bằng hai tay, dưới là cột tích lũy theo chu kỳ và dải nối.'},
+   {t:'tab',head:['Thao tác','Hiệu quả'],rows:[
+    ['Rê chuột lên ô màu','Cùng thao tác được <b>làm nổi bật ở tất cả chu kỳ</b>, phần còn lại mờ đi.'],
+    ['Nút [Dải nối cùng thao tác]','Bật/tắt dải nối các thao tác.'],
+    ['[Phóng dọc] 1x/1.5x/2x','Kéo dài theo chiều dọc khi các ô quá sát nhau.'],
+   ]},
+  ]},
+
+ {id:'stats',icon:'📈',title:'9. Kết quả phân tích — Tổng hợp bằng số',
+  lead:'Gom trung bình, độ lệch, thời gian chuẩn, số người cần và đánh giá hai tay vào một màn hình.',
+  b:[
+   {t:'shot',k:'stats',cap:'Màn hình kết quả — thẻ phía trên là số liệu cốt lõi, dưới là đánh giá hai tay và bảng theo chu kỳ.'},
+   {t:'tab',head:['Mục','Cách đọc'],rows:[
+    ['Thời gian quan sát trung bình','Trung bình các chu kỳ. σ (sigma) lớn nghĩa là dao động nhiều.'],
+    ['CV (hệ số biến thiên)','<b>Dưới 10% là ổn định</b>, trên 20% là thao tác không ổn định, cần chuẩn hóa.'],
+    ['Thời gian chuẩn (đại diện)','Giá trị đã áp Rating·Dung sai. Dùng cho thiết kế chuyền.'],
+    ['Số công nhân cần','Thời gian chuẩn ÷ takt time. Cần bao nhiêu người.'],
+    ['Độ đầy đủ quan sát','Cho biết cần đo thêm bao nhiêu lần để đủ tin cậy thống kê.'],
+    ['⚖ Đánh giá thao tác hai tay','Cơ cấu thời gian của tay trái·tay phải·một tay và độ cân bằng (HBR).'],
+   ]},
+   {t:'note',x:'<b>Độ cân bằng hai tay (HBR)</b> — càng gần 100% thì hai tay càng làm việc đều. <b>Dưới 80%</b> nghĩa là một tay đang rảnh tương ứng, hãy cân nhắc chia lại công việc. (Thao tác một tay không được tính.)'},
+  ]},
+
+ {id:'compare',icon:'🎬',title:'10. So sánh video — Người lành nghề và người mới',
+  lead:'Chạy song song hai video để thấy tận mắt "khoảng cách phát sinh ở đâu". Rất hợp làm tài liệu đào tạo.',
+  b:[
+   {t:'steps',x:[
+    'Mở menu <b>🎬 So sánh video</b>.',
+    'Tải video người lành nghề ở bên trái, người mới ở bên phải.',
+    'Khi phát, hai video chạy <b>đồng bộ</b>. Chạy chậm 0,5x sẽ thấy khác biệt rõ hơn.',
+    'Nếu liên kết với phiên đã phân tích, có thể nhảy thẳng tới động tác mong muốn từ danh sách thao tác.',
+   ]},
+   {t:'tip',x:'Chỉ chọn 3 động tác khác biệt lớn nhất để đào tạo là hiệu quả nhất. Đừng cố sửa tất cả.'},
+  ]},
+
+ {id:'line',icon:'📊',title:'11. Phân tích chuyền — Đo thời gian từng công nhân',
+  lead:'Nếu phân tích thao tác đo "thời gian chuẩn của một linh kiện", thì phân tích chuyền đo "người này thực tế dùng bao nhiêu giây trên chuyền này".',
+  b:[
+   {t:'steps',x:[
+    'Trong <b>📊 Phân tích chuyền</b>, nhấn <b>[+ Thêm công nhân]</b> để tạo công nhân.',
+    'Tải video của công nhân đó.',
+    '<b>[⏺ Dấu bắt đầu]</b> → khi động tác kết thúc nhấn <b>[⏹ Dấu kết thúc]</b>. Một dòng xuất hiện trong bảng.',
+    'Chọn <b>linh kiện</b> cho dòng đó trong bảng.',
+    'Nhấn <b>[Chu kỳ tiếp theo +]</b> và lặp lại. <b>Từ chu kỳ 2 trở đi linh kiện tự động được kế thừa.</b>',
+    'Đổi công nhân và đo cả chuyền.',
+   ]},
+   {t:'shot',k:'line',cap:'Màn hình phân tích chuyền — bên trái đánh dấu, bên phải bảng tích lũy theo linh kiện.'},
+   {t:'note',x:'Ở đây cũng có thể đo riêng <span class="k">🤚 LH</span> / <span class="k">✋ RH</span> / <span class="k">🖐 một tay</span>. Khi đổi tay, video quay về đầu và ghi chép của tay khác được giữ lại bên dưới để tham khảo.'},
+  ]},
+
+ {id:'balance',icon:'⚖',title:'12. Phân bổ công việc — Tìm nút thắt và chia đều',
+  lead:'Nhìn một cái là biết ai bận ai rảnh, rồi kéo linh kiện sang để cân bằng.',
+  b:[
+   {t:'shot',k:'balance',cap:'Màn hình phân bổ — biểu đồ Yamazumi và biểu đồ Pitch.'},
+   {t:'h3',x:'Cách đọc biểu đồ Pitch'},
+   {t:'p',x:'Mỗi cột là một công nhân, giá trị là <b>thời gian chuẩn của người đó ÷ takt time</b>. Vạch dọc màu trắng ở giữa là <b>100% (takt)</b>.'},
+   {t:'tab',head:['Trạng thái','Ý nghĩa','Cần làm gì'],rows:[
+    ['<span style="color:#22c55e">Dưới 100%</span>','Còn dư thời gian (rảnh)','Có thể nhận thêm việc từ người khác.'],
+    ['<span style="color:#f59e0b">90~100%</span>','Gần đầy','Giao thêm là rủi ro.'],
+    ['<span style="color:#ef4444">Trên 100%</span>','<b>Không xong trong takt = nút thắt</b>','Phần gạch chéo là phần vượt. Hãy bớt việc cho người này.'],
+   ]},
+   {t:'tip',x:'<b>Mục tiêu là đưa tất cả các cột lên mức đều nhau ngay dưới vạch takt.</b> Có vậy hiệu suất biên chế (tỷ lệ cân bằng) mới tăng.'},
+   {t:'h3',x:'Chuyển linh kiện'},
+   {t:'steps',x:[
+    '<b>Kéo bằng chuột</b> khối linh kiện của công nhân đang bận sang công nhân còn dư.',
+    '<b>Thả vào chỗ trống sẽ thêm một công nhân mới.</b> Dùng khi muốn thử tăng người.',
+    'Hài lòng rồi thì xuất Excel bằng <b>[📥 Xuất phương án biên chế]</b>.',
+   ]},
+  ]},
+
+ {id:'sim',icon:'🔀',title:'13. Mô phỏng bố trí — Chạy thử theo phương án đã đổi',
+  lead:'Chạy chuyền theo biên chế đã đổi ở Phân bổ công việc để xác nhận thật sự không còn nút thắt.',
+  b:[
+   {t:'shot',k:'sim',cap:'Màn hình mô phỏng — hiển thị công nhân nút thắt và thời gian rảnh.'},
+   {t:'tab',head:['Nội dung hiển thị','Ý nghĩa'],rows:[
+    ['Cycle time (CT)','Thời gian chuyền cho ra một sản phẩm. Do <b>người chậm nhất</b> quyết định.'],
+    ['Đánh dấu nút thắt','Người quyết định CT. Phải giảm ở đây thì chuyền mới nhanh hơn.'],
+    ['Thời gian rảnh','Tổng thời gian chờ của từng người.'],
+    ['Tỷ lệ cân bằng','Tổng khối lượng ÷ (CT × số người). Càng cao càng chia đều.'],
+    ['Sản lượng mỗi giờ','3600 ÷ CT.'],
+   ]},
+  ]},
+
+ {id:'predict',icon:'📈',title:'14. Dự đoán chuyền — Tính trước cho model mới',
+  lead:'AI·SMT có thể suy ra takt từ số linh kiện, nhưng MI thì không. Vì vậy phải tính bằng thời gian chuẩn đã tích lũy.',
+  b:[
+   {t:'steps',x:[
+    'Mở <b>📈 Dự đoán chuyền</b>.',
+    'Nhập linh kiện và số lượng của model mới. (Chọn từ danh sách rồi nhập số lượng)',
+    'Nhập thời gian vận hành và mục tiêu sản lượng ngày, <b>takt time mục tiêu</b> sẽ được tính ngược.',
+    'Kết quả cho ra <b>cycle time dự kiến · số người cần · tỷ lệ cân bằng · trình tự thao tác từng công đoạn</b>.',
+    'Lưu cấu hình để lần sau mở lại, cũng có thể xuất Excel.',
+   ]},
+   {t:'shot',k:'predict',cap:'Màn hình dự đoán — nhập cấu hình linh kiện sẽ ra takt, số người và biên chế công đoạn.'},
+   {t:'warn',x:'Chỉ tính các linh kiện đã lưu thời gian chuẩn. Linh kiện thiếu sẽ được hiển thị riêng — hãy <b>đo và lưu bằng Phân tích thao tác</b> trước.'},
+  ]},
+
+ {id:'save',icon:'💾',title:'15. Lưu và làm tiếp',
+  lead:'Lưu giữa chừng thì sau này có thể làm tiếp y nguyên.',
+  b:[
+   {t:'tab',head:['Cách','Nơi lưu','Khi nào dùng'],rows:[
+    ['💾 Lưu nội dung phân tích (phiên)','Trong trình duyệt máy này','Khi làm tiếp trên cùng một máy'],
+    ['↑ Xuất tệp (.wvas)','Tệp trong thư mục tùy chọn','Khi chuyển sang máy khác hoặc sao lưu'],
+    ['Lưu ST linh kiện','DB Quản lý linh kiện','Khi tích lũy thời gian chuẩn từng linh kiện'],
+    ['Cài đặt > Kho lưu trữ chung','Thư mục mạng hoặc máy chủ nội bộ','<b>Khi nhiều máy cùng tích lũy chung thời gian chuẩn</b>'],
+   ]},
+   {t:'tip',x:'<b>Khi nhiều người chia nhau đo</b>, hãy đăng ký thư mục chung (hoặc máy chủ) trong Cài đặt. Mỗi lần khởi động chương trình sẽ tự động hợp nhất dữ liệu của nhau.'},
+  ]},
+
+ {id:'trouble',icon:'🩺',title:'16. Khi gặp sự cố',
+  lead:'Hầu như mọi vấn đề đều thuộc một trong bốn trường hợp dưới đây.',
+  b:[
+   {t:'tab',head:['Hiện tượng','Nguyên nhân','Cách xử lý'],rows:[
+    ['Linh kiện·thời gian chuẩn <b>biến mất hết</b>','Địa chỉ (cổng) bị lệch. Dữ liệu không bị xóa.','<b>Đóng hết</b> cửa sổ đen và cửa sổ PIE rồi chạy lại. Hoặc nhấn <b>[Mở bằng địa chỉ chuẩn]</b> trên dải cảnh báo đỏ.'],
+    ['Đã chạy nhưng <b>không thấy màn hình</b>','Cửa sổ trình duyệt bị khuất phía sau.','Mở trực tiếp <code>http://127.0.0.1:8791/PIE.html</code> trong trình duyệt.'],
+    ['So sánh tư thế (Pose) <b>không chạy</b>','Thiếu thư mục <code>mediapipe</code>, hoặc mở tệp bằng nhấp đúp.','Nhất định phải chạy bằng <code>PIE(중국).bat</code> và kiểm tra đã sao chép nguyên thư mục.'],
+    ['Video <b>không mở được</b>','Trình duyệt không hỗ trợ codec đó.','Hãy chuyển sang định dạng MP4 (H.264).'],
+    ['Không thấy <b>nút lưu·mở</b>','Không phải Chrome/Edge.','Hãy mở bằng Chrome hoặc Edge.'],
+   ]},
+   {t:'note',x:'Nếu vẫn không được, hãy gửi <b>hiện tượng + ảnh chụp màn hình</b> cho người phụ trách. lovekhl83@gmail.com'},
+  ]},
+
+ {id:'words',icon:'📖',title:'17. Bảng thuật ngữ',
+  lead:'Chỉ gom những từ hay dùng tại hiện trường.',
+  b:[
+   {t:'tab',head:['Thuật ngữ','Giải thích dễ hiểu'],rows:[
+    ['Takt time (T/T)','Cứ bao nhiêu giây phải ra một sản phẩm. <b>Thời gian vận hành ÷ Mục tiêu sản lượng</b>'],
+    ['Cycle time (CT)','Thời gian thực tế để ra một sản phẩm. Do người chậm nhất quyết định.'],
+    ['Thời gian chuẩn (ST)','Thời gian quy định ai làm cũng mất khoảng đó. Thời gian đo × Rating × (1+Dung sai)'],
+    ['Rating','Tốc độ người được quay bằng bao nhiêu % so với mức bình thường'],
+    ['Dung sai','Tỷ lệ cộng thêm cho mệt mỏi·vệ sinh...'],
+    ['Thao tác giá trị','Thao tác cần thiết tạo ra giá trị sản phẩm'],
+    ['Thao tác phụ trợ','Hiện cần nhưng nên loại bỏ nếu được'],
+    ['Lãng phí','Thao tác phải loại bỏ (chờ·tìm·làm lại)'],
+    ['Tỷ lệ cân bằng','Công việc được chia đều đến mức nào. Càng cao càng tốt'],
+    ['Nút thắt','Điểm mất nhiều thời gian nhất, quyết định tốc độ chuyền'],
+    ['HBR (cân bằng hai tay)','Tay trái và tay phải làm việc đều đến mức nào'],
+    ['Công đoạn MI','Công đoạn người cắm linh kiện bằng tay'],
+    ['BOM','Bảng danh sách linh kiện của model đó'],
+   ]},
+  ]},
+ ]}
+};
+
+function esc(s){return String(s);}
+function block(b,L){
+  if(b.t==='p')    return '<p>'+esc(b.x)+'</p>';
+  if(b.t==='h3')   return '<h3 style="margin:18px 0 4px;font-size:16px;color:#93c5fd">'+esc(b.x)+'</h3>';
+  if(b.t==='tip')  return '<div class="tip">💡 '+esc(b.x)+'</div>';
+  if(b.t==='warn') return '<div class="warn">⚠ '+esc(b.x)+'</div>';
+  if(b.t==='note') return '<div class="note">ℹ '+esc(b.x)+'</div>';
+  if(b.t==='steps')return '<ol class="steps">'+b.x.map(function(s){return '<li>'+esc(s)+'</li>';}).join('')+'</ol>';
+  if(b.t==='tab')  return '<table><thead><tr>'+b.head.map(function(h){return '<th>'+esc(h)+'</th>';}).join('')
+                          +'</tr></thead><tbody>'+b.rows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+esc(c)+'</td>';}).join('')+'</tr>';}).join('')
+                          +'</tbody></table>';
+  if(b.t==='shot'){
+    var img=SHOTS[b.k]
+      ? '<img src="'+SHOTS[b.k]+'" alt="'+esc(b.cap)+'">'
+      : '<div class="ph">'+esc(L.phShot)+'</div>';
+    return '<div class="shot">'+img+'<div class="cap">'+esc(b.cap)+'</div></div>';
+  }
+  return '';
 }
+function render(l){
+  var L=G[l];
+  document.documentElement.lang = l==='ko'?'ko':l==='zh'?'zh-CN':'vi';
+  document.getElementById('htitle').textContent=L.htitle;
+  document.getElementById('h1').textContent=L.h1;
+  document.getElementById('hsub').textContent=L.hsub;
+  document.getElementById('tocT').textContent=L.tocT;
+  document.getElementById('foot').textContent=L.foot;
+  document.getElementById('toc').innerHTML=L.sec.map(function(s){
+    return '<li><a href="#'+s.id+'">'+s.icon+' '+esc(s.title)+'</a></li>';}).join('');
+  document.getElementById('body').innerHTML=L.sec.map(function(s){
+    return '<section id="'+s.id+'"><h2>'+s.icon+' '+esc(s.title)+'</h2>'
+      +(s.lead?'<div class="lead">'+esc(s.lead)+'</div>':'')
+      +s.b.map(function(b){return block(b,L);}).join('')+'</section>';}).join('');
+  [].forEach.call(document.querySelectorAll('.langs button'),function(btn){
+    btn.classList.toggle('on',btn.dataset.l===l);});
+  try{localStorage.setItem('pie_guide_lang',l);}catch(e){}
+}
+[].forEach.call(document.querySelectorAll('.langs button'),function(btn){
+  btn.addEventListener('click',function(){render(btn.dataset.l);});
+});
+var saved='ko'; try{saved=localStorage.getItem('pie_guide_lang')||'ko';}catch(e){}
+render(G[saved]?saved:'ko');
 </script>
 </body>
 </html>
