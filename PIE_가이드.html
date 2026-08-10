@@ -90,8 +90,378 @@
 <footer id="foot"></footer>
 
 <script>
-/* 화면 캡처는 아래 객체에 base64(JPEG)로 들어간다. 비어 있으면 자리표시 상자가 보인다. */
-var SHOTS = /*__SHOTS_START__*/{}/*__SHOTS_END__*/;
+/* ────────────────────────────────────────────────────────────────
+   화면 그림은 사진 대신 SVG 도해로 그린다.
+   ① 회사 기밀(실제 품번·Maker·거래처품번·현장 영상)이 문서에 남지 않는다
+   ② 그림 안 글자까지 3개 국어로 같이 번역된다
+   ③ 용량이 작아 오프라인 배포에 부담이 없다
+   ──────────────────────────────────────────────────────────────── */
+var C={bg:'#0f172a',pn:'#111c2e',pn2:'#0b1220',bd:'#1e293b',bd2:'#334155',
+       tx:'#e2e8f0',sub:'#94a3b8',dim:'#64748b',
+       blue:'#3b82f6',green:'#22c55e',amber:'#f59e0b',red:'#ef4444',violet:'#a78bfa',pink:'#ec4899'};
+function A(o){return Object.keys(o).map(function(k){return k+'="'+o[k]+'"';}).join(' ');}
+function R(x,y,w,h,o){o=o||{};return '<rect '+A(Object.assign({x:x,y:y,width:w,height:h,rx:o.rx||4,
+  fill:o.f||C.pn,stroke:o.s||'none','stroke-width':o.sw||1},o.d||{}))+'/>';}
+function T(x,y,t,o){o=o||{};return '<text '+A({x:x,y:y,fill:o.f||C.tx,'font-size':o.fs||11,
+  'font-weight':o.fw||400,'text-anchor':o.a||'start','dominant-baseline':o.b||'middle'})+'>'+t+'</text>';}
+function L2(x1,y1,x2,y2,o){o=o||{};return '<line '+A({x1:x1,y1:y1,x2:x2,y2:y2,stroke:o.s||C.bd,
+  'stroke-width':o.sw||1,'stroke-dasharray':o.dash||'none'})+'/>';}
+/* 말풍선 번호 */
+function N(x,y,n){return '<circle cx="'+x+'" cy="'+y+'" r="10" fill="'+C.amber+'"/>'
+  +T(x,y+0.5,n,{f:'#1a1200',fs:12,fw:800,a:'middle'});}
+function SVG(w,h,inner){return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" style="display:block;border-radius:8px">'
+  +'<defs><pattern id="hx" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">'
+  +'<rect width="8" height="8" fill="#7f1d1d"/><rect width="4" height="8" fill="#991b1b"/></pattern></defs>'
+  +R(0,0,w,h,{f:C.bg,rx:8})+inner+'</svg>';}
+
+/* 좌측 메뉴 기둥 (여러 그림에서 공통으로 씀) */
+function sidebar(F,active){
+  var s=R(0,0,132,430,{f:C.pn2}),y=24;
+  F.menu.forEach(function(m,i){
+    var on=i===active;
+    if(on) s+=R(0,y-13,132,26,{f:'#12233f',rx:0})+R(0,y-13,3,26,{f:C.blue,rx:0});
+    s+=T(12,y,m,{fs:10.5,f:on?C.tx:C.dim,fw:on?700:400});
+    y+=28;
+  });
+  return s;
+}
+function topbar(F,w){
+  return R(0,0,w,26,{f:C.pn2,rx:0})
+   +T(10,13,'☰ '+F.menuW,{fs:10,f:C.tx})
+   +T(52,13,'PIE',{fs:11,fw:800,f:C.blue})
+   +R(w-150,5,142,16,{f:'#0f2040',s:C.blue,rx:5})
+   +T(w-79,13,F.ratingL+' 100% · '+F.allowL+' 15%',{fs:9,f:'#7dd3fc',a:'middle'});
+}
+
+var FIGS={
+/* 설치 흐름 */
+install:function(F){
+  var w=900,h=170,bx=[20,240,460,680],inner='';
+  var steps=[['📁',F.f_copy],['🖱',F.f_dbl],['⬛',F.f_black],['🌐',F.f_browser]];
+  steps.forEach(function(s,i){
+    inner+=R(bx[i],35,180,100,{f:C.pn,s:C.bd2,rx:10})
+      +T(bx[i]+90,68,s[0],{fs:26,a:'middle'})
+      +T(bx[i]+90,102,s[1],{fs:11.5,a:'middle',f:C.tx,fw:600});
+    if(i<3) inner+=T(bx[i]+205,85,'▶',{fs:16,f:C.blue,a:'middle'});
+  });
+  inner+=T(450,152,F.f_blackWarn,{fs:10.5,a:'middle',f:'#fca5a5'});
+  return SVG(w,h,inner);
+},
+/* 시작 화면 */
+home:function(F){
+  var w=900,h=430,i=topbar(F,w)+sidebar(F,0);
+  i+=R(300,120,420,60,{f:C.blue,rx:10})+T(510,150,'📹 '+F.f_loadVideo,{fs:15,fw:800,a:'middle',f:'#fff'});
+  i+=T(510,72,'PIE',{fs:30,fw:900,a:'middle',f:C.blue});
+  i+=T(510,98,'Powernet Industrial Engineering',{fs:11,a:'middle',f:C.sub});
+  i+=R(300,205,420,60,{f:'none',s:C.bd2,rx:10,d:{'stroke-dasharray':'5 4'}})
+    +T(510,235,F.f_noSession,{fs:10.5,a:'middle',f:C.dim});
+  i+=N(20,40,'1')+T(38,40,F.f_cMenu,{fs:11,f:C.amber,fw:700});
+  i+=N(760,13,'2')+T(776,13,F.f_cRating,{fs:11,f:C.amber,fw:700});
+  i+=N(276,150,'3')+T(292,178,'',{fs:1});
+  i+=T(300,300,'③ '+F.f_cLoad,{fs:11,f:C.amber,fw:700});
+  return SVG(w,h,i);
+},
+/* 부품관리 */
+parts:function(F){
+  var w=900,h=430,i=topbar(F,w)+sidebar(F,8);
+  i+=T(146,44,'🔧 '+F.menu[8],{fs:13,fw:800});
+  var bs=[[420,F.f_bImport,C.blue],[560,F.f_bClean,C.amber],[700,F.f_bReset,'#7f1d1d']];
+  bs.forEach(function(b){ i+=R(b[0],34,130,20,{f:b[2],rx:5})+T(b[0]+65,44,b[1],{fs:9.5,a:'middle',f:'#fff',fw:700}); });
+  i+=R(146,66,180,344,{f:C.pn2,s:C.bd,rx:8});
+  i+=R(154,74,164,18,{f:C.bg,s:C.bd2,rx:5})+T(162,83,'🔍 '+F.f_search,{fs:9,f:C.dim});
+  for(var k=0;k<5;k++){
+    var y=100+k*44, on=k===0;
+    i+=R(150,y,172,40,{f:on?'#12233f':'transparent',s:on?C.blue:C.bd,rx:6})
+      +T(158,y+13,'A-100'+(k+1)+'(CAP-ELEC)',{fs:9.5,fw:700,f:on?C.tx:C.sub})
+      +T(158,y+28,'400V,10uF,105C',{fs:8,f:C.dim});
+  }
+  i+=R(336,66,556,344,{f:C.pn2,s:C.bd,rx:8});
+  i+=T(348,86,'A-1001(CAP-ELEC)',{fs:13,fw:800});
+  i+=R(346,100,536,34,{f:C.bg,s:C.bd2,rx:6});
+  var cols=[[F.f_code,'A-1001'],[F.f_pname,'CAP-ELEC'],[F.f_spec,'400V,10uF'],[F.f_maker,'MAKER-A']];
+  var cx=356; cols.forEach(function(c){ i+=T(cx,117,c[0],{fs:8.5,f:C.dim})+T(cx+34,117,c[1],{fs:9,fw:700,f:C.tx}); cx+=130; });
+  i+=R(346,144,110,22,{f:'#12233f',rx:5})+T(401,155,'📹 '+F.f_tabHist,{fs:9,a:'middle',f:'#93c5fd',fw:700})
+    +T(478,155,'⏱ '+F.f_tabSt,{fs:9,f:C.dim});
+  i+=N(430,44,'1')+N(240,120,'2')+N(346,100,'3')+N(346,144,'4');
+  i+=T(146,424,'① '+F.f_cImport+'   ② '+F.f_cList+'   ③ '+F.f_cBom+'   ④ '+F.f_cTabs,{fs:10.5,f:C.amber,fw:700});
+  return SVG(w,h,i);
+},
+/* 부품 상세 (BOM 정보 띠 + 탭) */
+parts_detail:function(F){
+  var w=900,h=230,i=R(10,10,880,210,{f:C.pn2,s:C.bd,rx:10});
+  i+=T(30,36,'A-1001(CAP-ELEC)',{fs:14,fw:800});
+  i+=R(760,26,50,18,{f:C.bd,rx:5})+T(785,35,F.f_edit,{fs:9,a:'middle',f:C.tx});
+  i+=R(816,26,50,18,{f:'#78350f',rx:5})+T(841,35,F.f_del,{fs:9,a:'middle',f:'#fde68a'});
+  i+=R(28,50,844,40,{f:C.bg,s:C.bd2,rx:6});
+  var f1=[[F.f_code,'A-1001'],[F.f_pname,'CAP-ELEC'],[F.f_spec,'400V,10uF,105C'],[F.f_unitQty,'1 EA']];
+  var f2=[[F.f_maker,'MAKER-A'],[F.f_makerPn,'MA-1001'],[F.f_custPn,'CU-1001'],[F.f_bomModel,'DEMO-MODEL']];
+  var x=40; f1.forEach(function(c){ i+=T(x,64,c[0],{fs:8.5,f:C.dim})+T(x+40,64,c[1],{fs:9.5,fw:700}); x+=210; });
+  x=40;   f2.forEach(function(c){ i+=T(x,79,c[0],{fs:8.5,f:C.dim})+T(x+50,79,c[1],{fs:9.5,fw:700}); x+=210; });
+  i+=R(28,102,120,24,{f:'#12233f',s:C.blue,rx:6})+T(88,114,'📹 '+F.f_tabHist,{fs:9.5,a:'middle',f:'#93c5fd',fw:700});
+  i+=T(180,114,'⏱ '+F.f_tabSt,{fs:9.5,f:C.dim});
+  [[F.f_sess,'0'],[F.f_taskKinds,'0'],[F.f_avgObs,'0.000s']].forEach(function(c,ci){
+    var cx2=28+ci*150;
+    i+=R(cx2,136,140,54,{f:C.bg,s:C.bd,rx:8})+T(cx2+14,154,c[0],{fs:9,f:C.dim})
+      +T(cx2+14,174,c[1],{fs:15,fw:800,f:[C.blue,C.violet,C.green][ci]}); });
+  i+=N(28,50,'1')+N(28,102,'2');
+  i+=T(10,224,'① '+F.f_cBom+'   ② '+F.f_cTabs,{fs:10.5,f:C.amber,fw:700});
+  return SVG(w,h,i);
+},
+/* 작업분석 */
+analysis:function(F){
+  var w=900,h=460,i=topbar(F,w)+sidebar(F,1);
+  /* 왼쪽 영상 */
+  i+=R(146,36,330,190,{f:'#060b16',s:C.bd2,rx:8});
+  i+=T(311,110,'▶',{fs:34,a:'middle',f:'#1e3a5f'})+T(311,150,F.f_videoHere,{fs:10.5,a:'middle',f:C.dim});
+  i+='<circle cx="230" cy="90" r="7" fill="'+C.green+'"/>'+T(230,90,'1',{fs:9,fw:800,a:'middle',f:'#04210f'});
+  i+='<circle cx="392" cy="160" r="7" fill="'+C.red+'"/>'+T(392,160,'2',{fs:9,fw:800,a:'middle',f:'#2b0606'});
+  i+=T(230,74,F.f_clickStart,{fs:9,a:'middle',f:C.green,fw:700});
+  i+=T(392,178,F.f_clickEnd,{fs:9,a:'middle',f:C.red,fw:700});
+  /* 손 버튼 */
+  i+=T(146,246,F.f_hand+':',{fs:10,f:C.dim});
+  var hb=[[176,F.f_lh,C.blue],[262,F.f_rh,C.green],[348,F.f_one,C.amber]];
+  hb.forEach(function(b,k){ i+=R(b[0],236,80,20,{f:k===0?b[2]:'transparent',s:b[2],rx:5})
+    +T(b[0]+40,246,b[1],{fs:9.5,a:'middle',f:k===0?'#fff':b[2],fw:700}); });
+  /* 사이클 */
+  i+=T(146,276,F.f_cycle+':',{fs:10,f:C.dim})+R(176,266,90,20,{f:C.bd,s:C.bd2,rx:5})
+    +T(221,276,F.f_cycle+' 1 (6)',{fs:9.5,a:'middle',f:C.tx,fw:700});
+  i+=R(280,266,110,20,{f:C.amber,rx:5})+T(335,276,'⚡ '+F.f_autoCycle,{fs:9,a:'middle',f:'#1a1200',fw:700});
+  i+=R(146,300,150,22,{f:'#14532d',s:'#166534',rx:5})+T(221,311,'💾 '+F.f_saveSt,{fs:9.5,a:'middle',f:'#86efac',fw:700});
+  /* 오른쪽 표 */
+  i+=R(492,36,400,374,{f:C.pn2,s:C.bd,rx:8});
+  var hd=[[500,'#'],[522,F.f_taskName],[622,F.f_partCol],[712,F.f_type],[790,F.f_startC],[840,F.f_endC]];
+  i+=R(494,38,396,20,{f:'#16233a',rx:6});
+  hd.forEach(function(c){ i+=T(c[0],48,c[1],{fs:8.5,f:'#93c5fd',fw:700}); });
+  var names=[F.f_egPick,F.f_egMove,F.f_egFit];
+  for(var r=0;r<3;r++){
+    var y=62+r*26;
+    i+=R(496,y,392,24,{f:r%2?'transparent':'rgba(255,255,255,.02)',rx:4})
+      +'<rect x="500" y="'+(y+8)+'" width="9" height="9" rx="2" fill="'+[C.blue,C.violet,C.pink][r]+'"/>'
+      +T(522,y+12,names[r],{fs:9.5})+T(622,y+12,'A-100'+(r+1),{fs:9,f:'#86efac'})
+      +T(712,y+12,F.f_va,{fs:9,f:C.green})+T(790,y+12,'00:0'+(r+1)+'.2',{fs:8.5,f:C.sub})
+      +T(840,y+12,'00:0'+(r+2)+'.4',{fs:8.5,f:C.sub});
+  }
+  /* 구분선 + 다른 손 */
+  var dy=142;
+  i+=R(496,dy,392,20,{f:C.pn2,rx:0})+L2(496,dy,888,dy,{s:C.green,sw:2})
+    +T(504,dy+10,F.f_rh,{fs:9.5,f:C.green,fw:800})
+    +T(560,dy+10,F.f_otherHand,{fs:9,f:C.dim});
+  for(var r2=0;r2<2;r2++){
+    var y2=dy+24+r2*26;
+    i+='<g opacity="0.5">'+R(496,y2,392,24,{f:'rgba(0,0,0,.25)',rx:4})
+      +'<rect x="500" y="'+(y2+8)+'" width="9" height="9" rx="2" fill="'+[C.blue,C.pink][r2]+'"/>'
+      +T(522,y2+12,[F.f_egPick,F.f_egInsert][r2],{fs:9.5})+T(622,y2+12,'A-100'+(r2+4),{fs:9,f:'#86efac'})
+      +T(712,y2+12,F.f_va,{fs:9,f:C.green})+'</g>';
+  }
+  i+=N(500,36,'1')+N(230,52,'2')+N(160,236,'3')+N(500,142,'4')+N(160,300,'5');
+  i+=T(146,432,'① '+F.f_cPart+'   ② '+F.f_cClick+'   ③ '+F.f_cHand+'   ④ '+F.f_cOther+'   ⑤ '+F.f_cSave,
+       {fs:10.5,f:C.amber,fw:700});
+  return SVG(w,h,i);
+},
+/* 설정 (레이팅·여유율) */
+settings:function(F){
+  var w=900,h=250,i=R(250,14,400,222,{f:C.pn,s:C.bd2,rx:12});
+  i+=T(270,38,'⚙️ '+F.f_settings,{fs:13,fw:800});
+  i+=R(266,54,368,120,{f:'#0f2040',s:C.blue,rx:10});
+  i+=T(280,74,'⏱ '+F.f_stBasis,{fs:11.5,fw:800,f:'#93c5fd'});
+  i+=T(280,94,F.f_formula,{fs:10,f:C.dim});
+  i+=T(280,120,F.ratingL,{fs:10.5,f:C.tx})+R(330,110,54,20,{f:C.bg,s:C.bd2,rx:4})+T(357,120,'100',{fs:11,a:'middle',fw:700})+T(392,120,'%',{fs:10,f:C.sub});
+  i+=T(420,120,F.allowL,{fs:10.5,f:C.tx})+R(470,110,54,20,{f:C.bg,s:C.bd2,rx:4})+T(497,120,'15',{fs:11,a:'middle',fw:700})+T(532,120,'%',{fs:10,f:C.sub});
+  i+=T(280,148,F.f_egCalc,{fs:10.5,f:'#7dd3fc',fw:700});
+  i+=T(280,196,F.f_lang,{fs:10.5,f:C.sub});
+  i+=R(266,206,368,20,{f:'#12233f',s:C.blue,rx:6})+T(280,216,'KR 한국어  /  CN 中文  /  VN Tiếng Việt',{fs:9.5,f:C.tx});
+  i+=N(266,54,'1')+N(266,110,'2');
+  i+=T(250,244,'① '+F.f_cFormula+'   ② '+F.f_cInput,{fs:10.5,f:C.amber,fw:700});
+  return SVG(w,h,i);
+},
+/* 차트 — 사이클 누적 + 연장선 */
+chart:function(F){
+  var w=900,h=330,i='';
+  i+=T(20,22,'📊 '+F.f_chartTitle,{fs:12,fw:800});
+  var base=280,cx=[140,380,620],bw=110;
+  var segs=[[C.blue,52,F.f_egPick],[C.violet,30,F.f_egMove],[C.pink,86,F.f_egFit]];
+  var tops=[];
+  cx.forEach(function(x,ci){
+    var y=base,arr=[];
+    segs.forEach(function(s,si){
+      var hgt=s[1]*(1+ci*0.12);
+      y-=hgt;
+      i+=R(x,y,bw,hgt-2,{f:s[0],rx:3})
+        +(hgt>22?T(x+bw/2,y+hgt/2,s[2],{fs:9.5,a:'middle',f:'#fff',fw:700}):'');
+      arr.push({y:y,h:hgt});
+    });
+    tops.push(arr);
+    i+=T(x+bw/2,base+18,'C'+(ci+1),{fs:11,a:'middle',f:[C.blue,C.green,C.amber][ci],fw:800});
+    i+=T(x+bw/2,y-12,(31.6+ci*1.4).toFixed(1)+'s',{fs:10,a:'middle',fw:700});
+  });
+  /* 연결 띠 */
+  var bands='';
+  for(var g=0;g<2;g++){
+    for(var s2=0;s2<3;s2++){
+      var a1=tops[g][s2],a2=tops[g+1][s2],x1=cx[g]+bw,x2=cx[g+1],mx=(x1+x2)/2;
+      bands+='<path d="M'+x1+','+a1.y+'C'+mx+','+a1.y+' '+mx+','+a2.y+' '+x2+','+a2.y
+        +'L'+x2+','+(a2.y+a2.h)+'C'+mx+','+(a2.y+a2.h)+' '+mx+','+(a1.y+a1.h)+' '+x1+','+(a1.y+a1.h)+'Z" '
+        +'fill="'+segs[s2][0]+'" opacity="0.18"/>';
+    }
+  }
+  i=i.replace(/(<text x="20")/, bands+'$1');
+  i=bands+i;
+  i+=L2(120,base,760,base,{s:C.bd});
+  i+=N(250,120,'1')+T(268,120,F.f_cBand,{fs:10.5,f:C.amber,fw:700});
+  i+=T(20,312,'① '+F.f_cBandDesc,{fs:10.5,f:C.amber,fw:700});
+  return SVG(w,h,i);
+},
+/* 분석결과 — KPI + 양손 평가 */
+stats:function(F){
+  var w=900,h=300,i='';
+  i+=T(20,24,'📊 '+F.f_statsTitle,{fs:12,fw:800});
+  var k=[[F.f_kAvg,'19.2s',C.blue],[F.f_kSt,'22.1s',C.violet],[F.f_kWorker,'4'+F.f_person,C.amber],[F.f_kCv,'3.9%',C.green]];
+  k.forEach(function(c,ci){ var x=20+ci*220;
+    i+=R(x,38,205,54,{f:C.pn,s:C.bd2,rx:8})+T(x+14,56,c[0],{fs:9.5,f:C.dim})
+      +T(x+14,76,c[1],{fs:17,fw:800,f:c[2]}); });
+  i+=R(20,106,860,170,{f:C.pn2,s:'#1e3a5f',rx:10});
+  i+=T(36,128,'⚖ '+F.f_handEval,{fs:12,fw:800,f:'#60a5fa'});
+  i+=T(190,128,F.f_hbr,{fs:10,f:C.dim})+T(250,128,'74%',{fs:16,fw:900,f:C.amber});
+  i+=R(300,118,300,18,{f:'rgba(127,29,29,.4)',s:'rgba(239,68,68,.4)',rx:5})
+    +T(310,127,'⚠ '+F.f_hbrWarn,{fs:9,f:'#fca5a5'});
+  var hd2=[[36,F.f_hand],[130,F.f_total],[210,F.f_share],[290,F.f_va],[370,F.f_aux],[450,F.f_waste]];
+  hd2.forEach(function(c){ i+=T(c[0],152,c[1],{fs:9,f:'#93c5fd',fw:700}); });
+  var rows=[[F.f_lh,'3.4s','34%',C.blue],[F.f_rh,'2.5s','25%',C.green],[F.f_one,'4.1s','41%',C.amber]];
+  rows.forEach(function(r,ri){ var y=176+ri*30;
+    i+=T(36,y,r[0],{fs:10,f:r[3],fw:700})+T(130,y,r[1],{fs:10,fw:700})+T(210,y,r[2],{fs:10,f:C.sub})
+      +T(290,y,r[1],{fs:10,f:C.green})+T(370,y,'0.0s',{fs:10,f:C.amber})+T(450,y,'0.0s',{fs:10,f:C.dim})
+      +R(530,y-5,330,10,{f:C.bd,rx:5})
+      +R(530,y-5,330*(parseFloat(r[1])/4.1),10,{f:r[3],rx:5}); });
+  i+=N(30,106,'1');
+  i+=T(20,292,'① '+F.f_cHandEval,{fs:10.5,f:C.amber,fw:700});
+  return SVG(w,h,i);
+},
+/* 라인분석 */
+line:function(F){
+  var w=900,h=400,i=sidebar(F,5);
+  i+=T(146,24,'📊 '+F.menu[5],{fs:13,fw:800});
+  i+=R(146,38,330,180,{f:'#060b16',s:C.bd2,rx:8})
+    +T(311,120,'🎬',{fs:26,a:'middle'})+T(311,150,F.f_pickWorkerVideo,{fs:10,a:'middle',f:C.dim});
+  i+=R(146,232,100,24,{f:'#1e293b',s:C.bd2,rx:6})+T(196,244,'⏺ '+F.f_markStart,{fs:9.5,a:'middle',fw:700,f:C.tx});
+  i+=R(256,232,100,24,{f:'#1e293b',s:C.bd2,rx:6})+T(306,244,'⏹ '+F.f_markEnd,{fs:9.5,a:'middle',fw:700,f:C.tx});
+  i+=R(366,232,110,24,{f:'#12233f',s:C.blue,rx:6})+T(421,244,F.f_nextCycle+' +',{fs:9.5,a:'middle',fw:700,f:'#93c5fd'});
+  i+=T(146,278,F.f_hand+':',{fs:10,f:C.dim});
+  [[176,F.f_lh,C.blue],[262,F.f_rh,C.green],[348,F.f_one,C.amber]].forEach(function(b,k2){
+    i+=R(b[0],268,80,20,{f:k2===0?b[2]:'transparent',s:b[2],rx:5})
+      +T(b[0]+40,278,b[1],{fs:9.5,a:'middle',f:k2===0?'#fff':b[2],fw:700}); });
+  i+=R(492,38,400,320,{f:C.pn2,s:C.bd,rx:8});
+  i+=T(504,56,F.f_markList+' '+F.f_lh+' (4)',{fs:11,fw:800,f:C.blue});
+  var mh=[[504,'#'],[530,F.f_partCol],[700,F.f_cycle],[750,F.f_hand],[800,F.f_startC]];
+  i+=R(496,66,392,18,{f:'#16233a',rx:5});
+  mh.forEach(function(c){ i+=T(c[0],75,c[1],{fs:8.5,f:'#93c5fd',fw:700}); });
+  for(var r=0;r<3;r++){ var y=90+r*24;
+    i+=T(504,y+10,String(r+1),{fs:9,f:C.dim})
+      +R(528,y+2,160,17,{f:C.bg,s:'rgba(34,197,94,.3)',rx:4})
+      +T(534,y+10,'A-100'+(r+1)+'(CAP-ELEC) ▾',{fs:8.5,f:'#86efac'})
+      +T(700,y+10,'C1',{fs:9,f:'#60a5fa',fw:700})+T(750,y+10,'LH',{fs:9,f:C.blue,fw:700})
+      +T(800,y+10,'00:0'+(r+2)+',4',{fs:8.5,f:C.sub}); }
+  var dy=170;
+  i+=L2(496,dy,888,dy,{s:C.green,sw:2})+T(504,dy+12,F.f_rh,{fs:9.5,f:C.green,fw:800})
+    +T(560,dy+12,F.f_otherHand,{fs:9,f:C.dim});
+  for(var r3=0;r3<2;r3++){ var y3=dy+26+r3*24;
+    i+='<g opacity="0.5">'+T(504,y3+10,String(r3+1),{fs:9,f:C.dim})
+      +R(528,y3+2,160,17,{f:C.bg,s:C.bd2,rx:4})+T(534,y3+10,'A-100'+(r3+3)+'(FUSE) ▾',{fs:8.5,f:'#86efac'})
+      +T(700,y3+10,'C1',{fs:9,f:'#60a5fa',fw:700})+T(750,y3+10,'RH',{fs:9,f:C.green,fw:700})+'</g>'; }
+  i+=N(500,66,'1')+N(370,232,'2')+N(500,170,'3');
+  i+=T(146,384,'① '+F.f_cPickPart+'   ② '+F.f_cInherit+'   ③ '+F.f_cOther,{fs:10.5,f:C.amber,fw:700});
+  return SVG(w,h,i);
+},
+/* 작업배분 — 야마즈미 + 피치 */
+balance:function(F){
+  var w=900,h=420,i='';
+  i+=T(20,22,'⚖ '+F.f_balTitle,{fs:12,fw:800});
+  var base=210,bx=[70,200,330,460],bw=100,tak=120;
+  var loads=[[62,46,60],[40,44,46],[38,40,40],[34,36,36]];
+  loads.forEach(function(arr,ci){
+    var y=base;
+    arr.forEach(function(hh,si){ y-=hh; i+=R(bx[ci],y,bw,hh-2,{f:C.green,s:'#0b3d1e',rx:3})
+      +(hh>20?T(bx[ci]+bw/2,y+hh/2,'A-100'+(si+1),{fs:8.5,a:'middle',f:'#eafff3'}):''); });
+    i+=T(bx[ci]+bw/2,base+16,F.f_worker+' '+(ci+1),{fs:10,a:'middle',f:C.sub,fw:700});
+    i+=T(bx[ci]+bw/2,y-10,((arr[0]+arr[1]+arr[2])/10).toFixed(1)+'s',{fs:10,a:'middle',fw:700});
+  });
+  i+=R(590,50,110,160,{f:'none',s:C.bd2,rx:8,d:{'stroke-dasharray':'6 5'}})
+    +T(645,120,'+',{fs:22,a:'middle',f:C.dim})+T(645,146,F.f_newWorker,{fs:9.5,a:'middle',f:C.dim});
+  i+=L2(60,base-tak,710,base-tak,{s:C.red,sw:1.5,dash:'7 5'})+T(716,base-tak,'TT',{fs:10,f:C.red,fw:700});
+  i+=L2(60,base,720,base,{s:C.bd});
+  /* 피치 */
+  i+=T(20,252,'📏 '+F.f_pitch,{fs:11.5,fw:800});
+  var pv=[160,124,118,104],ax=160,x0=90,pw=620;
+  i+=L2(x0+pw*100/ax,262,x0+pw*100/ax,262+4*30,{s:'#e2e8f0',sw:1.2});
+  pv.forEach(function(p,pi){ var y=272+pi*30;
+    i+=T(20,y+6,F.f_worker+' '+(pi+1),{fs:9.5,f:C.sub});
+    i+=R(x0,y,pw,12,{f:C.bd,rx:6});
+    i+=R(x0,y,pw*Math.min(p,100)/ax,12,{f:p>100?C.red:p>90?C.amber:C.green,rx:6});
+    if(p>100) i+=R(x0+pw*100/ax,y,pw*(p-100)/ax,12,{f:'url(#hx)',rx:6});
+    i+=T(x0+pw+10,y+6,p+'%',{fs:10,f:p>100?C.red:C.green,fw:700});
+  });
+  i+=T(x0+pw*100/ax,264,'100%',{fs:9,a:'middle',f:'#e2e8f0',fw:700});
+  i+=N(600,base-tak,'1')+N(60,272,'2');
+  i+=T(20,406,'① '+F.f_cTakt+'   ② '+F.f_cPitch,{fs:10.5,f:C.amber,fw:700});
+  return SVG(w,h,i);
+},
+/* 배치실험 */
+sim:function(F){
+  var w=900,h=260,i='';
+  i+=T(20,22,'🔀 '+F.f_simTitle,{fs:12,fw:800});
+  var k=[[F.f_ct,'16.7s',C.red],[F.f_bottleneck,F.f_worker+' 1',C.amber],[F.f_balRate,'79%',C.blue],[F.f_perHour,'215'+F.f_ea,C.green]];
+  k.forEach(function(c,ci){ var x=20+ci*220;
+    i+=R(x,38,205,58,{f:C.pn,s:C.bd2,rx:8})+T(x+14,58,c[0],{fs:9.5,f:C.dim})
+      +T(x+14,80,c[1],{fs:17,fw:800,f:c[2]}); });
+  var bx=[70,230,390,550],base=220;
+  [[95,1],[62,0],[58,0],[50,0]].forEach(function(d,ci){
+    i+=R(bx[ci],base-d[0],120,d[0],{f:d[1]?C.red:C.green,rx:4,s:d[1]?'#fca5a5':'none',sw:d[1]?2:0})
+      +T(bx[ci]+60,base+16,F.f_worker+' '+(ci+1),{fs:10,a:'middle',f:C.sub,fw:700});
+    if(d[1]) i+=T(bx[ci]+60,base-d[0]-12,'⚠ '+F.f_bottleneck,{fs:10,a:'middle',f:'#fca5a5',fw:800});
+    else i+=R(bx[ci],base-95,120,95-d[0],{f:'rgba(100,116,139,.18)',rx:4})
+      +T(bx[ci]+60,base-95+(95-d[0])/2,F.f_idle,{fs:9,a:'middle',f:C.dim});
+  });
+  i+=T(20,248,'※ '+F.f_simNote,{fs:10.5,f:C.amber,fw:700});
+  return SVG(w,h,i);
+},
+/* 라인예측 */
+predict:function(F){
+  var w=900,h=280,i='';
+  i+=T(20,22,'🏭 '+F.f_predTitle,{fs:12,fw:800});
+  var inp=[[F.f_availMin,'480'],[F.f_dayTarget,'1,200'],[F.f_targetTT,'24']];
+  var x=250; inp.forEach(function(c){ i+=T(x,22,c[0],{fs:9.5,f:C.dim})+R(x+70,12,54,20,{f:C.bg,s:C.bd2,rx:4})
+    +T(x+97,22,c[1],{fs:10,a:'middle',fw:700}); x+=200; });
+  i+=R(20,44,300,214,{f:C.pn2,s:C.bd,rx:8});
+  i+=T(34,64,F.f_bomInput,{fs:11,fw:700,f:'#93c5fd'});
+  i+=R(32,76,240,20,{f:C.bg,s:C.bd2,rx:5})+T(42,86,F.f_pickPart+' ▾',{fs:9.5,f:C.dim});
+  i+=T(34,110,F.f_qty,{fs:9.5,f:C.dim})+R(70,100,44,20,{f:C.bg,s:C.bd2,rx:4})+T(92,110,'2',{fs:10,a:'middle',fw:700})
+    +R(124,100,60,20,{f:C.blue,rx:5})+T(154,110,'+ '+F.f_add,{fs:9.5,a:'middle',f:'#fff',fw:700});
+  for(var r=0;r<3;r++){ var y=134+r*28;
+    i+=R(32,y,276,24,{f:C.bg,s:C.bd,rx:5})+T(42,y+12,'A-100'+(r+1)+'(CAP-ELEC)',{fs:9,f:C.tx})
+      +T(240,y+12,'×'+(r+1),{fs:9,f:C.sub})+T(280,y+12,(4.2+r).toFixed(1)+'s',{fs:9,f:'#a78bfa',fw:700}); }
+  i+=R(336,44,544,214,{f:C.pn2,s:C.bd,rx:8});
+  var o=[[F.f_expCt,'22.4s',C.blue],[F.f_needPeople,'5'+F.f_person,C.amber],[F.f_balRate,'86%',C.green]];
+  o.forEach(function(c,ci){ var ox=352+ci*176;
+    i+=R(ox,60,166,60,{f:C.pn,s:C.bd2,rx:8})+T(ox+14,80,c[0],{fs:9.5,f:C.dim})
+      +T(ox+14,102,c[1],{fs:18,fw:800,f:c[2]}); });
+  i+=T(352,142,F.f_procPlan,{fs:10.5,fw:700,f:'#93c5fd'});
+  for(var p=0;p<3;p++){ var py=156+p*32;
+    i+=R(352,py,512,26,{f:C.bg,s:C.bd,rx:5})
+      +T(364,py+13,F.f_proc+' '+(p+1),{fs:9.5,f:C.sub,fw:700})
+      +R(420,py+5,120+p*30,16,{f:C.green,rx:4})
+      +T(430,py+13,'A-100'+(p+1)+' → A-100'+(p+2),{fs:8.5,f:'#eafff3'}); }
+  return SVG(w,h,i);
+},
+/* 주소 경고 배너 */
+trouble:function(F){
+  var w=900,h=120,i=R(0,10,900,60,{f:'#7f1d1d',rx:8})+L2(0,70,900,70,{s:C.red,sw:2});
+  i+=T(18,32,'⚠',{fs:16,f:'#fee2e2'});
+  i+=T(42,28,F.f_warnTitle,{fs:12,fw:800,f:'#fee2e2'});
+  i+=T(42,48,F.f_warnBody,{fs:10,f:'#fecaca'});
+  i+=R(690,22,150,24,{f:C.blue,rx:6})+T(765,34,F.f_btnStdAddr,{fs:10,a:'middle',f:'#fff',fw:700});
+  i+=T(0,96,F.f_warnNote,{fs:10.5,f:C.amber,fw:700});
+  return SVG(w,h,i);
+}
+};
 
 var G = {
 /* ─────────────────────────── 한국어 ─────────────────────────── */
@@ -102,6 +472,54 @@ ko:{
  tocT:'목차',
  foot:'PIE — Powernet Industrial Engineering · 문의: lovekhl83@gmail.com',
  phShot:'(화면 그림)',
+ fig:{
+  menu:['홈','작업분석','차트','분석결과','영상비교','라인분석','작업배분','배치실험','부품관리','라인예측'],
+  menuW:'메뉴', ratingL:'레이팅', allowL:'여유율',
+  f_copy:'PIE 폴더 복사', f_dbl:'PIE(중국).bat 더블클릭', f_black:'검은 창이 뜬다', f_browser:'브라우저 자동 열림',
+  f_blackWarn:'⚠ 검은 창을 끄면 프로그램이 종료됩니다 — 그냥 두세요',
+  f_loadVideo:'영상 불러오기', f_noSession:'저장된 세션이 없습니다',
+  f_cMenu:'왼쪽이 메뉴', f_cRating:'레이팅·여유율 (눌러서 설정)', f_cLoad:'여기서 영상을 불러옵니다',
+  f_search:'부품 검색...', f_bImport:'📋 BOM 가져오기', f_bClean:'🧹 품명 없는 부품 정리', f_bReset:'🗑 전체 초기화',
+  f_code:'품번', f_pname:'품명', f_spec:'규격', f_unitQty:'단위수량', f_maker:'Maker', f_makerPn:'Maker P/N',
+  f_custPn:'거래처품번', f_bomModel:'BOM 모델', f_edit:'수정', f_del:'삭제',
+  f_tabHist:'영상분석이력', f_tabSt:'표준시간 DB',
+  f_sess:'분석 세션', f_taskKinds:'작업 항목', f_avgObs:'총 평균 측정시간',
+  f_cImport:'BOM 가져오기', f_cList:'부품 목록', f_cBom:'BOM 정보', f_cTabs:'분석이력 / 표준시간',
+  f_videoHere:'여기에 작업 영상이 보입니다',
+  f_clickStart:'① 시작할 때 클릭', f_clickEnd:'② 끝날 때 클릭',
+  f_hand:'손', f_lh:'🤚 LH 왼손', f_rh:'✋ RH 오른손', f_one:'🖐 한손작업',
+  f_cycle:'사이클', f_autoCycle:'사이클 자동 분리', f_saveSt:'부품 ST 저장',
+  f_taskName:'작업명', f_partCol:'부품', f_type:'분류', f_startC:'시작', f_endC:'종료',
+  f_egPick:'부품 집기', f_egMove:'손 이동', f_egFit:'삽입', f_egInsert:'체결',
+  f_va:'정미', f_aux:'부수', f_waste:'낭비',
+  f_otherHand:'다른 손 기록 (참고용 — 지워지지 않습니다)',
+  f_cPart:'부품 고르기', f_cClick:'영상 위 두 번 클릭', f_cHand:'손 바꾸기',
+  f_cOther:'다른 손은 아래에 참고로', f_cSave:'표준시간 저장',
+  f_settings:'설정', f_stBasis:'표준시간 산정 기준',
+  f_formula:'측정시간 × 레이팅 × (1 + 여유율) = 표준시간',
+  f_egCalc:'예: 측정 5.0초 → 표준시간 5.75초', f_lang:'언어 / Language',
+  f_cFormula:'공식과 권장값', f_cInput:'여기서 값을 바꿉니다',
+  f_chartTitle:'사이클별 누적 작업시간', f_cBand:'같은 작업 연장선',
+  f_cBandDesc:'띠가 위로 벌어지면 그 작업이 사이클마다 길어지고 있다는 뜻',
+  f_statsTitle:'사이클 통계 분석', f_kAvg:'평균 관측시간', f_kSt:'표준시간 (대표)',
+  f_kWorker:'필요 작업자', f_kCv:'CV (변동계수)', f_person:'명',
+  f_handEval:'양손 작업 평가', f_hbr:'균형도(HBR)', f_hbrWarn:'RH 오른손이 놀고 있습니다 → 재배분 검토',
+  f_total:'총 시간', f_share:'비중', f_cHandEval:'왼손·오른손·한손의 시간 구성과 균형도',
+  f_pickWorkerVideo:'이 작업자의 영상을 고르세요',
+  f_markStart:'시작 마크', f_markEnd:'종료 마크', f_nextCycle:'다음 사이클', f_markList:'마크 목록',
+  f_cPickPart:'표에서 부품을 고릅니다', f_cInherit:'2사이클부터 부품이 자동으로 따라옵니다',
+  f_balTitle:'야마즈미 (드래그 라인 밸런싱)', f_worker:'작업자', f_newWorker:'새 작업자 (여기로 끌기)',
+  f_pitch:'피치 다이어그램', f_cTakt:'빨간 점선 = 택트타임', f_cPitch:'100% 넘은 빗금 = 택트 초과 (병목)',
+  f_simTitle:'배치 시뮬레이션', f_ct:'사이클타임(CT)', f_bottleneck:'병목', f_balRate:'밸런스율',
+  f_perHour:'시간당 생산', f_ea:'개', f_idle:'유휴',
+  f_simNote:'회색이 유휴 — 병목(빨강)의 일을 덜어 주면 전체가 빨라집니다',
+  f_predTitle:'신규 모델 라인 예측', f_availMin:'가동시간', f_dayTarget:'일 생산목표', f_targetTT:'목표 T/T',
+  f_bomInput:'부품 구성 (BOM) 입력', f_pickPart:'부품 선택...', f_qty:'수량', f_add:'추가',
+  f_expCt:'예상 사이클타임', f_needPeople:'필요 인원', f_procPlan:'예상 공정 편성', f_proc:'공정',
+  f_warnTitle:'평소와 다른 주소로 열렸습니다 — 저장된 부품·표준시간이 보이지 않습니다',
+  f_warnBody:'브라우저는 데이터를 주소별로 따로 보관합니다. (데이터가 지워진 것은 아닙니다)',
+  f_btnStdAddr:'표준 주소로 열기', f_warnNote:'이 띠가 보이면 버튼을 누르거나, 창을 모두 닫고 다시 실행하세요',
+ },
  sec:[
  {id:'what',icon:'🎯',title:'1. 이 프로그램은 무엇인가요?',
   lead:'작업 영상을 보면서 "어떤 동작이 몇 초 걸리는지"를 재고, 그 시간으로 라인을 설계하는 도구입니다.',
@@ -139,6 +557,7 @@ ko:{
     'PIE 폴더 전체를 원하는 위치(예: <code>D:\\PIE</code>)에 복사합니다.',
     '폴더 안의 <code>PIE(중국).bat</code>를 더블클릭하면 바로 실행됩니다.',
    ]},
+   {t:'shot',k:'install',cap:'설치부터 첫 실행까지의 흐름'},
    {t:'warn',x:'<b>폴더 안의 파일을 빼놓지 마세요.</b> <code>mediapipe</code> 폴더가 빠지면 자세(Pose) 비교 기능이 동작하지 않습니다. <b>폴더 통째로</b> 복사해야 합니다.'},
   ]},
 
@@ -363,6 +782,7 @@ ko:{
     ['영상이 <b>안 열린다</b>','브라우저가 지원하지 않는 코덱입니다.','MP4(H.264) 형식으로 변환해 보세요.'],
     ['저장·불러오기 버튼이 <b>안 보인다</b>','Chrome/Edge가 아닙니다.','Chrome 또는 Edge로 여세요.'],
    ]},
+   {t:'shot',k:'trouble',cap:'주소가 밀렸을 때 화면 맨 위에 뜨는 경고 띠'},
    {t:'note',x:'그래도 안 되면 담당자에게 <b>증상 + 화면 사진</b>을 보내 주세요. lovekhl83@gmail.com'},
   ]},
 
@@ -395,6 +815,54 @@ zh:{
  tocT:'目录',
  foot:'PIE — Powernet Industrial Engineering · 咨询: lovekhl83@gmail.com',
  phShot:'(画面图)',
+ fig:{
+  menu:['主页','作业分析','图表','分析结果','视频对比','产线分析','作业分配','布局模拟','部品管理','产线预测'],
+  menuW:'菜单', ratingL:'评比系数', allowL:'宽放率',
+  f_copy:'复制 PIE 文件夹', f_dbl:'双击 PIE(중국).bat', f_black:'出现黑色窗口', f_browser:'浏览器自动打开',
+  f_blackWarn:'⚠ 关闭黑色窗口程序就会结束 — 请保持打开',
+  f_loadVideo:'加载视频', f_noSession:'没有已保存的会话',
+  f_cMenu:'左侧是菜单', f_cRating:'评比系数·宽放率(点击可设置)', f_cLoad:'在这里加载视频',
+  f_search:'搜索部品...', f_bImport:'📋 导入 BOM', f_bClean:'🧹 清理无品名部品', f_bReset:'🗑 全部重置',
+  f_code:'品号', f_pname:'品名', f_spec:'规格', f_unitQty:'单位数量', f_maker:'厂商', f_makerPn:'厂商料号',
+  f_custPn:'客户料号', f_bomModel:'BOM 机种', f_edit:'修改', f_del:'删除',
+  f_tabHist:'视频分析履历', f_tabSt:'标准时间 DB',
+  f_sess:'分析会话', f_taskKinds:'作业项目', f_avgObs:'总平均实测时间',
+  f_cImport:'导入 BOM', f_cList:'部品清单', f_cBom:'BOM 信息', f_cTabs:'分析履历 / 标准时间',
+  f_videoHere:'这里显示作业视频',
+  f_clickStart:'① 开始时点击', f_clickEnd:'② 结束时点击',
+  f_hand:'手', f_lh:'🤚 LH 左手', f_rh:'✋ RH 右手', f_one:'🖐 单手作业',
+  f_cycle:'循环', f_autoCycle:'自动分离循环', f_saveSt:'保存部品 ST',
+  f_taskName:'作业名', f_partCol:'部品', f_type:'分类', f_startC:'开始', f_endC:'结束',
+  f_egPick:'取部品', f_egMove:'手部移动', f_egFit:'插入', f_egInsert:'紧固',
+  f_va:'净作业', f_aux:'辅助', f_waste:'浪费',
+  f_otherHand:'其他手的记录(仅供参考 — 不会被删除)',
+  f_cPart:'选择部品', f_cClick:'在视频上点击两次', f_cHand:'切换手',
+  f_cOther:'其他手在下方作为参考', f_cSave:'保存标准时间',
+  f_settings:'设置', f_stBasis:'标准时间计算基准',
+  f_formula:'实测时间 × 评比系数 × (1 + 宽放率) = 标准时间',
+  f_egCalc:'例：实测 5.0 秒 → 标准时间 5.75 秒', f_lang:'语言 / Language',
+  f_cFormula:'公式与建议值', f_cInput:'在这里修改数值',
+  f_chartTitle:'各循环累积作业时间', f_cBand:'相同作业连接带',
+  f_cBandDesc:'色带向上变宽表示该作业每个循环都在变长',
+  f_statsTitle:'循环统计分析', f_kAvg:'平均实测时间', f_kSt:'标准时间(代表值)',
+  f_kWorker:'所需作业者', f_kCv:'CV(变异系数)', f_person:'人',
+  f_handEval:'双手作业评价', f_hbr:'平衡度(HBR)', f_hbrWarn:'RH 右手在空闲 → 建议重新分配',
+  f_total:'总时间', f_share:'占比', f_cHandEval:'左手·右手·单手的时间构成与平衡度',
+  f_pickWorkerVideo:'请选择该作业者的视频',
+  f_markStart:'开始标记', f_markEnd:'结束标记', f_nextCycle:'下一循环', f_markList:'标记列表',
+  f_cPickPart:'在表格中选择部品', f_cInherit:'从第 2 循环起部品自动沿用',
+  f_balTitle:'山积图(拖拽产线平衡)', f_worker:'作业者', f_newWorker:'新作业者(拖到此处)',
+  f_pitch:'节距图', f_cTakt:'红色虚线 = 节拍时间', f_cPitch:'超过 100% 的斜纹 = 超出节拍(瓶颈)',
+  f_simTitle:'布局模拟', f_ct:'节拍周期(CT)', f_bottleneck:'瓶颈', f_balRate:'平衡率',
+  f_perHour:'每小时产量', f_ea:'个', f_idle:'空闲',
+  f_simNote:'灰色为空闲 — 减轻瓶颈(红色)的工作，整体就会加快',
+  f_predTitle:'新机种产线预测', f_availMin:'可动时间', f_dayTarget:'日产量目标', f_targetTT:'目标 T/T',
+  f_bomInput:'部品构成 (BOM) 输入', f_pickPart:'选择部品...', f_qty:'数量', f_add:'添加',
+  f_expCt:'预计节拍周期', f_needPeople:'所需人数', f_procPlan:'预计工序编成', f_proc:'工序',
+  f_warnTitle:'以与平时不同的地址打开 — 已保存的部品·标准工时不会显示',
+  f_warnBody:'浏览器按地址分别保存数据。(数据并未被删除)',
+  f_btnStdAddr:'用标准地址打开', f_warnNote:'看到此条时请点击按钮，或关闭所有窗口后重新启动',
+ },
  sec:[
  {id:'what',icon:'🎯',title:'1. 这是什么程序?',
   lead:'一边看作业视频，一边测量"每个动作用了几秒"，并用这些时间来设计产线的工具。',
@@ -432,6 +900,7 @@ zh:{
     '将整个 PIE 文件夹复制到需要的位置（例如 <code>D:\\PIE</code>）。',
     '双击文件夹中的 <code>PIE(중국).bat</code> 即可运行。',
    ]},
+   {t:'shot',k:'install',cap:'从安装到首次运行的流程'},
    {t:'warn',x:'<b>请勿遗漏文件夹中的文件。</b> 缺少 <code>mediapipe</code> 文件夹时，姿势(Pose)对比功能将无法运行。必须<b>整个文件夹</b>一起复制。'},
   ]},
 
@@ -656,6 +1125,7 @@ zh:{
     ['视频<b>打不开</b>','浏览器不支持该编码。','请转换为 MP4(H.264) 格式。'],
     ['看不到<b>保存·加载按钮</b>','不是 Chrome/Edge。','请用 Chrome 或 Edge 打开。'],
    ]},
+   {t:'shot',k:'trouble',cap:'地址偏移时画面顶部出现的警告条'},
    {t:'note',x:'若仍无法解决，请将<b>现象 + 画面照片</b>发给负责人。lovekhl83@gmail.com'},
   ]},
 
@@ -688,6 +1158,54 @@ vi:{
  tocT:'Mục lục',
  foot:'PIE — Powernet Industrial Engineering · Liên hệ: lovekhl83@gmail.com',
  phShot:'(hình màn hình)',
+ fig:{
+  menu:['Trang chủ','Phân tích thao tác','Biểu đồ','Kết quả','So sánh video','Phân tích chuyền','Phân bổ','Mô phỏng','Quản lý linh kiện','Dự đoán chuyền'],
+  menuW:'Menu', ratingL:'Rating', allowL:'Dung sai',
+  f_copy:'Sao chép thư mục PIE', f_dbl:'Nhấp đúp PIE(중국).bat', f_black:'Cửa sổ đen hiện ra', f_browser:'Trình duyệt tự mở',
+  f_blackWarn:'⚠ Tắt cửa sổ đen là chương trình dừng — hãy để nguyên',
+  f_loadVideo:'Tải video', f_noSession:'Chưa có phiên nào được lưu',
+  f_cMenu:'Bên trái là menu', f_cRating:'Rating·Dung sai (nhấn để cài đặt)', f_cLoad:'Tải video tại đây',
+  f_search:'Tìm linh kiện...', f_bImport:'📋 Nhập BOM', f_bClean:'🧹 Dọn linh kiện thiếu tên', f_bReset:'🗑 Xóa toàn bộ',
+  f_code:'Mã', f_pname:'Tên', f_spec:'Quy cách', f_unitQty:'Số lượng', f_maker:'NSX', f_makerPn:'Mã NSX',
+  f_custPn:'Mã khách hàng', f_bomModel:'Model BOM', f_edit:'Sửa', f_del:'Xóa',
+  f_tabHist:'Lịch sử phân tích', f_tabSt:'DB thời gian chuẩn',
+  f_sess:'Phiên phân tích', f_taskKinds:'Loại thao tác', f_avgObs:'Thời gian đo trung bình',
+  f_cImport:'Nhập BOM', f_cList:'Danh sách linh kiện', f_cBom:'Thông tin BOM', f_cTabs:'Lịch sử / Thời gian chuẩn',
+  f_videoHere:'Video thao tác hiển thị ở đây',
+  f_clickStart:'① Nhấp khi bắt đầu', f_clickEnd:'② Nhấp khi kết thúc',
+  f_hand:'Tay', f_lh:'🤚 LH Tay trái', f_rh:'✋ RH Tay phải', f_one:'🖐 Một tay',
+  f_cycle:'Chu kỳ', f_autoCycle:'Tự tách chu kỳ', f_saveSt:'Lưu ST linh kiện',
+  f_taskName:'Tên thao tác', f_partCol:'Linh kiện', f_type:'Phân loại', f_startC:'Bắt đầu', f_endC:'Kết thúc',
+  f_egPick:'Nhặt linh kiện', f_egMove:'Di chuyển tay', f_egFit:'Cắm vào', f_egInsert:'Siết chặt',
+  f_va:'Giá trị', f_aux:'Phụ trợ', f_waste:'Lãng phí',
+  f_otherHand:'Ghi chép của tay khác (tham khảo — không bị xóa)',
+  f_cPart:'Chọn linh kiện', f_cClick:'Nhấp hai lần trên video', f_cHand:'Đổi tay',
+  f_cOther:'Tay khác nằm bên dưới để tham khảo', f_cSave:'Lưu thời gian chuẩn',
+  f_settings:'Cài đặt', f_stBasis:'Cơ sở tính thời gian chuẩn',
+  f_formula:'Thời gian đo × Rating × (1 + Dung sai) = Thời gian chuẩn',
+  f_egCalc:'VD: đo 5,0 giây → chuẩn 5,75 giây', f_lang:'Ngôn ngữ / Language',
+  f_cFormula:'Công thức và giá trị khuyến nghị', f_cInput:'Sửa giá trị tại đây',
+  f_chartTitle:'Thời gian tích lũy theo chu kỳ', f_cBand:'Dải nối cùng thao tác',
+  f_cBandDesc:'Dải nở rộng lên trên nghĩa là thao tác đó dài dần qua từng chu kỳ',
+  f_statsTitle:'Thống kê theo chu kỳ', f_kAvg:'Thời gian đo TB', f_kSt:'Thời gian chuẩn (đại diện)',
+  f_kWorker:'Số công nhân cần', f_kCv:'CV (hệ số biến thiên)', f_person:' người',
+  f_handEval:'Đánh giá thao tác hai tay', f_hbr:'Cân bằng (HBR)', f_hbrWarn:'Tay phải RH đang rảnh → xem lại phân bổ',
+  f_total:'Tổng thời gian', f_share:'Tỷ trọng', f_cHandEval:'Cơ cấu thời gian tay trái·phải·một tay và độ cân bằng',
+  f_pickWorkerVideo:'Hãy chọn video của công nhân này',
+  f_markStart:'Dấu bắt đầu', f_markEnd:'Dấu kết thúc', f_nextCycle:'Chu kỳ tiếp', f_markList:'Danh sách dấu',
+  f_cPickPart:'Chọn linh kiện trong bảng', f_cInherit:'Từ chu kỳ 2 linh kiện tự động kế thừa',
+  f_balTitle:'Yamazumi (kéo thả cân bằng chuyền)', f_worker:'Công nhân', f_newWorker:'Công nhân mới (thả vào đây)',
+  f_pitch:'Biểu đồ Pitch', f_cTakt:'Đường đứt đỏ = takt time', f_cPitch:'Phần gạch chéo vượt 100% = vượt takt (nút thắt)',
+  f_simTitle:'Mô phỏng bố trí', f_ct:'Cycle time (CT)', f_bottleneck:'Nút thắt', f_balRate:'Tỷ lệ cân bằng',
+  f_perHour:'Sản lượng/giờ', f_ea:' cái', f_idle:'Rảnh',
+  f_simNote:'Màu xám là rảnh — giảm việc cho nút thắt (đỏ) thì cả chuyền nhanh hơn',
+  f_predTitle:'Dự đoán chuyền model mới', f_availMin:'Thời gian vận hành', f_dayTarget:'Mục tiêu ngày', f_targetTT:'T/T mục tiêu',
+  f_bomInput:'Nhập cấu hình linh kiện (BOM)', f_pickPart:'Chọn linh kiện...', f_qty:'Số lượng', f_add:'Thêm',
+  f_expCt:'Cycle time dự kiến', f_needPeople:'Số người cần', f_procPlan:'Biên chế công đoạn dự kiến', f_proc:'Công đoạn',
+  f_warnTitle:'Đã mở bằng địa chỉ khác thường lệ — linh kiện·thời gian chuẩn đã lưu không hiện ra',
+  f_warnBody:'Trình duyệt lưu dữ liệu theo từng địa chỉ. (Dữ liệu không bị xóa)',
+  f_btnStdAddr:'Mở bằng địa chỉ chuẩn', f_warnNote:'Thấy dải này thì nhấn nút, hoặc đóng hết cửa sổ rồi chạy lại',
+ },
  sec:[
  {id:'what',icon:'🎯',title:'1. Chương trình này là gì?',
   lead:'Công cụ vừa xem video thao tác vừa đo "mỗi động tác mất bao nhiêu giây", rồi dùng thời gian đó để thiết kế chuyền.',
@@ -725,6 +1243,7 @@ vi:{
     'Sao chép toàn bộ thư mục PIE vào vị trí mong muốn (ví dụ <code>D:\\PIE</code>).',
     'Nhấp đúp <code>PIE(중국).bat</code> trong thư mục là chạy được ngay.',
    ]},
+   {t:'shot',k:'install',cap:'Luồng từ cài đặt đến lần chạy đầu tiên'},
    {t:'warn',x:'<b>Đừng bỏ sót tệp nào trong thư mục.</b> Thiếu thư mục <code>mediapipe</code> thì chức năng so sánh tư thế (Pose) sẽ không chạy. Phải sao chép <b>nguyên cả thư mục</b>.'},
   ]},
 
@@ -949,6 +1468,7 @@ vi:{
     ['Video <b>không mở được</b>','Trình duyệt không hỗ trợ codec đó.','Hãy chuyển sang định dạng MP4 (H.264).'],
     ['Không thấy <b>nút lưu·mở</b>','Không phải Chrome/Edge.','Hãy mở bằng Chrome hoặc Edge.'],
    ]},
+   {t:'shot',k:'trouble',cap:'Dải cảnh báo hiện ở đầu màn hình khi địa chỉ bị lệch'},
    {t:'note',x:'Nếu vẫn không được, hãy gửi <b>hiện tượng + ảnh chụp màn hình</b> cho người phụ trách. lovekhl83@gmail.com'},
   ]},
 
@@ -986,10 +1506,10 @@ function block(b,L){
                           +'</tr></thead><tbody>'+b.rows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+esc(c)+'</td>';}).join('')+'</tr>';}).join('')
                           +'</tbody></table>';
   if(b.t==='shot'){
-    var img=SHOTS[b.k]
-      ? '<img src="'+SHOTS[b.k]+'" alt="'+esc(b.cap)+'">'
+    var fig=FIGS[b.k]
+      ? FIGS[b.k](L.fig)
       : '<div class="ph">'+esc(L.phShot)+'</div>';
-    return '<div class="shot">'+img+'<div class="cap">'+esc(b.cap)+'</div></div>';
+    return '<div class="shot">'+fig+'<div class="cap">'+esc(b.cap)+'</div></div>';
   }
   return '';
 }
