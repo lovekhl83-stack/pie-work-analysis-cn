@@ -3,3 +3,4 @@ st_store.json
 # BOM 원본은 회사 기밀(실제 품번·품명·Maker 포함)이고 이 저장소는 public이므로 절대 커밋하지 않는다.
 # 사용법: 이 폴더에 "모델명_BOM.xlsx"를 넣고 프로그램의 [📋 BOM 가져오기]로 읽는다.
 BOM/
+PIE_배포_*.zip
