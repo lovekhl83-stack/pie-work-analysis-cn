@@ -214,7 +214,10 @@ $btnInstall.Add_Click({
             $ws = New-Object -ComObject WScript.Shell
             $lnkPath = Join-Path ([Environment]::GetFolderPath('Desktop')) 'PIE 작업분석.lnk'
             $lnk = $ws.CreateShortcut($lnkPath)
-            $lnk.TargetPath = Join-Path $InstallPath 'PIE(중국).bat'   # bat 경유 실행 — 로컬 서버로 열어야 Pose 기능 동작
+            # 바로가기는 .bat 을 거치지 않고 powershell.exe 를 직접 부른다 (2026-08-13)
+            # 일부 회사 PC의 문서보안(Cloudium 등)이 .bat 실행을 막기 때문. 로컬 서버로 열어야 Pose 기능이 동작한다.
+            $lnk.TargetPath = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+            $lnk.Arguments  = '-NoProfile -ExecutionPolicy Bypass -File "' + (Join-Path $InstallPath 'PIE_local_server.ps1') + '"'
             $lnk.WorkingDirectory = $InstallPath
             $lnk.Description = 'PIE - Powernet Industrial Engineering'
             $lnk.Save()
@@ -228,13 +231,17 @@ $btnInstall.Add_Click({
             $smDir = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\PIE'
             if (-not (Test-Path $smDir)) { New-Item -ItemType Directory -Path $smDir -Force | Out-Null }
             $ws2 = New-Object -ComObject WScript.Shell
+            $psExe = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
             $lnk2 = $ws2.CreateShortcut("$smDir\PIE 작업분석.lnk")
-            $lnk2.TargetPath = Join-Path $InstallPath 'PIE(중국).bat'
+            $lnk2.TargetPath = $psExe
+            $lnk2.Arguments  = '-NoProfile -ExecutionPolicy Bypass -File "' + (Join-Path $InstallPath 'PIE_local_server.ps1') + '"'
             $lnk2.WorkingDirectory = $InstallPath
             $lnk2.Save()
             # 제거 바로가기
             $uninstLnk = $ws2.CreateShortcut("$smDir\PIE 제거.lnk")
-            $uninstLnk.TargetPath = Join-Path $InstallPath 'PIE_제거.bat'
+            $uninstLnk.TargetPath = $psExe
+            $uninstLnk.Arguments  = '-NoProfile -ExecutionPolicy Bypass -File "' + (Join-Path $InstallPath 'PIE_uninstall.ps1') + '"'
+            $uninstLnk.WorkingDirectory = $InstallPath
             $uninstLnk.Save()
         }
         $progress.Value = 90
