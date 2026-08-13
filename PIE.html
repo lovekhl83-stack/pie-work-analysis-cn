@@ -11162,7 +11162,7 @@ function VisionAiModal(props){
 // ══════════════════════════════════════════════════════════════════
 //  LineAnalysisPanel  — 라인 분석 (부품별 평균 시간 → 작업배분 연동)
 // ══════════════════════════════════════════════════════════════════
-function LineAnalysisPanel({parts,taktTime,onDataChange,snapshotRef,projectToLoad,onProjectLoaded,onSaveProject,onLoadProject,onNewProject}){
+function LineAnalysisPanel({parts,taktTime,visible,onDataChange,snapshotRef,projectToLoad,onProjectLoaded,onSaveProject,onLoadProject,onNewProject}){
   var LS_W='pie_line_workers', LS_T='pie_line_tasks', LS_MN='pie_line_model';
   function loadW(){try{return JSON.parse(localStorage.getItem(LS_W)||'[]');}catch{return[];}}
   function loadT(){try{return JSON.parse(localStorage.getItem(LS_T)||'{}');}catch{return{};}}
@@ -11188,6 +11188,13 @@ function LineAnalysisPanel({parts,taktTime,onDataChange,snapshotRef,projectToLoa
   React.useEffect(function(){localStorage.setItem(LS_T,JSON.stringify(workerTasks));},[workerTasks]);
   React.useEffect(function(){localStorage.setItem(LS_MN,modelName);},[modelName]);
   React.useEffect(function(){setCurrentCycle(1);},[activeWorkerId]);
+  // 다른 탭으로 나가면 화면에선 감춰지므로 영상 소리가 계속 나지 않게 세워 둔다 (2026-08-13)
+  React.useEffect(function(){
+    if(visible===false&&videoRef.current&&!videoRef.current.paused){
+      videoRef.current.pause();
+      setPending(null);
+    }
+  },[visible]);
   // 스냅샷 - 저장 시 App에서 읽어감
   React.useEffect(function(){
     if(snapshotRef) snapshotRef.current={workers:workers,workerTasks:workerTasks,modelName:modelName,workerVideos:workerVideos};
@@ -13572,17 +13579,24 @@ function App() {
       tab==='line'&&React.createElement(LinePredict,{parts:parts}),
 
       // ══ LINE ANALYSIS TAB ══
-      tab==='lineanalysis'&&React.createElement(LineAnalysisPanel,{
-        parts:parts,
-        taktTime:taktTime,
-        onDataChange:function(d){setLineYamaData(d);},
-        snapshotRef:lineSnapshotRef,
-        projectToLoad:lineProjectToLoad,
-        onProjectLoaded:function(){setLineProjectToLoad(null);},
-        onSaveProject:saveUnifiedProject,
-        onLoadProject:loadUnifiedProject,
-        onNewProject:newProject,
-      }),
+      // 탭을 옮겨도 화면에서 감추기만 하고 살려 둔다 (2026-08-13)
+      // 예전에는 tab 조건으로 아예 떼어 냈는데, 그러면 불러온 영상(blob 주소)·기록 중인 손·
+      // 사이클·재생 위치가 통째로 사라졌다. 작업배분도 라인분석을 한 번 들러야 데이터가 잡혔다.
+      React.createElement('div',{key:'lineWrap',
+        style:{display:tab==='lineanalysis'?'contents':'none'}},
+        React.createElement(LineAnalysisPanel,{
+          parts:parts,
+          taktTime:taktTime,
+          visible:tab==='lineanalysis',
+          onDataChange:function(d){setLineYamaData(d);},
+          snapshotRef:lineSnapshotRef,
+          projectToLoad:lineProjectToLoad,
+          onProjectLoaded:function(){setLineProjectToLoad(null);},
+          onSaveProject:saveUnifiedProject,
+          onLoadProject:loadUnifiedProject,
+          onNewProject:newProject,
+        })
+      ),
 
       // ══ YAMAZUMI TAB ══
       (function(){
