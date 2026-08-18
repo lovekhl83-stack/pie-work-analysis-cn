@@ -185,7 +185,7 @@ $btnInstall.Add_Click({
         # 2. 파일 복사 — 프로그램 전체 (mediapipe 자산·로컬 서버 포함, Pose 기능에 필수)
         $lblStatus.Text = "[2/5] 프로그램 파일 복사 중..."
         $form.Refresh()
-        $CopyItems = @('PIE.html','PIE(중국).bat','PIE_local_server.ps1','PIE_ST_server.ps1','PIE_ST_server_시작.bat','README.md','PIE_가이드.html','PIE_가이드_한국어.pptx','PIE_가이드_中文.pptx','PIE_가이드_TiengViet.pptx')
+        $CopyItems = @('PIE.html','PIE(중국).bat','PIE_local_server.ps1','PIE_ST_server.ps1','PIE_ST_server_시작.bat','README.md','PIE_가이드.html','PIE_사양확인.bat','PIE_사양확인.ps1','PIE_가이드_한국어.pptx','PIE_가이드_中文.pptx','PIE_가이드_TiengViet.pptx')
         foreach ($ci in $CopyItems) {
             $srcF = Join-Path $SrcDir $ci
             if (Test-Path $srcF) { Copy-Item $srcF (Join-Path $InstallPath $ci) -Force }
