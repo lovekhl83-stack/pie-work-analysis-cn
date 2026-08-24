@@ -12618,8 +12618,17 @@ function App() {
     setCurrentCycle(Math.max.apply(null,newTasks.map(function(t){return t.cycle||1;})));
   }
 
-  function newProject(){
-    if(!confirm(t('new_confirm'))) return;
+  // 지울 것이 실제로 남아 있는지 — 라인분석 작업자·마크까지 함께 본다 (2026-08-19)
+  function hasAnyProjectData(){
+    var ln=lineSnapshotRef.current||{};
+    var lnMarks=Object.keys(ln.workerTasks||{}).some(function(k){return (ln.workerTasks[k]||[]).length>0;});
+    return tasks.length>0||videos.length>0||(ln.workers||[]).length>0||lnMarks;
+  }
+  // fromStartup: 시작 화면에서 부른 경우 — 지울 데이터가 없으면 확인창을 띄우지 않는다
+  function newProject(fromStartup){
+    if(!(fromStartup&&!hasAnyProjectData())){
+      if(!confirm(t('new_confirm'))) return;
+    }
     setVideos([]);setActiveVideoId(null);setVideoSrc(null);setVideoName('');
     setTasks([]);setPending(null);setActiveTask(null);setAnalysisName('');
     setCurrentCycle(1);setSelectedPartId(null);
@@ -12925,7 +12934,7 @@ function App() {
       onApply:applyFileData,
       onClose:()=>setShowFileMgr(false)
     }),
-      showStartup&&React.createElement(StartupModal,{onNew:function(){setShowStartup(false);},onLoad:function(){handleStartupLoad();}}),
+      showStartup&&React.createElement(StartupModal,{onNew:function(){setShowStartup(false);newProject(true);},onLoad:function(){handleStartupLoad();}}),
       showWelcome&&React.createElement(WelcomeModal,{onClose:function(){setShowWelcome(false);}}),
     showGlossary&&React.createElement(GlossaryModal,{onClose:function(){setShowGlossary(false);}}),
     showSettings&&React.createElement(SettingsModal,{
