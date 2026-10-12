@@ -1,4 +1,4 @@
-# PIE(중국) — Powernet Industrial Engineering 오프라인/중국 빌드 — 프로젝트 전체 문서
+# PIE — Powernet Industrial Engineering 통합본 — 프로젝트 전체 문서
 
 > 2026-07-24 기준, `D:\김형래\프로그램\작업분석 중국` 폴더의 파일을 정독하고 작성한 종합 문서.
 > 공정관리·대시보드 프로젝트의 자매 프로젝트이며, 동일하게 **중국 현지 오프라인 전용 배포**를 전제로 한다.
@@ -12,7 +12,7 @@
 - **목적**: 작업 영상을 보면서 작업요소(구간)를 마킹해 시간연구(Time Study)를 수행하고, 레이팅·여유율로 표준시간(ST)을 산출, 야마즈미·작업편성·라인 시뮬레이션까지 이어지는 **IE 작업분석 도구**
 - **이 빌드의 특징**: 인터넷 없는 중국 현장용. 원본의 구글 시트(GAS) 연동을 제거하고 ①부품 ST 누적을 로컬 파일/폴더/LAN 서버로 대체 ②MediaPipe Pose 모델을 `mediapipe/pose/`에 동봉 ③라이선스·시작 화면에 한국어/중국어 토글 추가
 - **형태**: **단일 HTML 파일 앱** — `PIE.html` 하나(1.86MB, 12,386줄)에 React 18(min)+jsPDF+html2canvas+MediaPipe Pose JS+앱 코드 전부 내장. 빌드 시스템 없음(파일 직접 편집)
-- **실행**: `PIE(중국).bat` → PowerShell 정적 서버(포트 8791) → 기본 브라우저 오픈. file:// 직접 열면 MediaPipe fetch가 막혀 Pose 기능 불가
+- **실행**: `PIE 실행.bat` → PowerShell 정적 서버(포트 8791) → 기본 브라우저 오픈. file:// 직접 열면 MediaPipe fetch가 막혀 Pose 기능 불가
 - **라이선스**: 첫 실행 시 `PIE-XXXX-XXXX-XXXX`(12자리 hex) 키 입력, 연·월 단위 만료. 문의 lovekhl83@gmail.com
 - **GitHub**: `lovekhl83-stack/pie-work-analysis-cn` (**public**) — GitHub Pages가 download.html(전체 zip 다운로드 페이지)을 서빙. `st_store.json`만 .gitignore
 
@@ -32,7 +32,7 @@
 ```
 작업분석 중국\
 ├─ PIE.html                 # 앱 전체 (단일 파일, 1.86MB)
-├─ PIE(중국).bat             # 표준 실행: PIE_local_server.ps1 구동
+├─ PIE 실행.bat             # 표준 실행: PIE_local_server.ps1 구동
 ├─ PIE_local_server.ps1     # 정적 서버 (127.0.0.1:8791, 포트 사용 중이면 +20까지 탐색)
 ├─ PIE_ST_server_시작.bat    # LAN ST 누적 서버 실행
 ├─ PIE_ST_server.ps1        # ST 공유 서버 (+:8792, GET/POST /api/st, st_store.json 병합 저장)
@@ -48,7 +48,7 @@
 └─ .nojekyll / .gitignore(st_store.json)
 ```
 
-⚠ **설치 스크립트 4종(setup.bat, install.vbs, PIE_설치, PIE_setup) 전부 PIE.html "한 파일만" 복사한다** — 설치본에는 mediapipe 자산·실행 bat이 없어 Pose 비교가 동작하지 않는다. 중국판 공식 절차는 "폴더째 복사 + PIE(중국).bat"이다 (README 명시, 백로그 A 참조).
+⚠ **설치 스크립트 4종(setup.bat, install.vbs, PIE_설치, PIE_setup) 전부 PIE.html "한 파일만" 복사한다** — 설치본에는 mediapipe 자산·실행 bat이 없어 Pose 비교가 동작하지 않는다. 중국판 공식 절차는 "폴더째 복사 + PIE 실행.bat"이다 (README 명시, 백로그 A 참조).
 
 ---
 
@@ -207,7 +207,7 @@
 
 ## 7. 실행·설치·배포
 
-- **표준 실행(중국)**: 폴더째 복사 → `PIE(중국).bat` (chcp 65001, PIE.html 존재 확인 후 서버 기동)
+- **표준 실행(중국)**: 폴더째 복사 → `PIE 실행.bat` (chcp 65001, PIE.html 존재 확인 후 서버 기동)
 - **ST 공유 서버 PC**: `PIE_ST_server_시작.bat` 실행, 각 클라이언트는 설정>ST 누적 저장소>서버에 `http://<서버IP>:8792` 등록
 - **설치 스크립트들(⚠ 전부 PIE.html 단일 복사 — 중국판에는 부적합)**:
   - setup.bat/install.vbs: 바탕화면에 복사 (구형, 원본 온라인판 잔재)

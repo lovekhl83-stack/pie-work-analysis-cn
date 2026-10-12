@@ -10,7 +10,7 @@ $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 # 실행 필수
 $Must = @(
   'PIE.html',
-  'PIE(중국).bat',
+  'PIE 실행.bat',
   'PIE_local_server.ps1'
 )
 # 같이 넣으면 좋은 것 (없으면 조용히 건너뜀)
@@ -94,7 +94,7 @@ PIE (중국) — USB 배포본
      ※ USB에서 바로 실행하지 마세요.
      ※ 문서중앙화·클라우드 드라이브(Cloudium, OneDrive, 네트워크 드라이브)에
         두지 마세요. 그런 드라이브는 실행 파일을 막습니다. (아래 참고)
-  2) 폴더 안의  PIE(중국).bat  을 더블클릭합니다.
+  2) 폴더 안의  PIE 실행.bat  을 더블클릭합니다.
   3) 검은 창이 뜨고 브라우저가 자동으로 열립니다.
      검은 창은 프로그램 본체입니다 — 끄면 종료됩니다.
 

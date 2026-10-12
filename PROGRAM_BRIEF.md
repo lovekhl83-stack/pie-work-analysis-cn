@@ -1,4 +1,4 @@
-# PIE(중국) — 프로그램 한눈에 보기
+# PIE — 프로그램 한눈에 보기
 
 > **다른 대화창에서 이 프로그램을 파악할 때는 이 파일 하나만 먼저 읽으면 된다.**
 > 더 깊게: 구조·내부 지도 → `PROJECT_OVERVIEW.md`, 진행 상황·버그 백로그 → `WORKLOG.md`, 작업 규칙 → `CLAUDE.md`
@@ -21,7 +21,7 @@
 ## 2. 실행 방법
 
 ```
-PIE(중국).bat 더블클릭
+PIE 실행.bat 더블클릭
   → PIE_local_server.ps1 (PowerShell 정적 서버, 127.0.0.1:8791)
   → 기본 브라우저 자동 오픈
 ```
@@ -36,7 +36,7 @@ PIE(중국).bat 더블클릭
 | 파일 | 역할 |
 |---|---|
 | `PIE.html` | **앱 전체** (단일 파일) |
-| `PIE(중국).bat` → `PIE_local_server.ps1` | 표준 실행 / 정적 서버 8791 |
+| `PIE 실행.bat` → `PIE_local_server.ps1` | 표준 실행 / 정적 서버 8791 |
 | `PIE_ST_server_시작.bat` → `PIE_ST_server.ps1` | ST 누적 공유 서버 8792 (`st_store.json`, 커밋 제외) |
 | `mediapipe/pose/` | Pose 모델 자산 8파일 (오프라인 동봉) |
 | `PIE_설치.bat` → `PIE_setup.ps1` / `PIE_제거.bat` → `PIE_uninstall.ps1` | 설치기·제거기 (2026-07-26부터 **폴더 전체** 설치형) |
